@@ -1,0 +1,193 @@
+---
+title: "Prdm9 Binding Sites"
+output: html_notebook
+---
+
+# Prdm9 Binding Sites
+
+## Export Prdm9 Binding for Liftover
+
+Coordinates are hg19/GRC37 and need to be converted to hg38
+
+
+```{bash}
+
+wget -P ../data ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE99nnn/GSE99407/suppl/GSE99407%5FChIPseq%5FPeaks%2EHumanPRDM9%5FHAV5%2EantiHAV5%2EprotocolC%2Ep10e%2D5%2Esep250%2Etxt%2Egz
+
+wget -P ../data ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE99nnn/GSE99407/suppl/GSE99407%5FChIPseq%5FPeaks%2EChimpPRDM9%5FHAV5%2EantiHAV5%2EprotocolC%2Ep10e%2D5%2Esep250%2EAnnotated%2Etxt%2Egz
+
+```
+
+
+```{r}
+# Human
+
+library(data.table)
+prdm9_h <- fread("zcat < ../data/GSE99407_ChIPseq_Peaks.HumanPRDM9_HAV5.antiHAV5.protocolC.p10e-5.sep250.txt.gz")
+sum((prdm9_h$center_start-prdm9_h$center_stop)!=(-1))
+str(prdm9_h[enrichment>1])
+
+max(prdm9_h$pvalue)
+
+ggplot(prdm9_c, aes(center_start, cov_input)) + geom_point(size=0.5) + scale_y_log10() + facet_wrap(~chr, scales='free_x') + geom_hline(yintercept = 100, col='red')
+
+fwrite(prdm9_h[enrichment>1 & cov_input<100,.(chr, center_start, center_stop, pvalue, enrichment)][order(pvalue)], "../data/prdm9_human_all_hg19.bed", col.names = FALSE, sep = "\t")
+
+```
+
+```{r}
+# Chimp
+
+prdm9_c <- fread("zcat < ../data/GSE99407_ChIPseq_Peaks.ChimpPRDM9_HAV5.antiHAV5.protocolC.p10e-5.sep250.Annotated.txt.gz")
+sum((prdm9_c$center_start-prdm9_c$center_stop)!=(-1))
+
+str(prdm9_c[enrichment>1,.(chr, center_start, center_stop, pvalue, enrichment)][order(pvalue)])
+
+ggplot(prdm9_c, aes(center_start, cov_input)) + geom_point(size=0.5) + scale_y_log10() + facet_wrap(~chr, scales='free_x') + geom_hline(yintercept = 100, col='red')
+
+max(prdm9_c$pvalue)
+
+fwrite(prdm9_c[enrichment>1 & cov_input<100,.(chr, center_start, center_stop, pvalue, enrichment)][order(pvalue)], "../data/prdm9_chimp_all_hg19.bed", col.names = FALSE, sep = "\t")
+
+```
+
+Then Run liftover
+https://genome.ucsc.edu/cgi-bin/hgLiftOver
+
+```{r}
+ggplot(prdm9_c[cov_input<100], aes(log(pvalue), log(enrichment), colour=log(cov_input))) +
+  geom_point(alpha=0.1) +
+  geom_hline(yintercept = log(prdm9_c[order(-enrichment)][5000]$enrichment), colour='red') +
+  geom_vline(xintercept = log(prdm9_c[order(pvalue)][5000]$pvalue), colour='red') +
+  xlim(-150,0) +
+  scale_color_viridis_c()
+```
+
+
+## Split by promotor status
+
+```{bash}
+curl 'http://genome.ucsc.edu/cgi-bin/hgTables' --../data 'hgsid=692185845_nZeTT3CVYORViSK028e2AnxIRkqp&hgta_database=hg38&hgta_table=wgEncodeGencodeCompV28&boolshad.hgta_fs.check.hg38.wgEncodeGencodeCompV28.bin=0&hgta_fs.check.hg38.wgEncodeGencodeCompV28.name=on&boolshad.hgta_fs.check.hg38.wgEncodeGencodeCompV28.name=0&hgta_fs.check.hg38.wgEncodeGencodeCompV28.chrom=on&boolshad.hgta_fs.check.hg38.wgEncodeGencodeCompV28.chrom=0&hgta_fs.check.hg38.wgEncodeGencodeCompV28.strand=on&boolshad.hgta_fs.check.hg38.wgEncodeGencodeCompV28.strand=0&hgta_fs.check.hg38.wgEncodeGencodeCompV28.txStart=on&boolshad.hgta_fs.check.hg38.wgEncodeGencodeCompV28.txStart=0&hgta_fs.check.hg38.wgEncodeGencodeCompV28.txEnd=on&boolshad.hgta_fs.check.hg38.wgEncodeGencodeCompV28.txEnd=0&boolshad.hgta_fs.check.hg38.wgEncodeGencodeCompV28.cdsStart=0&boolshad.hgta_fs.check.hg38.wgEncodeGencodeCompV28.cdsEnd=0&boolshad.hgta_fs.check.hg38.wgEncodeGencodeCompV28.exonCount=0&boolshad.hgta_fs.check.hg38.wgEncodeGencodeCompV28.exonStarts=0&boolshad.hgta_fs.check.hg38.wgEncodeGencodeCompV28.exonEnds=0&boolshad.hgta_fs.check.hg38.wgEncodeGencodeCompV28.score=0&hgta_fs.check.hg38.wgEncodeGencodeCompV28.name2=on&boolshad.hgta_fs.check.hg38.wgEncodeGencodeCompV28.name2=0&boolshad.hgta_fs.check.hg38.wgEncodeGencodeCompV28.cdsStartStat=0&boolshad.hgta_fs.check.hg38.wgEncodeGencodeCompV28.cdsEndStat=0&boolshad.hgta_fs.check.hg38.wgEncodeGencodeCompV28.exonFrames=0&hgta_doPrintSelectedFields=get+output&jsh_pageVertPos=0&boolshad.hgta_fs.check.hg38.wgEncodeGencodeAttrsV28.geneId=0&hgta_fs.check.hg38.wgEncodeGencodeAttrsV28.geneName=on&boolshad.hgta_fs.check.hg38.wgEncodeGencodeAttrsV28.geneName=0&hgta_fs.check.hg38.wgEncodeGencodeAttrsV28.geneType=on&boolshad.hgta_fs.check.hg38.wgEncodeGencodeAttrsV28.geneType=0&boolshad.hgta_fs.check.hg38.wgEncodeGencodeAttrsV28.geneStatus=0&boolshad.hgta_fs.check.hg38.wgEncodeGencodeAttrsV28.transcriptId=0&boolshad.hgta_fs.check.hg38.wgEncodeGencodeAttrsV28.transcriptName=0&hgta_fs.check.hg38.wgEncodeGencodeAttrsV28.transcriptType=on&boolshad.hgta_fs.check.hg38.wgEncodeGencodeAttrsV28.transcriptType=0&hgta_fs.check.hg38.wgEncodeGencodeAttrsV28.transcriptStatus=on&boolshad.hgta_fs.check.hg38.wgEncodeGencodeAttrsV28.transcriptStatus=0&boolshad.hgta_fs.check.hg38.wgEncodeGencodeAttrsV28.havanaGeneId=0&boolshad.hgta_fs.check.hg38.wgEncodeGencodeAttrsV28.havanaTranscriptId=0&boolshad.hgta_fs.check.hg38.wgEncodeGencodeAttrsV28.ccdsId=0&hgta_fs.check.hg38.wgEncodeGencodeAttrsV28.level=on&boolshad.hgta_fs.check.hg38.wgEncodeGencodeAttrsV28.level=0&hgta_fs.check.hg38.wgEncodeGencodeAttrsV28.transcriptClass=on&boolshad.hgta_fs.check.hg38.wgEncodeGencodeAttrsV28.transcriptClass=0&boolshad.hgta_fs.check.hg38.wgEncodeGencodeAttrsV28.proteinId=0&boolshad.hgta_fs.linked.hg38.wgEncodeGencodeAnnotationRemarkV28=0&hgta_fs.linked.hg38.wgEncodeGencodeAttrsV28=on&boolshad.hgta_fs.linked.hg38.wgEncodeGencodeAttrsV28=0&boolshad.hgta_fs.linked.hg38.wgEncodeGencodeBasicV28=0&boolshad.hgta_fs.linked.hg38.wgEncodeGencodeExonSupportV28=0&boolshad.hgta_fs.linked.hg38.wgEncodeGencodeGeneSourceV28=0&boolshad.hgta_fs.linked.hg38.wgEncodeGencodePdbV28=0&boolshad.hgta_fs.linked.hg38.wgEncodeGencodePseudoGeneV28=0&boolshad.hgta_fs.linked.hg38.wgEncodeGencodePubMedV28=0&boolshad.hgta_fs.linked.hg38.wgEncodeGencodeRefSeqV28=0&boolshad.hgta_fs.linked.hg38.wgEncodeGencodeTagV28=0&boolshad.hgta_fs.linked.hg38.wgEncodeGencodeTranscriptSourceV28=0&boolshad.hgta_fs.linked.hg38.wgEncodeGencodeTranscriptSupportV28=0&boolshad.hgta_fs.linked.hg38.wgEncodeGencodeTranscriptionSupportLevelV28=0&boolshad.hgta_fs.linked.hg38.wgEncodeGencodeUniProtV28=0' -o data/hg38.wgEncodeGencodeCompV28.bed
+```
+
+
+```{r}
+
+split_by_promoter <- function(inputfile, outname){
+encode_tss <- fread("../data/hg38.wgEncodeGencodeCompV28.bed")
+names(encode_tss) <- gsub("hg38.wgEncodeGencodeCompV28.|hg38.wgEncodeGencodeAttrsV28.","",names(encode_tss))
+
+encode_tss[strand=='+', center_start := txStart - 500]
+encode_tss[strand=='+',center_stop := txStart + 500]
+encode_tss[strand=='-', center_start := txEnd - 500]
+encode_tss[strand=='-',center_stop := txEnd + 500]
+
+prdm9_h <- fread(inputfile)
+
+names(prdm9_h) <- c('chrom','center_start','center_stop','pvalue','enrichment')
+str(prdm9_h)
+
+setkey(encode_tss, chrom, center_start, center_stop)
+prdm9_h_tss <- foverlaps(prdm9_h, encode_tss, type="within")
+prdm9_h_P <- prdm9_h_tss[!is.na(center_start)]
+prdm9_h_notP <- prdm9_h_tss[is.na(center_start)]
+
+stopifnot(identical(prdm9_h_P, prdm9_h_P[order(pvalue)]))
+stopifnot(identical(prdm9_h_notP, prdm9_h_notP[order(pvalue)]))
+
+fwrite(unique(prdm9_h_P[,.(chrom, i.center_start, i.center_stop, pvalue, enrichment)]), paste0("../data/prdm9_",outname,"_all_hg38_P.bed"), col.names = FALSE, sep = "\t")
+
+fwrite(unique(prdm9_h_notP[,.(chrom, i.center_start, i.center_stop, pvalue, enrichment)]), paste0("../data/prdm9_",outname,"_all_hg38_notP.bed"), col.names = FALSE, sep = "\t")
+}
+
+split_by_promoter('../data/prdm9_human_all_hg38.bed', 'human')
+
+split_by_promoter('../data/prdm9_chimp_all_hg38.bed', 'chimp')
+
+```
+
+```{r}
+download_tss <- function(){
+  # Download Sequences
+  ensembl <- useMart("ENSEMBL_MART_ENSEMBL", host = "www.ensembl.org", dataset = "hsapiens_gene_ensembl")
+  #data.table(listAttributes(ensembl))[grepl(pattern = "Flank",x = description)]
+  
+  tss_o <- getBM(attributes = c("ensembl_gene_id","external_gene_name","strand","transcript_tsl","transcription_start_site","transcript_start","transcript_appris","transcript_length","ensembl_transcript_id","chromosome_name"),
+               filter = c("transcript_biotype"),
+               values = list("protein_coding"),
+               mart = ensembl, uniqueRows=TRUE, checkFilters = FALSE)
+  
+  tss <- data.table(tss_o)
+  
+  # tidy up names
+  #tss[,.N,by=transcript_tsl][order(-N)]
+  tss[, transcript_tsl := gsub(" \\(assigned to previous version [0-9]+\\)","",transcript_tsl)]
+  tss[, transcript_tsl := as.numeric(gsub("tsl","",transcript_tsl))]
+  
+  #tss[,.N,by=transcript_appris][order(-N)]
+  tss[, transcript_appris := gsub("alternative1","6",transcript_appris)]
+  tss[, transcript_appris := gsub("alternative2","7",transcript_appris)]
+  tss[, transcript_appris := as.numeric(gsub("principal","",transcript_appris))]
+  
+  # order such that best first
+  setorder(tss, transcript_tsl, transcript_appris, transcript_length, na.last = TRUE)
+  
+  # remove lower ranked duplicate transcripts
+  tss <- tss[!duplicated(tss, by="external_gene_name")]
+  
+  return(tss)
+}
+
+tss <- download_tss()
+
+str(tss)
+
+tss[strand==1,Strand:="+"]
+tss[strand==-1,Strand:="-"]
+tss[,chr:=paste0('chr',chromosome_name)]
+
+
+fwrite(unique(tss[,.(chr, transcription_start_site, transcription_start_site+1, "NA","NA", Strand)]), "../data/ensembl_tss_hg38_bestofeach.bed", col.names = FALSE, sep = "\t", quote = FALSE)
+
+```
+
+
+```{bash}
+
+# promoters
+head -3000 ../data/prdm9_human_all_hg38_P.bed > data/prdm9_human_hg38_P_3k.bed
+head -3000 ../data/prdm9_chimp_all_hg38_P.bed > data/prdm9_chimp_hg38_P_3k.bed
+
+# non promoters
+## human
+head -15000 ../data/prdm9_human_all_hg38_notP.bed > data/prdm9_human_hg38_notP_15k.bed
+head -5000 ../data/prdm9_human_all_hg38_notP.bed > data/prdm9_human_hg38_notP_5k.bed
+head -3000 ../data/prdm9_human_all_hg38_notP.bed > data/prdm9_human_hg38_notP_3k.bed
+head -1000 ../data/prdm9_human_all_hg38_notP.bed > data/prdm9_human_hg38_notP_1k.bed
+
+## chimp
+head -15000 ../data/prdm9_chimp_all_hg38_notP.bed > data/prdm9_chimp_hg38_notP_15k.bed
+head -5000 ../data/prdm9_chimp_all_hg38_notP.bed > data/prdm9_chimp_hg38_notP_5k.bed
+head -3000 ../data/prdm9_chimp_all_hg38_notP.bed > data/prdm9_chimp_hg38_notP_3k.bed
+head -1000 ../data/prdm9_chimp_all_hg38_notP.bed > data/prdm9_chimp_hg38_notP_1k.bed
+
+```
+
+```{bash}
+
+sort -k5 -n -r ../data/prdm9_chimp_all_hg38.bed > ../data/prdm9_chimp_all_hg38_byenrichment.bed
+sort -k5 -n -r ../data/prdm9_human_all_hg38.bed > ../data/prdm9_human_all_hg38_byenrichment.bed
+
+sort -k5 -n -r ../data/prdm9_human_hg38_notP_3k.bed | head -1000 > ../data/prdm9_human_hg38_notP_top1k.bed
+sort -k5 -n -r ../data/prdm9_human_hg38_notP_3k.bed | head -2000 | tail -1000 > ../data/prdm9_human_hg38_notP_middle1k.bed
+sort -k5 -n -r ../data/prdm9_human_hg38_notP_3k.bed | tail -1000 > ../data/prdm9_human_hg38_notP_low1k.bed
+
+sort -k5 -n -r ../data/prdm9_chimp_hg38_3k.bed | head -1000 > ../data/prdm9_chimp_hg38_top1k.bed
+sort -k5 -n -r ../data/prdm9_chimp_hg38_3k.bed | head -2000 | tail -1000 > ../data/prdm9_chimp_hg38_middle1k.bed
+sort -k5 -n -r ../data/prdm9_chimp_hg38_3k.bed | tail -1000 > ../data/prdm9_chimp_hg38_low1k.bed
+
+
+awk '$5 > 3' ../data/prdm9_human_all_hg38.bed > ../data/prdm9_human_all_hg38_byenrichment.bed
+
+
+```

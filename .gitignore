@@ -1,3 +1,5 @@
+*.nb.html
+analysis/archive/*
 .Rproj.user/
 .Rhistory
 data/*

@@ -1,0 +1,237 @@
+---
+title: "Hybrids In-vivo ChipSeq"
+output: html_notebook
+---
+
+In vivo ChipSeq of hybrid mice against Zcwpw1
+
+PWD x B6 F1, either B6 Prdm9 or Humanised Prdm9
+
+Download Data & QC
+
+```{r process_bams}
+
+wget -r ftp://aifojhoo:kavfi-hethu-03@bsg-ftp.well.ox.ac.uk/181018_K00198_0357_BHWV5YBBXX
+
+md5sum -c P180586-md5sum.txt > P180586-md5sumCHECK.txt
+
+# WTCHG_594404_276139 Sample:Input_PWDB6F1 Count:75761495
+# WTCHG_594404_277151 Sample:ChIPZCWPW1_PWDB6F1 Count:55372208
+# WTCHG_594404_278163 Sample:Input_PWDB6humF1 Count:100880333
+# WTCHG_594404_279175 Sample:ChIPZCWPW1_PWDB6humF1 Count:49620935
+
+path=raw_data/bsg-ftp.well.ox.ac.uk/181018_K00198_0357_BHWV5YBBXX
+expid=594404
+declare -a samples=(276139 277151 278163 279175)
+
+```
+
+
+```{r fingerprint}
+plotFingerprint -b higcovfiltered/${samples[0]}.bam \
+                    higcovfiltered/${samples[1]}.bam \
+                    higcovfiltered/${samples[2]}.bam \
+                    higcovfiltered/${samples[3]}.bam \
+                --labels Input_PWDB6F1 ChIPZcwpw1_PWDB6F1 Input_PWDB6humF1 ChIPZcwpw1_PWDB6humF1\
+                -p 15 \
+                -plot ${expid}_fingerprint.pdf
+
+```
+
+
+### CPM log2
+
+```{r plot_profile_Log2}
+
+# Hybrid
+bamCompare -b1 higcovfiltered/${samples[1]}.bam \
+            -b2 higcovfiltered/${samples[0]}.bam \
+            --scaleFactorsMethod None \
+            --normalizeUsing CPM \
+            --operation log2 \
+            -p 15 \
+            --extendReads \
+            --centerReads \
+            -o bigwigs/ChIPZcwpw1_PWDB6F1-vs-In_CPM_log2.bw
+
+# Humanised Hybrid
+bamCompare -b1 higcovfiltered/${samples[3]}.bam \
+            -b2 higcovfiltered/${samples[2]}.bam \
+            --scaleFactorsMethod None \
+            --normalizeUsing CPM \
+            --operation log2 \
+            -p 15 \
+            --extendReads \
+            --centerReads \
+            -o bigwigs/ChIPZcwpw1_PWDB6humF1-vs-In_CPM_log2.bw
+
+# cut -f 1-3 beds/dmc1hotspots_PWDB6F1.PRDM9ph_PWD_mm10.bed > beds/dmc1hotspots_PWDB6F1.PRDM9ph_PWD_mm10_B.bed
+# cut -f 1-3 beds/dmc1hotspots_PWDB6F1.PRDM9ph_HUM_mm10.bed > beds/dmc1hotspots_PWDB6F1.PRDM9ph_HUM_mm10_B.bed
+# cut -f 1-3 beds/dmc1hotspots_PWDB6F1.PRDM9pb_PWD_mm10.bed > beds/dmc1hotspots_PWDB6F1.PRDM9pb_PWD_mm10_B.bed
+# cut -f 1-3 beds/dmc1hotspots_PWDB6F1.PRDM9pb_B6_mm10.bed > beds/dmc1hotspots_PWDB6F1.PRDM9pb_B6_mm10_B.bed
+
+
+computeMatrix reference-point \
+  -S bigwigs/ChIPZcwpw1_PWDB6F1-vs-In_CPM_log2.bw \
+        bigwigs/ChIPZcwpw1_PWDB6humF1-vs-In_CPM_log2.bw \
+  -R beds/dmc1hotspots_PWDB6F1.PRDM9ph_PWD.bed \
+        beds/dmc1hotspots_PWDB6F1.PRDM9ph_HUM.bed \
+        beds/dmc1hotspots_PWDB6F1.PRDM9ph_Other.bed \
+        beds/dmc1hotspots_PWDB6F1.PRDM9pb_PWD.bed \
+        beds/dmc1hotspots_PWDB6F1.PRDM9pb_B6.bed \
+        beds/dmc1hotspots_PWDB6F1.PRDM9pb_Other.bed \
+  -a 3000 \
+  -b 3000 \
+  -p 15 \
+  --skipZeros \
+  -o deeptoolsmatrices/deeptoolsmatrix_${expid}_relative_CPM_log2.gz
+
+plotProfile \
+  -m deeptoolsmatrices/deeptoolsmatrix_${expid}_relative_CPM_log2.gz \
+  -out deeptoolsplots/${expid}_relative_CPM_log2.pdf \
+  --refPointLabel "0" \
+  --numPlotsPerRow 3 \
+  --regionsLabel PWDB6Hum_PWD PWDB6Hum_HUM PWDB6Hum_Unk PWDB6_PWD PWDB6_B6 PWDB6_Unk
+
+plotProfile \
+  -m deeptoolsmatrices/deeptoolsmatrix_${expid}_relative_CPM_log2.gz \
+  -out deeptoolsplots/${expid}_relative_CPM_log2_bygroup.pdf \
+  --refPointLabel "Hotspot" \
+  --numPlotsPerRow 3 \
+  --regionsLabel PWDB6Hum_PWD PWDB6Hum_HUM PWDB6Hum_Unk PWDB6_PWD PWDB6_B6 PWDB6_Unk \
+  --perGroup
+
+plotHeatmap -m deeptoolsmatrices/deeptoolsmatrix_${expid}_relative_CPM_log2.gz \
+      -out deeptoolsplots/${expid}_relative_CPM_log2_heatmap.pdf
+
+```
+
+```{r}
+dtmat <- fread("zcat < data/deeptoolsmatrix_594404_relative_CPM_log2.gz", skip = 1)
+dtmat[,.N,by=V4]
+```
+
+
+# without unk
+
+```{r}
+computeMatrix reference-point \
+  -S bigwigs/ChIPZcwpw1_PWDB6F1-vs-In_CPM_log2.bw \
+        bigwigs/ChIPZcwpw1_PWDB6humF1-vs-In_CPM_log2.bw \
+  -R beds/dmc1hotspots_PWDB6F1.PRDM9ph_PWD.bed \
+        beds/dmc1hotspots_PWDB6F1.PRDM9ph_HUM.bed \
+        beds/dmc1hotspots_PWDB6F1.PRDM9pb_PWD.bed \
+        beds/dmc1hotspots_PWDB6F1.PRDM9pb_B6.bed \
+  -a 3000 \
+  -b 3000 \
+  -p 15 \
+  --skipZeros \
+  -o deeptoolsmatrices/deeptoolsmatrix_${expid}_relative_CPM_log2_minusUnk.gz
+
+plotProfile \
+  -m deeptoolsmatrices/deeptoolsmatrix_${expid}_relative_CPM_log2_minusUnk.gz \
+  -out deeptoolsplots/${expid}_relative_CPM_log2_minusUnk.pdf \
+  --refPointLabel "0" \
+  --numPlotsPerRow 3 \
+  --regionsLabel PWDB6Hum_PWD PWDB6Hum_HUM PWDB6_PWD PWDB6_B6
+
+plotProfile \
+  -m deeptoolsmatrices/deeptoolsmatrix_${expid}_relative_CPM_log2_minusUnk.gz \
+  -out deeptoolsplots/${expid}_relative_CPM_log2_minusUnk_bygroup.pdf \
+  --refPointLabel "Hotspot" \
+  --numPlotsPerRow 3 \
+  --regionsLabel PWDB6Hum_PWD PWDB6Hum_HUM PWDB6_PWD PWDB6_B6 \
+  --perGroup
+
+```
+
+
+use as many dmc1 hotspots as possible
+
+```{r plot_profile_all}
+computeMatrix reference-point \
+  -S bigwigs/ChIPZcwpw1_PWDB6F1-vs-In_CPM_log2.bw \
+        bigwigs/ChIPZcwpw1_PWDB6humF1-vs-In_CPM_log2.bw \
+  -R beds/dmc1hotspots_PWDB6F1.PRDM9ph.bed \
+        beds/dmc1hotspots_PWDB6F1.PRDM9pb.bed \
+  -a 3000 \
+  -b 3000 \
+  -p 15 \
+  --skipZeros \
+  -o deeptoolsmatrices/deeptoolsmatrix_${expid}_relative_CPM_log2_all_phb.gz
+
+plotProfile \
+  -m deeptoolsmatrices/deeptoolsmatrix_${expid}_relative_CPM_log2_all_phb.gz \
+  -out deeptoolsplots/${expid}_relative_CPM_log2_all_phb.pdf \
+  --refPointLabel "Hotspot" \
+  --numPlotsPerRow 3 \
+  --regionsLabel PWDB6Hum PWDB6
+
+```
+
+
+
+### CPM Abs
+
+```{r plot_profile_abs}
+##### Absolute all by cpm
+
+for sample in ${samples[@]}
+do
+bamCoverage \
+    --bam higcovfiltered/${sample}.bam \
+    -o bigwigs/${sample}_cpm.bw \
+    --normalizeUsing CPM \
+    --centerReads \
+    --extendReads \
+    -p 15
+done
+
+computeMatrix reference-point \
+  -S bigwigs/${samples[0]}_cpm.bw \
+    bigwigs/${samples[1]}_cpm.bw \
+    bigwigs/${samples[2]}_cpm.bw \
+    bigwigs/${samples[3]}_cpm.bw \
+  --samplesLabel Input_PWDB6F1 ChIPZcwpw1_PWDB6F1 Input_PWDB6humF1 ChIPZcwpw1_PWDB6humF1 \
+-R beds/dmc1hotspots_PWDB6F1.PRDM9ph_PWD.bed \
+        beds/dmc1hotspots_PWDB6F1.PRDM9ph_HUM.bed \
+        beds/dmc1hotspots_PWDB6F1.PRDM9pb_PWD.bed \
+        beds/dmc1hotspots_PWDB6F1.PRDM9pb_B6.bed \
+  -a 3000 \
+  -b 3000 \
+  -p 15 \
+  --skipZeros \
+  -o deeptoolsmatrices/deeptoolsmatrix_${expid}_cpm_abs.gz
+
+plotProfile \
+  -m deeptoolsmatrices/deeptoolsmatrix_${expid}_cpm_abs.gz \
+  -out deeptoolsplots/${expid}_cpm_abs.pdf \
+  --refPointLabel "0" \
+  --numPlotsPerRow 2 \
+  --regionsLabel HumP9_PWD HumP9_HUM B6PWD_PWD B6PWD_B6
+
+plotHeatmap -m deeptoolsmatrices/deeptoolsmatrix_${expid}_cpm_abs.gz \
+      -out ${expid}_cpm_abs_heatmap.pdf
+```
+
+# TSS
+
+```{r plot_tss}
+computeMatrix reference-point \
+  -S bigwigs/ChIPZcwpw1_PWDB6F1-vs-In_CPM_log2.bw \
+        bigwigs/ChIPZcwpw1_PWDB6humF1-vs-In_CPM_log2.bw \
+  -R gencode.vM19.annotation.gtf.gz \
+  --metagene \
+  -a 3000 \
+  -b 3000 \
+  -p 15 \
+  --skipZeros \
+  -o deeptoolsmatrices/deeptoolsmatrix_${expid}_relative_CPM_log2_TSS.gz
+
+plotProfile \
+  -m deeptoolsmatrices/deeptoolsmatrix_${expid}_relative_CPM_log2_TSS.gz \
+  -out deeptoolsplots/${expid}_relative_CPM_log2_TSS.pdf
+
+
+```
+

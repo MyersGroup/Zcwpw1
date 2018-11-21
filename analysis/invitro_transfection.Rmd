@@ -1,0 +1,634 @@
+---
+title: "Zcwpw1"
+output: html_notebook
+---
+
+Transfection of Zcwpw1 with or without (human/chimp) Prdm9 in HEK cells
+
+# ChipSeq data
+
+## Raw Data QC
+
+
+```{r}
+# Download raw data (& pre-mapped bams)
+
+mkdir zcwpw1
+
+mkdir raw_data
+
+wget -r ftp://baquifta:pouma-motru-36@bsg-ftp.well.ox.ac.uk/180629_K00150_0342_AHVYHYBBXX
+
+md5sum -c P180312-md5sum.txt > P180312-md5sumCHECK.txt
+
+
+path=raw_data/bsg-ftp.well.ox.ac.uk/180629_K00150_0342_AHVYHYBBXX
+expid=538916
+declare -a samples=(217108 220144 221156 223180 224192)
+
+
+```
+
+```{r}
+
+# ZHA + hP9
+bamCompare -b1 higcovfiltered/223180.bam \
+            -b2 higcovfiltered/221156.bam \
+            --scaleFactorsMethod None \
+            --normalizeUsing RPKM \
+            --operation log2 \
+            -p 15 \
+            -bs 10 \
+            --region chr19:1000000:10000000 \
+            --extendReads \
+            --centerReads \
+            -o sample_regions/ChpHA_ZHA-vs-ChpHA_ZHA_hP9V5_chr19_sample_RPKM.bw
+
+
+```
+
+
+## DeepTools QC
+
+```{r}
+
+plotFingerprint -b higcovfiltered/220144.bam \
+                    higcovfiltered/217108.bam \
+                    higcovfiltered/221156.bam \
+                    higcovfiltered/223180.bam \
+                    higcovfiltered/224192.bam \
+                --labels In_ZHA In_ZHA_hP9V5 ChpHA_ZHA ChpHA_ZHA_hP9V5 ChpHA_ZHA_cP9V5 \
+                -p 15 \
+                -plot fingerprint.pdf
+
+bamPEFragmentSize -b higcovfiltered/220144.bam \
+                    higcovfiltered/217108.bam \
+                    higcovfiltered/221156.bam \
+                    higcovfiltered/223180.bam \
+                    higcovfiltered/224192.bam \
+                --maxFragmentLength 1000 \
+                --samplesLabel In_ZHA In_ZHA_hP9V5 ChpHA_ZHA ChpHA_ZHA_hP9V5 ChpHA_ZHA_cP9V5 \
+                -p 15 \
+                -hist frag_size.pdf
+
+multiBamSummary bins -b higcovfiltered/220144.bam \
+                    higcovfiltered/217108.bam \
+                    higcovfiltered/221156.bam \
+                    higcovfiltered/223180.bam \
+                    higcovfiltered/224192.bam \
+                  --extendReads \
+                  --labels In_ZHA In_ZHA_hP9V5 ChpHA_ZHA ChpHA_ZHA_hP9V5 ChpHA_ZHA_cP9V5 \
+                  -p 15 \
+                  -o multibamsummary.npz
+
+plotCorrelation \
+    -in multibamsummary.npz \
+    --corMethod spearman \
+    --skipZeros \
+    --plotTitle "Spearman Correlation of Read Counts" \
+    --whatToPlot heatmap \
+    --colorMap RdYlBu \
+    --plotNumbers \
+    -o heatmap_SpearmanCorr_readCounts.pdf
+
+plotCorrelation \
+    -in multibamsummary.npz \
+    --corMethod pearson \
+    --skipZeros \
+    --plotTitle "Pearson Correlation of Read Counts" \
+    --whatToPlot heatmap \
+    --colorMap RdYlBu \
+    --plotNumbers \
+    -o heatmap_PearsonCorr_readCounts.pdf
+
+plotPCA -in multibamsummary.npz \
+        -o PCA_readCounts.pdf \
+        -T "PCA of read counts"
+
+wget http://hgdownload.cse.ucsc.edu/gbdb/hg38Patch11/hg38Patch11.2bit
+
+computeGCBias -b higcovfiltered/223180.bam \
+    --effectiveGenomeSize 2747877777 \
+    -g hg38.2bit \
+    --GCbiasFrequenciesFile freq.txt \
+    -p 15 \
+    --biasPlot test_gc_223180.png
+```
+
+
+## Relative Comparisons
+
+### SES log2
+
+```{r}
+
+
+
+# input vs ZHA only
+bamCompare -b1 higcovfiltered/221156.bam \
+            -b2 higcovfiltered/217108.bam \
+            --scaleFactorsMethod SES \
+            --operation log2 \
+            -p 15 \
+            --extendReads \
+            --centerReads \
+            -o higcovfiltered/ChpHA_ZHA-vs-In_ZHA.bw
+
+# ZHA + hP9
+bamCompare -b1 higcovfiltered/223180.bam \
+            -b2 higcovfiltered/221156.bam \
+            --scaleFactorsMethod SES \
+            --operation log2 \
+            -p 15 \
+            --extendReads \
+            --centerReads \
+            -o higcovfiltered/ChpHA_ZHA-vs-ChpHA_ZHA_hP9V5.bw
+
+# ZHA + cP9
+bamCompare -b1 higcovfiltered/224192.bam \
+            -b2 higcovfiltered/221156.bam \
+            --scaleFactorsMethod SES \
+            --operation log2 \
+            -p 15 \
+            --extendReads \
+            --centerReads \
+            -o higcovfiltered/ChpHA_ZHA-vs-ChpHA_ZHA_cP9V5.bw
+
+computeMatrix reference-point \
+  -S higcovfiltered/ChpHA_ZHA-vs-In_ZHA.bw \
+    higcovfiltered/ChpHA_ZHA-vs-ChpHA_ZHA_hP9V5.bw \
+    higcovfiltered/ChpHA_ZHA-vs-ChpHA_ZHA_cP9V5.bw \
+  -R beds/prdm9_human_hg38_P_3k.bed \
+    beds/prdm9_human_hg38_notP_15k.bed \
+    beds/prdm9_human_hg38_notP_3k.bed \
+    beds/prdm9_human_hg38_notP_1k.bed \
+    beds/prdm9_chimp_hg38_P_3k.bed \
+    beds/prdm9_chimp_hg38_notP_15k.bed \
+    beds/prdm9_chimp_hg38_notP_3k.bed \
+    beds/prdm9_chimp_hg38_notP_1k.bed \
+  -a 3000 \
+  -b 3000 \
+  -p 15 \
+  --skipZeros \
+  -o deeptoolsmatrices/deeptoolsmatrix_relative.gz
+
+#plots/prdm9_70_human_hg38.bed plots/prdm9_19_chimp_hg38.bed \
+
+plotProfile \
+  -m deeptoolsmatrices/deeptoolsmatrix_relative.gz \
+  -out deeptoolsplots/Zcwpw1_relative.pdf \
+  --refPointLabel "0" \
+  --numPlotsPerRow 3 \
+  --regionsLabel Human_Prdm9_Promoters_3k Human_Prdm9_NonPromoters_15k Human_Prdm9_NonPromoters_3k Human_Prdm9_NonPromoters_1k Chimp_Prdm9_Promoters_3k Chimp_Prdm9_NonPromoters_15k Chimp_Prdm9_NonPromoters_3k Chimp_Prdm9_NonPromoters_1k
+
+
+
+
+########################################
+#### stratified by enrichment
+########################################
+
+computeMatrix reference-point \
+  -S higcovfiltered/ChpHA_ZHA-vs-In_ZHA.bw \
+    higcovfiltered/ChpHA_ZHA-vs-ChpHA_ZHA_hP9V5.bw \
+    higcovfiltered/ChpHA_ZHA-vs-ChpHA_ZHA_cP9V5.bw \
+  -R beds/prdm9_human_hg38_notP_top1k.bed \
+    beds/prdm9_human_hg38_notP_middle1k.bed \
+    beds/prdm9_human_hg38_notP_low1k.bed \
+    beds/prdm9_chimp_hg38_top1k.bed \
+    beds/prdm9_chimp_hg38_middle1k.bed \
+    beds/prdm9_chimp_hg38_low1k.bed \
+  -a 3000 \
+  -b 3000 \
+  -p 15 \
+  --skipZeros \
+  -o deeptoolsmatrices/deeptoolsmatrix_relative_enrich_stratified.gz
+
+#plots/prdm9_70_human_hg38.bed plots/prdm9_19_chimp_hg38.bed \
+
+plotProfile \
+  -m deeptoolsmatrices/deeptoolsmatrix_relative_enrich_stratified.gz \
+  -out deeptoolsplots/Zcwpw1_relative_enrich_stratified.pdf \
+  --refPointLabel "0" \
+  --numPlotsPerRow 3 \
+  --regionsLabel Human_notProm_top1k Human_notProm_mid1k Human_notProm_low1k Chimp_top1k Chimp_mid1k Chimp_low1k
+
+
+########################################
+###########   By Enrichment ############
+########################################
+
+
+computeMatrix reference-point \
+  -S higcovfiltered/ChpHA_ZHA-vs-In_ZHA.bw \
+    higcovfiltered/ChpHA_ZHA-vs-ChpHA_ZHA_hP9V5.bw \
+    higcovfiltered/ChpHA_ZHA-vs-ChpHA_ZHA_cP9V5.bw \
+  -R beds/prdm9_human_hg38_byenrichment_notP_3k.bed \
+    beds/prdm9_human_hg38_byenrichment_notP_1k.bed \
+    beds/prdm9_human_hg38_byenrichment_P_3k.bed \
+    beds/prdm9_chimp_hg38_byenrichment_25k.bed \
+    beds/prdm9_chimp_hg38_byenrichment_5k.bed \
+    beds/prdm9_chimp_hg38_byenrichment_1k.bed \
+  -a 3000 \
+  -b 3000 \
+  -p 15 \
+  --skipZeros \
+  -o deeptoolsmatrices/deeptoolsmatrix_relative_byenrich.gz
+
+#plots/prdm9_70_human_hg38.bed plots/prdm9_19_chimp_hg38.bed \
+
+plotProfile \
+  -m deeptoolsmatrices/deeptoolsmatrix_relative_byenrich.gz \
+  -out deeptoolsplots/Zcwpw1_relative_byenrich.pdf \
+  --refPointLabel "0" \
+  --numPlotsPerRow 3 \
+  --regionsLabel Human_Prdm9_NonPromoters_3k Human_Prdm9_NonPromoters_1k Human_Prdm9_Promoters_3k Chimp_Prdm9_Hotspots_25k Chimp_Prdm9_Hotspots_5k Chimp_Prdm9_Hotspots_1k
+
+```
+
+
+### CPM log2
+
+```{r}
+
+
+
+# input vs ZHA only
+bamCompare -b1 higcovfiltered/221156.bam \
+            -b2 higcovfiltered/217108.bam \
+            --scaleFactorsMethod None \
+            --normalizeUsing CPM \
+            --operation log2 \
+            -p 15 \
+            --extendReads \
+            --centerReads \
+            -o bigwigs/ChpHA_ZHA-vs-In_ZHA_CPM_log2.bw
+
+# ZHA + hP9
+bamCompare -b1 higcovfiltered/223180.bam \
+            -b2 higcovfiltered/221156.bam \
+            --scaleFactorsMethod None \
+            --normalizeUsing CPM \
+            --operation log2 \
+            -p 15 \
+            --extendReads \
+            --centerReads \
+            -o bigwigs/ChpHA_ZHA-vs-ChpHA_ZHA_hP9V5_CPM_log2.bw
+
+# ZHA + cP9
+bamCompare -b1 higcovfiltered/224192.bam \
+            -b2 higcovfiltered/221156.bam \
+            --scaleFactorsMethod None \
+            --normalizeUsing CPM \
+            --operation log2 \
+            -p 15 \
+            --extendReads \
+            --centerReads \
+            -o bigwigs/ChpHA_ZHA-vs-ChpHA_ZHA_cP9V5_CPM_log2.bw
+
+computeMatrix reference-point \
+  -S bigwigs/ChpHA_ZHA-vs-In_ZHA_CPM_log2.bw \
+    bigwigs/ChpHA_ZHA-vs-ChpHA_ZHA_hP9V5_CPM_log2.bw \
+    bigwigs/ChpHA_ZHA-vs-ChpHA_ZHA_cP9V5_CPM_log2.bw \
+  -R beds/prdm9_human_hg38_P_3k.bed \
+    beds/prdm9_human_hg38_notP_15k.bed \
+    beds/prdm9_human_hg38_notP_3k.bed \
+    beds/prdm9_human_hg38_notP_1k.bed \
+    beds/prdm9_chimp_hg38_P_3k.bed \
+    beds/prdm9_chimp_hg38_notP_15k.bed \
+    beds/prdm9_chimp_hg38_notP_3k.bed \
+    beds/prdm9_chimp_hg38_notP_1k.bed \
+  -a 3000 \
+  -b 3000 \
+  -p 15 \
+  --skipZeros \
+  -o deeptoolsmatrices/deeptoolsmatrix_relative_CPM_log2.gz
+
+plotProfile \
+  -m deeptoolsmatrices/deeptoolsmatrix_relative_CPM_log2.gz \
+  -out deeptoolsplots/Zcwpw1_relative_CPM_log2.pdf \
+  --refPointLabel "0" \
+  --numPlotsPerRow 3 \
+  --regionsLabel Human_Prdm9_Promoters_3k Human_Prdm9_NonPromoters_15k Human_Prdm9_NonPromoters_3k Human_Prdm9_NonPromoters_1k Chimp_Prdm9_Promoters_3k Chimp_Prdm9_NonPromoters_15k Chimp_Prdm9_NonPromoters_3k Chimp_Prdm9_NonPromoters_1k
+
+
+```
+
+### CPM log2 Bigwig compare
+
+```{r}
+
+
+
+# input vs ZHA only
+bigwigCompare -b1 higcovfiltered/221156_cpm.bw \
+            -b2 higcovfiltered/217108_cpm.bw \
+            --operation log2 \
+            -p 15 \
+            -o higcovfiltered/ChpHA_ZHA-vs-In_ZHA_BWC.bw \
+            -of bigwig
+
+# ZHA + hP9
+bigwigCompare -b1 higcovfiltered/223180_cpm.bw \
+            -b2 higcovfiltered/221156_cpm.bw \
+            --operation log2 \
+            -p 15 \
+            -o higcovfiltered/ChpHA_ZHA-vs-ChpHA_ZHA_hP9V5_BWC.bw
+
+# ZHA + cP9
+bigwigCompare -b1 higcovfiltered/224192_cpm.bw \
+            -b2 higcovfiltered/221156_cpm.bw \
+            --operation log2 \
+            -p 15 \
+            -o higcovfiltered/ChpHA_ZHA-vs-ChpHA_ZHA_cP9V5_BWC.bw
+
+computeMatrix reference-point \
+  -S higcovfiltered/ChpHA_ZHA-vs-In_ZHA_BWC.bw \
+    higcovfiltered/ChpHA_ZHA-vs-ChpHA_ZHA_hP9V5_BWC.bw \
+    higcovfiltered/ChpHA_ZHA-vs-ChpHA_ZHA_cP9V5_BWC.bw \
+  -R plots/prdm9_70_human_hg38.bed plots/prdm9_19_chimp_hg38.bed \
+  -a 3000 \
+  -b 3000 \
+  -p 15 \
+  --skipZeros \
+  -o deeptoolsmatrix_relative_BWC.gz
+
+plotProfile \
+  -m deeptoolsmatrix_relative_BWC.gz \
+  -out Zcwpw1_log2_BWC.pdf \
+  --refPointLabel "0" \
+  --numPlotsPerRow 3 \
+  --regionsLabel Human_Prdm9_Hotspots Chimp_Prdm9_Hotspots
+
+
+
+```
+
+## Relative TSS
+
+```{r}
+
+computeMatrix reference-point \
+  -S higcovfiltered/ChpHA_ZHA-vs-In_ZHA.bw \
+    higcovfiltered/ChpHA_ZHA-vs-ChpHA_ZHA_hP9V5.bw \
+    higcovfiltered/ChpHA_ZHA-vs-ChpHA_ZHA_cP9V5.bw \
+  -R Homo_sapiens.GRCh38.93.gtf.gz \
+  --metagene \
+  -a 3000 \
+  -b 3000 \
+  -p 15 \
+  --skipZeros \
+  -o deeptoolsmatrix_TSS.gz
+
+plotProfile \
+  -m deeptoolsmatrix_TSS.gz \
+  -out Zcwpw1_relative_TSS.pdf \
+  --numPlotsPerRow 3
+
+```
+
+## Absolute TSS
+
+```{r}
+
+computeMatrix reference-point \
+  -S higcovfiltered/217108_cpm.bw \
+    higcovfiltered/220144_cpm.bw \
+    higcovfiltered/221156_cpm.bw \
+    higcovfiltered/223180_cpm.bw \
+    higcovfiltered/224192_cpm.bw \
+  --samplesLabel In_ZHA In_ZHA_hP9V5 ChpHA_ZHA ChpHA_ZHA_hP9V5 ChpHA_ZHA_cP9V5 \
+  -R Homo_sapiens.GRCh38.93.gtf.gz \
+  --metagene \
+  -a 2000 \
+  -b 2000 \
+  -p 15 \
+  --skipZeros \
+  -o deeptoolsmatrix_TSS_absolute.gz
+
+plotProfile \
+  -m deeptoolsmatrix_TSS_absolute.gz \
+  -out Zcwpw1_absolute_TSS.pdf \
+  --numPlotsPerRow 3
+
+
+computeMatrix reference-point \
+  -S higcovfiltered/217108_cpm.bw \
+    higcovfiltered/220144_cpm.bw \
+    higcovfiltered/221156_cpm.bw \
+    higcovfiltered/223180_cpm.bw \
+    higcovfiltered/224192_cpm.bw \
+  --samplesLabel In_ZHA In_ZHA_hP9V5 ChpHA_ZHA ChpHA_ZHA_hP9V5 ChpHA_ZHA_cP9V5 \
+  -R hgTables.bed \
+  --metagene \
+  -a 2000 \
+  -b 2000 \
+  -p 15 \
+  --skipZeros \
+  -o deeptoolsmatrix_TSS_absolute_UCSC.gz
+
+plotProfile \
+  -m deeptoolsmatrix_TSS_absolute_UCSC.gz \
+  -out Zcwpw1_absolute_TSS_UCSC.pdf \
+  --numPlotsPerRow 3
+
+
+
+computeMatrix reference-point \
+  -S higcovfiltered/217108_cpm.bw \
+    higcovfiltered/220144_cpm.bw \
+    higcovfiltered/221156_cpm.bw \
+    higcovfiltered/223180_cpm.bw \
+    higcovfiltered/224192_cpm.bw \
+  --samplesLabel In_ZHA In_ZHA_hP9V5 ChpHA_ZHA ChpHA_ZHA_hP9V5 ChpHA_ZHA_cP9V5 \
+  -R plots/ensembl_tss_hg38.bed \
+  --referencePoint TSS \
+  -a 2000 \
+  -b 2000 \
+  -p 15 \
+  --skipZeros \
+  -o deeptoolsmatrix_TSS_absolute_Ens.gz
+
+plotProfile \
+  -m deeptoolsmatrix_TSS_absolute_Ens.gz \
+  -out Zcwpw1_absolute_TSS_Ens.pdf \
+  --numPlotsPerRow 3
+
+
+computeMatrix reference-point \
+  -S higcovfiltered/217108_cpm40.bw \
+    higcovfiltered/220144_cpm40.bw \
+    higcovfiltered/221156_cpm40.bw \
+    higcovfiltered/223180_cpm40.bw \
+    higcovfiltered/224192_cpm40.bw \
+  --samplesLabel In_ZHA In_ZHA_hP9V5 ChpHA_ZHA ChpHA_ZHA_hP9V5 ChpHA_ZHA_cP9V5 \
+  -R plots/ensembl_tss_hg38_bestofeach.bed \
+  --referencePoint TSS \
+  -a 2000 \
+  -b 2000 \
+  -p 15 \
+  --skipZeros \
+  -o deeptoolsmatrix_TSS_absolute_Ens_bestofeach40.gz
+
+plotProfile \
+  -m deeptoolsmatrix_TSS_absolute_Ens_bestofeach40.gz \
+  -out Zcwpw1_absolute_TSS_Ens_bestofeach40.pdf \
+  --perGroup \
+  --plotWidth 12 \
+  --plotHeight 10 \
+  -z "Transcription Start Sites"
+
+```
+
+```{r}
+wget http://ftp.ensembl.org/pub/release-93/gtf/homo_sapiens/Homo_sapiens.GRCh38.93.gtf.gz
+```
+
+
+## Absolute Comparisons
+
+```{r}
+
+##### Absolute all by cpm
+
+for id in 217108 220144 221156 223180 224192
+do
+bamCoverage \
+    --bam higcovfiltered/${id}.bam \
+    -o higcovfiltered/${id}_cpm.bw \
+    --binSize 10 \
+    --normalizeUsing CPM \
+    --centerReads \
+    --extendReads \
+    -p 15
+done
+
+for id in 217108 220144 221156 223180 224192
+do
+bamCoverage \
+    --bam higcovfiltered/${id}.bam \
+    -o higcovfiltered/${id}_cpm40.bw \
+    --binSize 40 \
+    --normalizeUsing CPM \
+    --centerReads \
+    --extendReads \
+    -p 15
+done
+
+computeMatrix reference-point \
+  -S higcovfiltered/217108_cpm.bw \
+    higcovfiltered/220144_cpm.bw \
+    higcovfiltered/221156_cpm.bw \
+    higcovfiltered/223180_cpm.bw \
+    higcovfiltered/224192_cpm.bw \
+  --samplesLabel In_ZHA In_ZHA_hP9V5 ChpHA_ZHA ChpHA_ZHA_hP9V5 ChpHA_ZHA_cP9V5 \
+-R beds/prdm9_human_hg38_byenrichment_notP_3k.bed \
+    beds/prdm9_human_hg38_byenrichment_notP_1k.bed \
+    beds/prdm9_human_hg38_byenrichment_P_3k.bed \
+    beds/prdm9_chimp_hg38_byenrichment_25k.bed \
+    beds/prdm9_chimp_hg38_byenrichment_5k.bed \
+    beds/prdm9_chimp_hg38_byenrichment_1k.bed \
+  -a 3000 \
+  -b 3000 \
+  -p 15 \
+  --skipZeros \
+  -o deeptoolsmatrices/deeptoolsmatrix_all_cpm_byenrichment.gz
+
+plotProfile \
+  -m deeptoolsmatrices/deeptoolsmatrix_all_cpm_byenrichment.gz \
+  -out deeptoolsplots/absolute_cpm_byenrichment.pdf \
+  --refPointLabel "0" \
+  --numPlotsPerRow 3 \
+  --regionsLabel Human_Prdm9_NonPromoters_3k Human_Prdm9_NonPromoters_1k Human_Prdm9_Promoters_3k Chimp_Prdm9_Hotspots_25k Chimp_Prdm9_Hotspots_5k Chimp_Prdm9_Hotspots_1k
+
+plotHeatmap -m deeptoolsmatrices/deeptoolsmatrix_all_cpm_byenrichment.gz \
+      -out deeptoolsplots/absolute_cpm_byenrichment_heatmap.pdf \
+  --regionsLabel Hu_NonProm_3k Hu_NonProm_1k Hu_Prom_3k Chimp_25k Chimp_5k Chimp_1k
+
+plotHeatmap -m deeptoolsmatrices/deeptoolsmatrix_all_cpm.gz \
+      -out deeptoolsplots/absolute_cpm_heatmap.pdf \
+  --regionsLabel Hu_NonProm_3k Hu_NonProm_1k Hu_Prom_3k Chimp_25k Chimp_5k Chimp_1k
+
+#Human_Prdm9_NonPromoters Human_Prdm9_Promoters Chimp_Prdm9_Hotspots_25k Chimp_Prdm9_Hotspots_5k
+
+
+
+
+#### RPGC normalisation absolute
+
+for id in 217108 220144 221156 223180 224192
+do
+bamCoverage --bam higcovfiltered/${id}.bam -o higcovfiltered/${id}.bw \
+    --binSize 10 \
+    --normalizeUsing RPGC \
+    --effectiveGenomeSize 2747877777 \
+    --ignoreForNormalization chrX \
+    --centerReads \
+    --extendReads \
+    -p 15
+done
+
+computeMatrix reference-point \
+  -S higcovfiltered/217108.bw \
+    higcovfiltered/220144.bw \
+    higcovfiltered/221156.bw \
+    higcovfiltered/223180.bw \
+    higcovfiltered/224192.bw \
+  --samplesLabel In_ZHA In_ZHA_hP9V5 ChpHA_ZHA ChpHA_ZHA_hP9V5 ChpHA_ZHA_cP9V5 \
+  -R plots/prdm9_70_human_hg38.bed  plots/prdm9_13_chimp_hg38.bed \
+  -a 3000 \
+  -b 3000 \
+  -p 15 \
+  --skipZeros \
+  -o deeptoolsmatrix_all_RPGC.gz
+
+plotProfile \
+  -m deeptoolsmatrix_all_RPGC.gz \
+  -out absolute_RPGC.pdf \
+  --refPointLabel "0" \
+  --numPlotsPerRow 3 \
+  --regionsLabel Human_Prdm9_Hotspots Chimp_Prdm9_Hotspots
+
+#Chimp_Prdm9_Hotspots 
+```
+
+
+## Long Range
+
+```{r}
+
+computeMatrix reference-point \
+  -S higcovfiltered/221156_cpm.bw \
+  -R plots/prdm9_70_human_hg38.bed plots/prdm9_13_chimp_hg38.bed\
+  -a 200000 \
+  -b 200000 \
+  -p 15 \
+  --skipZeros \
+  --samplesLabel ChpHA_ZHA \
+  -o deeptoolsmatrix_ChpHA_ZHA_200kb.bw.gz
+
+plotProfile -m deeptoolsmatrix_ChpHA_ZHA_200kb.bw.gz \
+              -out ChpHA_ZHA_200kb.pdf \
+  --refPointLabel "0" \
+  --regionsLabel Human_Prdm9_Hotspots_stringent Chimp_Prdm9_Hotspots
+
+```
+
+## Large bin, for long range patterns
+
+```{r}
+
+for id in 217108 220144 221156 223180 224192
+do
+bamCoverage \
+    --bam higcovfiltered/${id}.bam \
+    -o higcovfiltered/${id}_cpm_50kb.bw \
+    --binSize 50000 \
+    --normalizeUsing CPM \
+    --centerReads \
+    --extendReads \
+    -p 15
+done
+
+```
+
