@@ -1,0 +1,705 @@
+---
+title: "Peak Calling"
+output: 
+  html_notebook: 
+    code_folding: show
+    fig_height: 6
+    fig_width: 10.5
+    results: hold
+    fig_show: hold
+    toc: yes
+    toc_float: yes
+    number_sections: yes
+    theme: spacelab
+---
+
+# Download results
+
+```{r}
+
+rsync --stats -avpn -e ssh stats2:/data/saxony/wells/zcwpw1/peaks/*Peaks* ~/Dropbox/DPhil/Zcwpw1/results/peaks
+
+rsync --stats -avpn --delete -e ssh stats2:/data/saxony/wells/zcwpw1/deeptools/*.pdf ~/Dropbox/DPhil/Zcwpw1/results/deeptools
+
+rsync --stats -avpn -e ssh stats2:/data/saxony/wells/zcwpw1/bedgraphs/*.bigWig ~/Downloads/BigWigs/
+
+rsync --stats -avpn -e ssh stats2:/data/saxony/wells/zcwpw1/deeptools/bigwigs/*log2.bw ~/Downloads/BigWigs/log2/
+  
+rsync --stats -avpn -e ssh stats2:/data/saxony/wells/zcwpw1/deeptools/bigwigs/SBPsample/*log2.bw ~/Downloads/BigWigs/log2/SBPsample/
+
+# format for IGV
+for file in SingleBasePeaks*
+do
+tail -n +2 $file | awk -v OFS='\t' '{print $1, $4, $5, -log($11)/log(10)}' > igvbeds/$file
+done
+
+```
+
+# Load Results
+
+```{r}
+
+zcw_peaks <- fread("../results/peaks/SingleBasePeaks.WTCHG_538916_221156_vs_WTCHG_538916_217108.p0.000001.sep250.ALL.bed")
+zcw_wP9_peaks <- fread("../results/peaks/SingleBasePeaks.WTCHG_538916_223180_vs_WTCHG_538916_220144.p0.000001.sep250.ALL.bed")
+zcw_wP9_vs_chip_Z <- fread("../results/peaks/SingleBasePeaks.WTCHG_538916_223180_vs_WTCHG_538916_221156.p0.000001.sep250.ALL.bed")
+
+HP9_peaks <- fread("../results/peaks/SingleBasePeaks.SRA_Altemose2015_SRR5627146_vs_SRA_Altemose2015_SRR5627143.p0.000001.sep250.ALL.bed")
+HP9V5_peaks <- fread("../results/peaks/SingleBasePeaks.SRA_Altemose2015_SRR5627147_vs_SRA_Altemose2015_SRR5627143.p0.000001.sep250.ALL.bed")
+
+HP9combo_peaks <- fread("../results/peaks/SingleBasePeaks.SRA_Altemose2015_SRR5627146_AND_SRA_Altemose2015_SRR5627147_vs_SRA_Altemose2015_SRR5627143.p0.000001.sep250.ALL.bed")
+
+
+CP9_peaks <- fread("../results/peaks/SingleBasePeaks.SRA_Altemose2015_SRR5627144_vs_SRA_Altemose2015_SRR5627143.p0.000001.sep250.ALL.bed")
+
+HP9N_peaks <- fread("../results/peaks/SingleBasePeaks.SRA_Altemose2015_SRR5627138_AND_SRR5627139_vs_SRA_Altemose2015_SRR5627140.bed")
+
+h3k4me3_P9_peaks <- fread("../results/peaks/SingleBasePeaks.SRA_Altemose2015_SRR5627152_AND_SRR5627153_vs_SRA_Altemose2015_SRR5627143.p0.000001.sep250.ALL.bed")
+h3k36me3_P9_peaks <- fread("../results/peaks/SingleBasePeaks.SRA_Altemose2015_SRR5627149_vs_SRA_Altemose2015_SRR5627143.p0.000001.sep250.ALL.bed")
+
+h3k4me3_UT_peaks <- fread("../results/peaks/SingleBasePeaks.SRA_Altemose2015_SRR5627150_vs_SRA_Altemose2015_SRR5627142.p0.000001.sep250.ALL.bed")
+h3k36me3_UT_peaks <- fread("../results/peaks/SingleBasePeaks.SRA_Altemose2015_SRR5627148_vs_SRA_Altemose2015_SRR5627142.p0.000001.sep250.ALL.bed")
+
+```
+
+## Number of peaks
+
+```{r}
+
+number_of_peaks=c(
+nrow(zcw_peaks[cov_input>5]),
+nrow(zcw_wP9_peaks[cov_input>5]),
+nrow(zcw_wP9_vs_chip_Z[cov_input>5]),
+nrow(HP9_peaks[cov_input>5]),
+nrow(HP9V5_peaks[cov_input>5]),
+nrow(HP9combo_peaks[cov_input>5]),
+nrow(HP9N_peaks[cov_input>5]),
+nrow(CP9_peaks[cov_input>5]),
+nrow(h3k4me3_P9_peaks[cov_input>5]),
+nrow(h3k36me3_P9_peaks[cov_input>5]),
+nrow(h3k4me3_UT_peaks[cov_input>5]),
+nrow(h3k36me3_UT_peaks[cov_input>5]))
+
+experiment=c('Zcw',
+            'Zcw_wP9',
+            'zcw_wP9_vs_chip_Z',
+            'HP9',
+            'HP9V5',
+            'HP9V5&HA',
+            'HP9-Nterm',
+            'CP9',
+            'h3k4me3_P9',
+            'h3k36me3_P9',
+            'h3k4me3_UT',
+            'h3k36me3_UT')
+
+ggplot(data.table(number_of_peaks, experiment), aes(experiment, number_of_peaks)) + geom_col() + coord_flip()
+```
+
+```{r}
+ggplot(cbind(zcw_peaks, exp='Zcw'), aes(enrichment))+
+  geom_density() +
+  scale_x_log10() +
+  geom_density(data=cbind(zcw_wP9_peaks[cov_input>5], exp='zcw_wP9')) +
+  geom_density(data=cbind(HP9_peaks[cov_input>5], exp='hPrdm9')) +
+  geom_density(data=cbind(HP9V5_peaks[cov_input>5], exp='hPrdm9V5')) +
+  geom_density(data=cbind(HP9combo_peaks[cov_input>5], exp='hPrdm9V5&HA')) +
+  geom_density(data=cbind(HP9N_peaks[cov_input>5], exp='hPrdm9-Nterm')) +
+  geom_density(data=cbind(h3k4me3_UT_peaks[cov_input>5], exp='h3k4me3_UT')) +
+  geom_density(data=cbind(h3k4me3_P9_peaks[cov_input>5], exp='h3k4me3_P9')) +
+  geom_density(data=cbind(h3k36me3_UT_peaks[cov_input>5], exp='h3k36me3_UT')) +
+  geom_density(data=cbind(h3k36me3_P9_peaks[cov_input>5], exp='h3k36me3_P9')) + 
+  scale_color_brewer(type="qual", palette = "Set1") + facet_wrap("~exp")
+```
+
+# DMC1 peaks
+
+```{r}
+wget ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE59nnn/GSE59836/suppl/GSE59836%5FPeak%5Fdata%5FSupplementary%5FFile%5F1%2Etxt%2Egz
+gunzip GSE59836_Peak_data_Supplementary_File_1.txt.gz
+
+# subset to only AorB allele peaks observed in all samples & compute average strength
+awk -v OFS='\t' '{ if ($16 == 1 && ($3-$2)<3000 && $1!="chrY" && $1!="chrX") { print $1, $2, $3, ($4+$5)/2, ($6+$7)/4 } }' GSE59836_Peak_data_Supplementary_File_1.txt \ > Pratto_human_DSB_Aintersect_autosomal_hg19.bed
+# 18342
+# 18326
+
+dmc1 <- fread("~/Downloads/Pratto_human_DSB_Aintersect_autosomal_hg38.bed")
+setnames(dmc1, c("chr","CI_start_ext","CI_stop_ext","enrichment","enrichmentAB"))
+setkey(dmc1, chr, CI_start_ext, CI_stop_ext)
+
+# awk -v OFS='\t' '{ if ($11 == 1 && ($3-$2)<3000 && $1!="chrY" && $1!="chrX") { print $1, $2, $3, ($4+$5)/2, ($6+$7)/4 } }' GSE59836_Peak_data_Supplementary_File_1.txt \ > Pratto_human_DSB_AB_autosomal_hg19.bed
+# wc -l Pratto_human_DSB_AB_autosomal_hg19.bed
+# #20336
+# 
+# awk -v OFS='\t' '{ if ($9 == 1 && $10 == 1 && ($3-$2)<3000 && $1!="chrY" && $1!="chrX") { print $1, $2, $3, ($4+$5)/2, ($6+$7)/4 } }' GSE59836_Peak_data_Supplementary_File_1.txt \ > Pratto_human_DSB_AA_autosomal_hg19.bed
+# #21699
+# 
+# dmc1_AB <- fread("~/Downloads/Pratto_human_DSB_AB_autosomal_hg38.bed")
+# setnames(dmc1_AB, c("chr","CI_start_ext","CI_stop_ext","enrichment","enrichmentAB"))
+# setkey(dmc1_AB, chr, CI_start_ext, CI_stop_ext)
+# 
+# dmc1_AA <- fread("~/Downloads/Pratto_human_DSB_AA_autosomal_hg38.bed")
+# setnames(dmc1_AA, c("chr","CI_start_ext","CI_stop_ext","enrichment","enrichmentAB"))
+# setkey(dmc1_AA, chr, CI_start_ext, CI_stop_ext)
+```
+
+
+```{r}
+
+prejoin <- function(dt, ext=100){
+  dt[,CI_start_ext := CI_start -ext]
+  dt[,CI_stop_ext := CI_stop +ext]
+  setkey(dt, chr, CI_start_ext, CI_stop_ext)
+  return(dt)
+}
+
+fraction_overlap <- function(dt,x,y,n=100){
+  setorder(dt, i.enrichment)
+  binning_vector <- cut(1:nrow(dt), n)
+  plot(1:n/n, tapply(!is.na(dt$CI_start_ext), binning_vector, mean),
+       xlab=paste("Fraction of",x,"Peaks  (ordered low to high enrichment)"),
+       ylab=paste("Fraction of",x,"peaks that overlap",y,"peaks"))  
+}
+
+fraction_overlapN <- function(dt,x,y,n=100){
+  setorder(dt, enrichment)
+  binning_vector <- cut(1:nrow(dt), n)
+  plot(1:n/n, tapply(!is.na(dt[,get(y)]), binning_vector, mean),
+       xlab=paste("Fraction of",x,"Peaks  (ordered low to high enrichment)"),
+       ylab=paste("Fraction of",x,"peaks that overlap",y,"peaks"))  
+}
+
+fraction_overlapP <- function(dt,x,y,n=100){
+  setorder(dt, -pvalue)
+  binning_vector <- cut(1:nrow(dt), n)
+  plot(1:n/n, tapply(!is.na(dt[,get(y)]), binning_vector, mean),
+       xlab=paste("Fraction of",x,"Peaks  (ordered large to small pvalue)"),
+       ylab=paste("Fraction of",x,"peaks that overlap",y,"peaks"))  
+}
+
+
+HP9_peaks <- prejoin(HP9_peaks)
+HP9N_peaks <- prejoin(HP9N_peaks)
+HP9V5_peaks <- prejoin(HP9V5_peaks)
+HP9combo_peaks <- prejoin(HP9combo_peaks)
+zcw_peaks <- prejoin(zcw_peaks)
+zcw_wP9_peaks <- prejoin(zcw_wP9_peaks)
+zcw_wP9_vs_chip_Z <- prejoin(zcw_wP9_vs_chip_Z)
+
+
+h3k4me3_P9_peaks <- prejoin(h3k4me3_P9_peaks)
+h3k36me3_P9_peaks <- prejoin(h3k36me3_P9_peaks)
+h3k4me3_UT_peaks <- prejoin(h3k4me3_UT_peaks)
+h3k36me3_UT_peaks <- prejoin(h3k36me3_UT_peaks)
+```
+
+
+```{r}
+# library(GenomicRanges)
+# 
+# HP9_peaks_G <- makeGRangesFromDataFrame(HP9_peaks, start.field = "CI_start", end.field = "CI_stop", keep.extra.columns = T)
+# zcw_wP9_vs_chip_Z_G <- makeGRangesFromDataFrame(zcw_wP9_vs_chip_Z, start.field = "CI_start", end.field = "CI_stop", keep.extra.columns = T)
+# 
+# queryHits(findOverlaps(HP9_peaks_G, zcw_wP9_vs_chip_Z_G, select = "all"))
+```
+
+# HP9HA_C vs HP9V5_C
+
+Good overlap, as expected, were these combined as two replicates in Altemose 2015?
+
+```{r}
+HP9V5_peaks$HP9_enrichment <- foverlaps(HP9V5_peaks, HP9_peaks[cov_input>5], mult="first")$enrichment
+HP9_peaks$HP9V5_enrichment <- foverlaps(HP9_peaks, HP9V5_peaks[cov_input>5], mult="first")$enrichment
+
+fraction_overlapN(HP9V5_peaks[cov_input>5], "hPrdm9V5", "HP9_enrichment")
+fraction_overlapN(HP9_peaks[cov_input>5], "hPrdm9", "HP9V5_enrichment")
+
+plot(HP9V5_peaks[cov_input>5]$enrichment, HP9V5_peaks[cov_input>5]$HP9_enrichment, log='xy', pch='.')
+cor(HP9V5_peaks[cov_input>5][!is.na(HP9_enrichment)]$enrichment, HP9V5_peaks[cov_input>5][!is.na(HP9_enrichment)]$HP9_enrichment)
+```
+
+# P9 N vs C term
+
+```{r}
+HP9N_peaks$HP9_enrichment <- foverlaps(HP9N_peaks, HP9_peaks[cov_input>5], mult="first")$enrichment
+HP9N_peaks$HP9combo_enrichment <- foverlaps(HP9N_peaks, HP9combo_peaks[cov_input>5], mult="first")$enrichment
+HP9_peaks$HP9N_enrichment <- foverlaps(HP9_peaks, HP9N_peaks[cov_input>5], mult="first")$enrichment
+
+fraction_overlapN(HP9N_peaks[cov_input>5], "hPrdm9 N", "HP9_enrichment")
+fraction_overlapN(HP9N_peaks[cov_input>5], "hPrdm9 N", "HP9combo_enrichment")
+fraction_overlapN(HP9_peaks[cov_input>5], "hPrdm9", "HP9N_enrichment")
+
+plot(HP9N_peaks[cov_input>5]$enrichment, HP9N_peaks[cov_input>5]$HP9_enrichment, log='xy', pch='.')
+plot(HP9N_peaks[cov_input>5]$enrichment, HP9N_peaks[cov_input>5]$HP9combo_enrichment, log='xy', pch='.')
+cor(HP9N_peaks[cov_input>5][!is.na(HP9_enrichment)]$enrichment, HP9N_peaks[cov_input>5][!is.na(HP9_enrichment)]$HP9_enrichment)
+```
+
+## Visualise Similar N & C term peaks
+
+```{r}
+HP9N_peaks[,NC_similar := (HP9combo_enrichment/enrichment)>exp(0.2) | HP9combo_enrichment/enrichment<exp(-0.2)]
+
+ggplot(HP9N_peaks[cov_input>5], aes(enrichment, HP9combo_enrichment,
+                                    colour=NC_similar)) +
+  geom_point(pch='.', size=0.1) +
+  scale_x_log10() + scale_y_log10() +
+  theme(legend.position = 'bottom') + 
+  geom_abline(intercept = 0,slope = 1)
+```
+
+
+# HP9 vs H3K4
+
+```{r}
+HP9combo_peaks$h3k4me3_P9_enrichment <- foverlaps(HP9combo_peaks, h3k4me3_P9_peaks, mult="first")$enrichment
+HP9combo_peaks$h3k4me3_UT_enrichment <- foverlaps(HP9combo_peaks, h3k4me3_UT_peaks, mult="first")$enrichment
+
+fraction_overlapN(HP9combo_peaks[cov_input>5], "hPrdm9 combo", "h3k4me3_P9_enrichment")
+fraction_overlapN(HP9combo_peaks[cov_input>5], "hPrdm9 combo", "h3k4me3_UT_enrichment")
+```
+
+## HP9N
+
+higher enriched N peaks, overlap more with transfected H3K4, but less with untransfected H3K4 (larger drop for N than C here)
+
+```{r}
+HP9N_peaks$h3k4me3_P9_enrichment <- foverlaps(HP9N_peaks, h3k4me3_P9_peaks, mult="first")$enrichment
+HP9N_peaks$h3k4me3_UT_enrichment <- foverlaps(HP9N_peaks, h3k4me3_UT_peaks, mult="first")$enrichment
+
+fraction_overlapN(HP9N_peaks[cov_input>5], "hPrdm9N", "h3k4me3_P9_enrichment")
+fraction_overlapN(HP9N_peaks[cov_input>5], "hPrdm9N", "h3k4me3_UT_enrichment")
+```
+
+# HP9 vs H3K36
+
+```{r}
+HP9combo_peaks$h3k36me3_P9_enrichment <- foverlaps(HP9combo_peaks, h3k36me3_P9_peaks, mult="first")$enrichment
+HP9combo_peaks$h3k36me3_UT_enrichment <- foverlaps(HP9combo_peaks, h3k36me3_UT_peaks, mult="first")$enrichment
+
+fraction_overlapN(HP9combo_peaks[cov_input>5], "hPrdm9 combo", "h3k36me3_P9_enrichment")
+fraction_overlapN(HP9combo_peaks[cov_input>5], "hPrdm9 combo", "h3k36me3_UT_enrichment")
+```
+
+## HP9 N
+
+Overall low overlaps, H3K36 not a great experiment?
+
+```{r}
+HP9N_peaks$h3k36me3_P9_enrichment <- foverlaps(HP9N_peaks, h3k36me3_P9_peaks, mult="first")$enrichment
+HP9N_peaks$h3k36me3_UT_enrichment <- foverlaps(HP9N_peaks, h3k36me3_UT_peaks, mult="first")$enrichment
+
+fraction_overlapN(HP9N_peaks[cov_input>5], "hPrdm9 N", "h3k36me3_P9_enrichment")
+fraction_overlapN(HP9N_peaks[cov_input>5], "hPrdm9 N", "h3k36me3_UT_enrichment")
+```
+
+# hPrdm9 vs Zcw
+
+For Zcw alone, and co-tranfected with P9, most peaks overlap P9 peaks with not much variation with P9 enrichment - too many Zcw peaks?
+
+Nice variation from 0.1 to 0.7 with Chip vs Chip comparison
+
+```{r}
+HP9combo_peaks$zcw_enrichment <- foverlaps(HP9combo_peaks, zcw_peaks, mult="first")$enrichment
+HP9combo_peaks$zcw_wP9_enrichment <- foverlaps(HP9combo_peaks, zcw_wP9_peaks, mult="first")$enrichment
+HP9combo_peaks$zcw_CVC_enrichment <- foverlaps(HP9combo_peaks, zcw_wP9_vs_chip_Z, mult="first")$enrichment
+HP9V5_peaks$zcw_CVC_enrichment <- foverlaps(HP9V5_peaks, zcw_wP9_vs_chip_Z, mult="first")$enrichment
+
+fraction_overlapN(HP9combo_peaks[cov_input>=10], "hPrdm9 combo", "zcw_enrichment")
+fraction_overlapN(HP9combo_peaks[cov_input>=10], "hPrdm9 combo", "zcw_wP9_enrichment")
+fraction_overlapN(HP9combo_peaks[cov_input>=10], "hPrdm9 combo", "zcw_CVC_enrichment")
+```
+
+## N
+
+Less linear Variation with Chip vs Chip for N term, only goes to 40% but more P9 Peaks to start with
+
+```{r}
+HP9N_peaks$zcw_enrichment <- foverlaps(HP9N_peaks, zcw_peaks, mult="first")$enrichment
+HP9N_peaks$zcw_wP9_enrichment <- foverlaps(HP9N_peaks, zcw_wP9_peaks, mult="first")$enrichment
+HP9N_peaks$zcw_CVC_enrichment <- foverlaps(HP9N_peaks, zcw_wP9_vs_chip_Z, mult="first")$enrichment
+
+fraction_overlapN(HP9N_peaks[cov_input>20], "hPrdm9 N", "zcw_enrichment")
+fraction_overlapN(HP9N_peaks[cov_input>20], "hPrdm9 N", "zcw_wP9_enrichment")
+fraction_overlapN(HP9N_peaks[cov_input>20], "hPrdm9 N", "zcw_CVC_enrichment")
+```
+
+
+# Zcw vs hPrdm9
+
+```{r}
+setkey(HP9_peaks, chr, CI_start_ext, CI_stop_ext)
+zcw_peaks$HP9combo_enrichment <- foverlaps(zcw_peaks, HP9combo_peaks, mult="first")$enrichment
+zcw_wP9_peaks$HP9combo_enrichment <- foverlaps(zcw_wP9_peaks, HP9combo_peaks, mult="first")$enrichment
+zcw_wP9_vs_chip_Z$HP9combo_enrichment <- foverlaps(zcw_wP9_vs_chip_Z, HP9combo_peaks, mult="first")$enrichment
+
+fraction_overlapN(zcw_peaks[cov_input>10], "Zcwpw1", "HP9combo_enrichment")
+fraction_overlapN(zcw_wP9_peaks[cov_input>10], "Zcwpw1_wP9", "HP9combo_enrichment")
+fraction_overlapN(zcw_wP9_vs_chip_Z[cov_input>10], "Zcwpw1_CVC", "HP9combo_enrichment")
+```
+
+
+## Zcw vs hPrdm9 N
+
+First plot not so clean, other's are similar
+
+```{r}
+setkey(HP9N_peaks, chr, CI_start_ext, CI_stop_ext)
+zcw_peaks$HP9N_enrichment <- foverlaps(zcw_peaks, HP9N_peaks, mult="first")$enrichment
+zcw_wP9_peaks$HP9N_enrichment <- foverlaps(zcw_wP9_peaks, HP9N_peaks, mult="first")$enrichment
+zcw_wP9_vs_chip_Z$HP9N_enrichment <- foverlaps(zcw_wP9_vs_chip_Z, HP9N_peaks, mult="first")$enrichment
+
+fraction_overlapN(zcw_peaks[cov_input>10], "Zcwpw1", "HP9N_enrichment")
+fraction_overlapN(zcw_wP9_peaks[cov_input>10], "Zcwpw1_wP9", "HP9N_enrichment")
+fraction_overlapN(zcw_wP9_vs_chip_Z[cov_input>10], "Zcwpw1_CVC", "HP9N_enrichment")
+```
+
+
+# ZcwCVC vs DMC1
+
+```{r}
+
+zcw_wP9_vs_chip_Z$DMC1_enrichment <- foverlaps(zcw_wP9_vs_chip_Z, dmc1, mult="first")$enrichment
+
+fraction_overlapN(zcw_wP9_vs_chip_Z[cov_input>10], x="Zcw_CVC", y="DMC1_enrichment")
+```
+
+# hPrdm9 vs DMC1
+
+```{r}
+
+HP9combo_peaks$DMC1_enrichment <- foverlaps(HP9combo_peaks, dmc1, mult="first")$enrichment
+
+fraction_overlapN(HP9combo_peaks[cov_input>5], x="hPrdm9 combo", y="DMC1_enrichment")
+```
+
+## Hp9-N vs DMC1
+
+Much cleaner than C term!
+
+```{r}
+HP9N_peaks$DMC1_enrichment <- foverlaps(HP9N_peaks, dmc1, mult="first")$enrichment
+fraction_overlapN(HP9N_peaks[cov_input>5 & chr!="chrX"], x="hPrdm9 N", y="DMC1_enrichment")
+```
+
+
+
+# Zcw vs Zcw
+
+```{r}
+zcw_wP9_vs_chip_Z$HP9_enrichment <- foverlaps(zcw_wP9_vs_chip_Z, HP9_peaks, mult="first")$enrichment
+zcw_wP9_peaks$zcw_CVC_enrichment <- foverlaps(zcw_wP9_peaks, zcw_wP9_vs_chip_Z, mult="first")$enrichment
+zcw_wP9_peaks$zcw_enrichment <- foverlaps(zcw_wP9_peaks, zcw_peaks, mult="first")$enrichment
+
+fraction_overlapN(zcw_wP9_vs_chip_Z[cov_input>5], x="Zcw_CVC", y="HP9_enrichment")
+fraction_overlapN(zcw_wP9_peaks[cov_input>5], x="Zcw_wP9", y="zcw_CVC_enrichment")
+fraction_overlapN(zcw_wP9_peaks[cov_input>5], x="Zcw_wP9", y="zcw_enrichment")
+```
+
+
+# Zcw vs H3K4
+
+```{r}
+zcw_peaks$h3k4me3_P9_enrichment <- foverlaps(zcw_peaks, h3k4me3_P9_peaks, mult="first")$enrichment
+zcw_wP9_peaks$h3k4me3_P9_enrichment <- foverlaps(zcw_wP9_peaks, h3k4me3_P9_peaks, mult="first")$enrichment
+
+fraction_overlapN(zcw_peaks[cov_input>5], x="Zcw", y="h3k4me3_P9_enrichment")
+fraction_overlapN(zcw_wP9_peaks[cov_input>5], x="Zcw_wP9", y="h3k4me3_P9_enrichment")
+```
+
+# Zcw vs H3K36
+
+```{r}
+zcw_peaks$h3k36me3_UT_enrichment <- foverlaps(zcw_peaks, h3k36me3_UT_peaks, mult="first")$enrichment
+zcw_wP9_peaks$h3k36me3_UT_enrichment <- foverlaps(zcw_wP9_peaks, h3k36me3_UT_peaks, mult="first")$enrichment
+
+zcw_peaks$h3k36me3_P9_enrichment <- foverlaps(zcw_peaks, h3k36me3_P9_peaks, mult="first")$enrichment
+zcw_wP9_peaks$h3k36me3_P9_enrichment <- foverlaps(zcw_wP9_peaks, h3k36me3_P9_peaks, mult="first")$enrichment
+
+
+fraction_overlapN(zcw_peaks[cov_input>5], x="Zcw", y="h3k36me3_UT_enrichment")
+fraction_overlapN(zcw_wP9_peaks[cov_input>5], x="Zcw_wP9", y="h3k36me3_UT_enrichment")
+
+fraction_overlapN(zcw_peaks[cov_input>5], x="Zcw", y="h3k36me3_P9_enrichment")
+fraction_overlapN(zcw_wP9_peaks[cov_input>5], x="Zcw_wP9", y="h3k36me3_P9_enrichment")
+```
+
+# Sandbox
+
+```{r}
+
+binned_enrichment <- function(dt,x,y,n=100){
+  setorder(dt, i.enrichment)
+  binning_vector <- cut(1:nrow(dt), n)
+  plot(1:n/n, tapply(dt$enrichment, binning_vector, mean),
+       xlab=paste("Enrichment Bin of",x,"(ordered low to high enrichment)"),
+       ylab=paste("Mean enrichment of",y))  
+}
+
+binned_enrichment2 <- function(dt,x,y,n=100){
+  setorder(dt, i.pvalue)
+  binning_vector <- cut(1:nrow(dt), n)
+  plot(1:n/n, tapply(dt$enrichment, binning_vector, mean),
+       xlab=paste("p-value Bin of",x,"(ordered small to large pvalue)"),
+       ylab=paste("Mean enrichment of",y))  
+}
+
+#binned_enrichment(zcw_wP9_peaks_JOIN_ctcf[!is.na(CI_start)], x='Zcw_wP9', y='ctcf')
+#binned_enrichment2(zcw_wP9_peaks_JOIN_ctcf[!is.na(CI_start)], x='Zcw_wP9', y='ctcf')
+
+binned_enrichment(zcw_wP9_peaks_JOIN_h3k36me3_P9_peaks[!is.na(CI_start)], x='Zcw_wP9', y='H3k36me3_wP9')
+binned_enrichment(zcw_wP9_peaks_JOIN_h3k4me3_P9_peaks[!is.na(CI_start)], x='Zcw_wP9', y='H3k4me3_wP9')
+
+binned_enrichment2(zcw_wP9_peaks_JOIN_h3k36me3_P9_peaks[!is.na(CI_start)], x='Zcw_wP9', y='H3k36me3_wP9')
+binned_enrichment2(zcw_wP9_peaks_JOIN_h3k4me3_P9_peaks[!is.na(CI_start)], x='Zcw_wP9', y='H3k4me3_wP9')
+
+#ggplot(zcw_wP9_peaks_JOIN_h3k36me3_P9_peaks[!is.na(CI_start)][is.finite(pvalue) & is.finite(pvalue)], aes(log(i.pvalue), log(pvalue))) + geom_point(size=0.1) + xlim(-200,0) + ylim(-20,0)
+```
+
+
+
+```{r}
+h3k36me3_P9_peaks_JOIN_zcw_wP9_peaks <- foverlaps(h3k36me3_P9_peaks, zcw_wP9_peaks, by.x = c("chr","CI_start_ext","CI_stop_ext"))
+fraction_overlap(h3k36me3_P9_peaks_JOIN_zcw_wP9_peaks[i.enrichment>1], x="H3K36me3_P9", y="Zcwpw1_wP9", n = 100)
+```
+
+```{r}
+ctcf <- fread("~/Downloads/hglft_genome_1dd9_39f220.bed")
+setnames(ctcf,c("chr",'CI_start','CI_stop',"enrichment","B","C"))
+ctcf <- prejoin(ctcf)
+ctcf
+
+zcw_wP9_peaks_JOIN_ctcf <- foverlaps(zcw_wP9_peaks, ctcf, by.x = c("chr","CI_start_ext","CI_stop_ext"))
+fraction_overlap(zcw_wP9_peaks_JOIN_ctcf, x="Zcwpw1", y="CTCF", n = 150)
+
+zcw_wP9_peaks_JOIN_ctcf <- foverlaps(zcw_wP9_peaks, ctcf, by.x = c("chr","CI_start_ext","CI_stop_ext"))
+fraction_overlap(zcw_wP9_peaks_JOIN_ctcf, x="Zcwpw1", y="H3K36me3_P9", n = 400)
+```
+
+```{r}
+readBED <- function(bedfile="~/Downloads/hglft_genome_6542_3a6b10.bed"){
+  ctcf <- fread(bedfile)
+  setnames(ctcf,c("chr",'CI_start','CI_stop',"enrichment","B","C"))
+  ctcf <- prejoin(ctcf)
+  ctcf <- foverlaps(zcw_wP9_peaks, ctcf, by.x = c("chr","CI_start_ext","CI_stop_ext"))
+  return(ctcf)
+}
+
+
+h4k20me1 <- readBED("~/Downloads/h4k20me1_bernstein.bed")
+h3k27ac <- readBED("~/Downloads/h3k27ac_bernstein.bed")
+h3k27me3 <- readBED("~/Downloads/h3k27me3_bernstein.bed")
+
+ctcf <- readBED("~/Downloads/Bernstein_NHEK_CTCF_hg38.bed")
+pol2b <- readBED("~/Downloads/Bernstein_NHEK_Pol2b_hg38.bed")
+h3k4me3_bern <- readBED("~/Downloads/Bernstein_NHEK_H3K4me3_hg38.bed")
+h3k36me3_bern <- readBED("~/Downloads/Bernstein_NHEK_H3K36me3_hg38.bed")
+h3k9me3_broad <- readBED("~/Downloads/Broad_ChipSeq_NHEK_H3K9me3_hg38.bed")
+
+fraction_overlap(h4k20me1, x="Zcwpw1", y="h4k20me1", n = 150)
+fraction_overlap(h3k27ac, x="Zcwpw1", y="h3k27ac", n = 150)
+fraction_overlap(h3k27me3, x="Zcwpw1", y="h3k27me3", n = 150)
+
+fraction_overlap(ctcf, x="Zcwpw1", y="ctcf", n = 150)
+fraction_overlap(pol2b, x="Zcwpw1", y="pol2b", n = 150)
+fraction_overlap(h3k4me3_bern, x="Zcwpw1", y="h3k4me3_bern", n = 150)
+fraction_overlap(h3k36me3_bern, x="Zcwpw1", y="h3k36me3_bern", n = 150)
+fraction_overlap(h3k9me3_broad, x="Zcwpw1", y="h3k9me3_broad", n = 150)
+
+
+```
+
+
+```{r}
+nearest_peak <- function(x, A=zcw_wP9_peaks, B=h3k4me3_P9_peaks) min(abs(A[chr=="chr16" & center_start<3.1e+07][x]$center_start - B[chr=="chr16"]$center_start))
+
+set.seed(42)
+uniform_dist <- sample(1:max(zcw_wP9_peaks[chr=="chr16" & center_start<3.1e+07]$center_start), 10000)
+
+no <- sort(uniform_dist)[diff(sort(uniform_dist))<250]
+uniform_dist <- uniform_dist[!uniform_dist %in% no][1:5000]
+
+nearest_peak_null <- function(x, B=h3k4me3_P9_peaks) min(abs(uniform_dist[x] - B[chr=="chr16"]$center_start))
+
+plot_cum_nearest <- function(nearest, nearest_null, to=10e4, by=100){
+  cum_nearest <- function(x, vec=nearest) sum(vec<x)/length(vec)
+  dt <- data.table(dist=seq(1,to,by),
+             overlap=sapply(seq(1,to,by), cum_nearest),
+             overlap_null=sapply(seq(1,to,by), function(x) cum_nearest(x, vec=nearest_null)))
+  ggplot(dt, aes(dist, overlap)) +
+    geom_line() +
+      xlab("Distance to peak") + ylab("Cumulative fraction of peaks") + 
+    geom_line(aes(y=overlap_null), colour='red')
+}
+
+set.seed(42)
+indexes <- sample(1:nrow(zcw_wP9_peaks[chr=="chr16" & center_start<3.1e+07]), 5000)
+
+nearest <- sapply(indexes, nearest_peak)
+nearest_null <- sapply(seq_along(uniform_dist), nearest_peak_null)
+
+
+nearest_k36 <- sapply(indexes, function(x) nearest_peak(x, B=h3k36me3_P9_peaks))
+nearest_null_k36 <- sapply(seq_along(uniform_dist), function(x) nearest_peak_null(x, B=h3k36me3_P9_peaks))
+
+nearest_hP9 <- sapply(indexes, function(x) nearest_peak(x, B=HP9_peaks))
+nearest_null_hP9 <- sapply(seq_along(uniform_dist), function(x) nearest_peak_null(x, B=HP9_peaks))
+
+
+
+plot_cum_nearest(nearest, nearest_null, to=1e4)
+plot_cum_nearest(nearest_k36, nearest_null_k36, to=1e4)
+plot_cum_nearest(nearest_hP9, nearest_null_hP9, to=1e4)
+
+# debugging plot
+# plot(sort(uniform_dist)[100:140], rep(1,41), col='blue')
+# points(zcw_wP9_peaks[chr=="chr16"]$center_start[indexes], rep(0.98,length(indexes)))
+# points(h3k4me3_P9_peaks[chr=="chr16"]$center_start, rep(0.96,nrow(h3k4me3_P9_peaks[chr=="chr16"])), col='red')
+
+
+hist(nearest, breaks=10000, xlim=c(0,10000), ylim=c(0,100))
+hist(nearest_null, breaks=10000, xlim=c(0,10000), ylim=c(0,100))
+
+hist(nearest_k36, breaks=10000, xlim=c(0,10000), ylim=c(0,100))
+hist(nearest_null_k36, breaks=10000, xlim=c(0,10000), ylim=c(0,100))
+
+```
+
+
+```{r}
+
+library(ChIPseeker)
+library(TxDb.Hsapiens.UCSC.hg38.knownGene)
+txdb <- TxDb.Hsapiens.UCSC.hg38.knownGene
+library(clusterProfiler)
+
+enriches <- enrichPeakOverlap(queryPeak = zcw_wP9_peaks_GR,
+                  targetPeak    = list(h3k36me3_P9_peaks_GR),
+                  TxDb          = txdb,
+                  pAdjustMethod = "BH",
+                  nShuffle      = 1000,
+                  chainFile     = NULL,
+                  verbose       = FALSE,
+                  pool = FALSE)
+
+
+zcw_wP9_peaks_GR <- makeGRangesFromDataFrame(zcw_wP9_peaks, ignore.strand = T, seqnames.field = "chr", start.field = "CI_start", end.field = "CI_stop", keep.extra.columns = T)
+zcw_wP9_peaks_GR
+
+h3k36me3_P9_peaks_GR <- makeGRangesFromDataFrame(h3k36me3_P9_peaks, ignore.strand = T, seqnames.field = "chr", start.field = "CI_start", end.field = "CI_stop", keep.extra.columns = T)
+
+ctcf <- readPeakFile("~/Downloads/hglft_genome_1dd9_39f220.bed")
+
+hg19 <- getGEOInfo(genome="hg19", simplify=TRUE)
+head(hg19)
+
+data.table(hg19)[grepl("HEK",hg19$title)]
+
+wget ftp://ftp.ncbi.nlm.nih.gov/geo/samples/GSM749nnn/GSM749668/suppl/GSM749668_hg19_wgEncodeUwTfbsHek293CtcfStdHotspotsRep1.broadPeak.gz
+cut -f 1-6 GSM749668_hg19_wgEncodeUwTfbsHek293CtcfStdHotspotsRep1.broadPeak > GSM749668_hg19_wgEncodeUwTfbsHek293CtcfStdHotspotsRep1.bed
+
+wget  ftp://ftp.ncbi.nlm.nih.gov/geo/samples/GSM749nnn/GSM749668/suppl/GSM749668_hg19_wgEncodeUwTfbsHek293CtcfStdPkRep1.narrowPeak.gz
+cut -f 1-6 GSM749668_hg19_wgEncodeUwTfbsHek293CtcfStdPkRep1.narrowPeak > GSM749668_hg19_wgEncodeUwTfbsHek293CtcfStdPkRep1.bed
+
+Broad_ChipSeq_NHEK_H3K79me2
+wget ftp://ftp.ncbi.nlm.nih.gov/geo/samples/GSM1003nnn/GSM1003527/suppl/GSM1003527_hg19_wgEncodeBroadHistoneNhekH3k79me2Pk.broadPeak.gz
+cut -f 1-6 GSM1003527_hg19_wgEncodeBroadHistoneNhekH3k79me2Pk.broadPeak > GSM1003527_hg19_wgEncodeBroadHistoneNhekH3k79me2Pk.bed
+
+Bernstein_NHEK_H3K27me3
+curl ftp://ftp.ncbi.nlm.nih.gov/geo/samples/GSM733nnn/GSM733701/suppl/GSM733701_hg19_wgEncodeBroadHistoneNhekH3k27me3StdPk.broadPeak.gz | zcat | cut -f 1-6 > GSM733701_hg19_wgEncodeBroadHistoneNhekH3k27me3StdPk.bed
+
+#Bernstein_NHEK_H3K27ac
+curl ftp://ftp.ncbi.nlm.nih.gov/geo/samples/GSM733nnn/GSM733674/suppl/GSM733674_hg19_wgEncodeBroadHistoneNhekH3k27acStdPk.broadPeak.gz | zcat | cut -f 1-6 > GSM733674_hg19_wgEncodeBroadHistoneNhekH3k27acStdPk.bed
+
+#Bernstein_NHEK_H4K20me1
+curl ftp://ftp.ncbi.nlm.nih.gov/geo/samples/GSM733nnn/GSM733728/suppl/GSM733728_hg19_wgEncodeBroadHistoneNhekH4k20me1StdPk.broadPeak.gz | zcat | cut -f 1-6 > GSM733728_hg19_wgEncodeBroadHistoneNhekH4k20me1StdPk.bed
+
+#Bernstein_NHEK_CTCF
+curl ftp://ftp.ncbi.nlm.nih.gov/geo/samples/GSM733nnn/GSM733636/suppl/GSM733636_hg19_wgEncodeBroadHistoneNhekCtcfStdPk.broadPeak.gz | zcat | cut -f 1-6 > Bernstein_NHEK_CTCF_hg19.bed
+
+#Bernstein_NHEK_Pol2(b)
+curl ftp://ftp.ncbi.nlm.nih.gov/geo/samples/GSM733nnn/GSM733671/suppl/GSM733671_hg19_wgEncodeBroadHistoneNhekPol2bStdPk.broadPeak.gz  | zcat | cut -f 1-6 > Bernstein_NHEK_Pol2b_hg19.bed
+
+#Bernstein_NHEK_H3K4me3
+curl ftp://ftp.ncbi.nlm.nih.gov/geo/samples/GSM733nnn/GSM733720/suppl/GSM733720_hg19_wgEncodeBroadHistoneNhekH3k4me3StdPk.broadPeak.gz | zcat | cut -f 1-6 > Bernstein_NHEK_H3K4me3_hg19.bed
+
+#Bernstein_NHEK_H3K36me3
+curl ftp://ftp.ncbi.nlm.nih.gov/geo/samples/GSM733nnn/GSM733726/suppl/GSM733726_hg19_wgEncodeBroadHistoneNhekH3k36me3StdPk.broadPeak.gz | zcat | cut -f 1-6 > Bernstein_NHEK_H3K36me3_hg19.bed
+
+#Broad_ChipSeq_NHEK_H3K9me3
+curl ftp://ftp.ncbi.nlm.nih.gov/geo/samples/GSM1003nnn/GSM1003528/suppl/GSM1003528_hg19_wgEncodeBroadHistoneNhekH3k09me3Pk.broadPeak.gz | zcat | cut -f 1-6 > Broad_ChipSeq_NHEK_H3K9me3_hg19.bed
+
+#Bernstein_NHEK_H3K9ac
+curl ftp://ftp.ncbi.nlm.nih.gov/geo/samples/GSM733nnn/GSM733665/suppl/GSM733665_hg19_wgEncodeBroadHistoneNhekH3k9acStdPk.broadPeak.gz | zcat | cut -f 1-6 > Bernstein_NHEK_H3K9ac_hg19.bed
+
+
+enriches <- enrichPeakOverlap(queryPeak = zcw_wP9_peaks_GR,
+                  targetPeak    = "~/Downloads/hglft_genome_1dd9_39f220.bed",
+                  TxDb          = txdb,
+                  pAdjustMethod = "BH",
+                  nShuffle      = 1000,
+                  chainFile     = NULL,
+                  verbose       = FALSE,
+                  pool = FALSE)
+
+enriches
+
+hg38 <- getGEOInfo(genome="hg38", simplify=TRUE)
+head(hg38)
+
+#GSM749668 hek ctcf
+
+downloadGEObedFiles(genome="hg38", destDir="~/chipseeker")
+
+GEO_beds <- list.files("~/chipseeker", full.names = T, pattern = "narrowPeak")
+
+# Takes too long to run!
+# enriches <- enrichPeakOverlap(queryPeak = zcw_wP9_peaks_GR,
+#                   targetPeak    = GEO_beds,
+#                   TxDb          = txdb,
+#                   pAdjustMethod = "BH",
+#                   nShuffle      = 1000,
+#                   chainFile     = NULL,
+#                   verbose       = FALSE,
+#                   pool=FALSE)
+
+enriches
+```
+
+
+
+```{r}
+ hist(Zcw_CVC_AT_hP9$pvalue[Zcw_CVC_AT_hP9$cov_input>=30 & HP9_peaks$enrichment>=10 & HP9_peaks$cov_input>=5],n=100)
+aa=Zcw_CVC_AT_hP9$cov_r1+Zcw_CVC_AT_hP9$cov_r2
+bb=Zcw_CVC_AT_hP9$cov_input
+cc=Zcw_CVC_AT_hP9$enrichment
+dd=cc*bb
+summary(lm(dd~aa+bb))
+
+enrich*bg=(0.5*(cov1+cov2)-0.3552*bg)
+Error: object 'cov1' not found
+> summary(lm(dd~0+aa+bb))
+
+enrich*bg=(0.5*(cov1+cov2)-0.3525*bg)
+Error: object 'cov1' not found
+> predcc=(0.5*aa-0.325*bb)/bb
+> plot(predcc,cc)
+> summary(lm(dd[dd>0]~0+aa[dd>0]+bb[dd>0]))
+
+predcc=(0.5*aa-0.3555*bb)/bb
+> summary(lm(dd[dd>0]~aa[dd>0]+bb[dd>0]))
+
+plot(predcc,cc)
+abline(0,1)
+cc2=HP9_peaks$enrichment
+bb2=HP9_peaks$cov_input
+plot(cc2[bb>=5 & bb2>=5],aa[bb>=5 & bb2>=5],pch=".",ylim=c(0.1,200),log="xy")
+plot(cc2[bb>=5 & bb2>=5],cc[bb>=5 & bb2>=5],pch=".",ylim=c(0.01,5),log="xy")
+mean(cc[bb>=5 & bb2>=5 & cc2>5])
+ee=aa-0.355*bb
+mean(aa[bb>=5 & bb2>=5 & cc2>2])
+hist(Zcw_CVC_AT_hP9$pvalue[Zcw_CVC_AT_hP9$cov_input>=5 & HP9_peaks$enrichment>=5 & HP9_peaks$cov_input>=5],n=100)
+mean(Zcw_CVC_AT_hP9$pvalue[HP9_peaks$enrichment>=10 & HP9_peaks$cov_input>=5]<=1e-6)
+
+
+
+```
+
