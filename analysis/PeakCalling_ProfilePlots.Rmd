@@ -1,0 +1,311 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+
+```{r}
+
+# including EBV
+# wget https://raw.githubusercontent.com/nellore/runs/master/gtex/hg38.sizes
+
+# samtools stats ../higcovfiltered/223180.bam | grep "is sorted:"
+
+# almost but not quite the same
+# bamCoverage -b ../higcovfiltered/223180.bam --binSize 1 -r chr1:1:137884 -e --outFileFormat bedgraph -o depth_bamCoverage.bedgraph --samFlagInclude 64
+# head -1000 depth_bamCoverage.bedgraph  > sample_depth_bamCoverage.bedgraph
+
+
+#########
+
+# Project P180312 (62GB)
+# WTCHG_538916_217108 Sample:Input_ZCWPW1-HA Count:61279859
+# WTCHG_538916_221156 Sample:ChIPHA_ZCWPW1-HA Count:65459828
+
+# WTCHG_538916_220144 Sample:Input_ZCWPW1-HA+hPRDM9-V5 Count:67107524
+# WTCHG_538916_223180 Sample:ChIPHA_ZCWPW1-HA+hPRDM9-V5 Count:66894286
+
+# WTCHG_538916_224192 Sample:ChIPHA_ZCWPW1-HA+cPRDM9-V5 Count:62310491
+
+wget -r ftp://baquifta:pouma-motru-36@bsg-ftp.well.ox.ac.uk/180629_K00150_0342_AHVYHYBBXX
+
+md5sum -c P180312-md5sum.txt > P180312-md5sumCHECK.txt
+
+wget -r ftp://aifojhoo:kavfi-hethu-03@bsg-ftp.well.ox.ac.uk/181018_K00198_0357_BHWV5YBBXX
+
+md5sum -c P180586-md5sum.txt > P180586-md5sumCHECK.txt
+
+
+#SRR5627143 ChIPseq.HumanPRDM9_HA.Input.ProtocolC
+#SRR5627146 ChIPseq.HumanPRDM9_HA.antiHA.ProtocolC
+#SRR5627144 ChIPseq.ChimpPRDM9_HA.antiHA.ProtocolC
+#SRR5627149 ChIPseq.HumanPRDM9_HA.antiH3K36me3.ProtocolC
+#SRR5627152 ChIPseq.HumanPRDM9_HA.antiH3K4me3.ProtocolC.Rep1
+#SRR5627153 ChIPseq.HumanPRDM9_HA.antiH3K4me3.ProtocolC.Rep2
+#SRR5627142 ChIPseq.Untransfected.Input.ProtocolC
+#SRR5627150 ChIPseq.Untransfected.antiH3K4me3.Rep1.ProtocolC
+#SRR5627151 ChIPseq.Untransfected.antiH3K4me3.Rep2.ProtocolC
+#SRR5627148 ChIPseq.Untransfected.antiH3K36me3.ProtocolC
+
+#ChIPseq.YFP_HumanPRDM9.antiGFP.Rep1.ProtocolN
+#ChIPseq.YFP_HumanPRDM9.antiGFP.Rep2.ProtocolN
+#ChIPseq.YFP_HumanPRDM9.Input.ProtocolN
+
+
+# cd /homes/wells/data-on-saxony/single-cell/sequencing/software/
+# wget https://github.com/bedops/bedops/releases/download/v2.4.35/bedops_linux_x86_64-v2.4.35.tar.bz2
+# tar jxvf bedops_linux_x86_64-v2.4.35.tar.bz2
+
+
+
+export PATH=/homes/wells/data-on-saxony/single-cell/sequencing/software/fastqc/FastQC/:$PATH
+export PATH=/homes/wells/data-on-saxony/single-cell/sequencing/software/bedtools/bedtools2/bin/:$PATH
+export PATH=/homes/wells/data-on-saxony/single-cell/sequencing/software/samtools/samtools-1.7/:$PATH
+export LD_LIBRARY_PATH=/homes/wells/data-on-saxony/single-cell/sequencing/software/htslib_1.9/lib/:$LD_LIBRARY_PATH
+export PATH=/homes/wells/data-on-saxony/single-cell/sequencing/software/:$PATH
+export PATH=/homes/wells/data-on-saxony/single-cell/sequencing/software/MAPeakCaller/:$PATH
+export PATH=/homes/wells/data-on-saxony/single-cell/sequencing/software/bwa-0.7.17/:$PATH
+export PATH=/homes/wells/data-on-saxony/single-cell/sequencing/software/bowtie/bowtie-1.2.2-linux-x86_64/:$PATH
+export PATH=/homes/wells/data-on-saxony/single-cell/sequencing/software/bin/:$PATH # bedops
+
+snakemake --cores 15 -npr
+snakemake --snakefile Snakefile_peaks -npr
+
+
+# 223180 mapping
+/data/saxony/wells/zcwpw1/.snakemake/log/2018-12-17T113936.560665.snakemake.log
+
+# 538916 mapping
+/data/saxony/wells/zcwpw1/.snakemake/log/2018-12-17T122730.067036.snakemake.log
+
+# 538916 peak calling
+/data/saxony/wells/zcwpw1/.snakemake/log/2018-12-17T215828.396975.snakemake.log
+
+# altemose2015 mapping
+/data/saxony/wells/zcwpw1/.snakemake/log/2018-12-18T010553.304882.snakemake.log
+
+# altemose2015 peak calling
+/data/saxony/wells/zcwpw1/.snakemake/log/2018-12-18T195115.331409.snakemake.log
+
+
+```
+
+# Profile Plots for WTCHG_538916 (in vitro transfections)
+
+```{r}
+
+  computeMatrix reference-point \
+    -S deeptools/bigwigs/WTCHG_538916_221156_vs_WTCHG_538916_217108_CPM_log2.bw \
+      deeptools/bigwigs/WTCHG_538916_223180_vs_WTCHG_538916_220144_CPM_log2.bw \
+      deeptools/bigwigs/WTCHG_538916_223180_vs_WTCHG_538916_221156_CPM_log2.bw \
+      deeptools/bigwigs/WTCHG_538916_224192_vs_WTCHG_538916_221156_CPM_log2.bw \
+    -R deeptools/beds/prdm9_human_hg38_P_3k.bed \
+      deeptools/beds/prdm9_human_hg38_notP_15k.bed \
+      deeptools/beds/prdm9_human_hg38_notP_3k.bed \
+      deeptools/beds/prdm9_human_hg38_notP_1k.bed \
+      deeptools/beds/prdm9_chimp_hg38_P_3k.bed \
+      deeptools/beds/prdm9_chimp_hg38_notP_15k.bed \
+      deeptools/beds/prdm9_chimp_hg38_notP_3k.bed \
+      deeptools/beds/prdm9_chimp_hg38_notP_1k.bed \
+    -a 3000 \
+    -b 3000 \
+    -p 15 \
+    --skipZeros \
+    -o deeptools/matrices/deeptoolsmatrix_WTCHG_538916_CPM_log2.gz
+
+
+plotProfile \
+  -m deeptools/matrices/deeptoolsmatrix_WTCHG_538916_CPM_log2.gz \
+  -out deeptools/Zcwpw1_relative_CPM_log2.pdf \
+  --refPointLabel "0" \
+  --samplesLabel ChpHA_ZHA-vs-In_ZHA_CPM ChpHA_ZHA_hP9V5-vs-Input ChpHA_ZHA_hP9V5-vs-ChpHA_ZHA ChpHA_ZHA_cP9V5-vs-ChpHA_ZHA \
+  --numPlotsPerRow 2 \
+  --regionsLabel Human_Prdm9_Promoters_3k Human_Prdm9_NonPromoters_15k Human_Prdm9_NonPromoters_3k Human_Prdm9_NonPromoters_1k Chimp_Prdm9_Promoters_3k Chimp_Prdm9_NonPromoters_15k Chimp_Prdm9_NonPromoters_3k Chimp_Prdm9_NonPromoters_1k
+
+```
+
+# Altemose2015 relative
+
+```{r}
+
+  computeMatrix reference-point \
+    -S deeptools/bigwigs/SRA_Altemose2015_SRR5627146_vs_SRA_Altemose2015_SRR5627143_CPM_log2.bw \
+      deeptools/bigwigs/SRA_Altemose2015_SRR5627144_vs_SRA_Altemose2015_SRR5627143_CPM_log2.bw \
+      deeptools/bigwigs/SRA_Altemose2015_SRR5627152_vs_SRA_Altemose2015_SRR5627143_CPM_log2.bw \
+      deeptools/bigwigs/SRA_Altemose2015_SRR5627149_vs_SRA_Altemose2015_SRR5627143_CPM_log2.bw \
+      deeptools/bigwigs/SRA_Altemose2015_SRR5627150_vs_SRA_Altemose2015_SRR5627142_CPM_log2.bw \
+      deeptools/bigwigs/SRA_Altemose2015_SRR5627148_vs_SRA_Altemose2015_SRR5627142_CPM_log2.bw \
+    -R deeptools/beds/prdm9_human_hg38_P_3k.bed \
+      deeptools/beds/prdm9_human_hg38_notP_15k.bed \
+      deeptools/beds/prdm9_human_hg38_notP_3k.bed \
+      deeptools/beds/prdm9_human_hg38_notP_1k.bed \
+      deeptools/beds/prdm9_chimp_hg38_P_3k.bed \
+      deeptools/beds/prdm9_chimp_hg38_notP_15k.bed \
+      deeptools/beds/prdm9_chimp_hg38_notP_3k.bed \
+      deeptools/beds/prdm9_chimp_hg38_notP_1k.bed \
+    -a 3000 \
+    -b 3000 \
+    -p 15 \
+    --skipZeros \
+    -o deeptools/matrices/deeptoolsmatrix_SRA_Altemose2015_CPM_log2.gz
+
+
+plotProfile \
+  -m deeptools/matrices/deeptoolsmatrix_SRA_Altemose2015_CPM_log2.gz \
+  -out deeptools/SRA_Altemose2015_relative_CPM_log2.pdf \
+  --refPointLabel "0" \
+  --samplesLabel hPrdm9-vs-Input cPrdm9-vs-Input H3K4wPrdm9 H3K36wPrdm9 H3K4_untransfected H3K36_untransfected \
+  --numPlotsPerRow 2 \
+  --regionsLabel Human_Prdm9_Promoters_3k Human_Prdm9_NonPromoters_15k Human_Prdm9_NonPromoters_3k Human_Prdm9_NonPromoters_1k Chimp_Prdm9_Promoters_3k Chimp_Prdm9_NonPromoters_15k Chimp_Prdm9_NonPromoters_3k Chimp_Prdm9_NonPromoters_1k
+
+```
+
+
+## Relative TSS
+
+
+```{r}
+wget https://www.proteinatlas.org/download/transcript_rna_celline.tsv.zip
+unzip transcript_rna_celline.tsv.zip
+
+# cut HEK239 expression
+# get top 20k expressed genes
+# for each gene get top expressed transcript
+# cut ensembl transcript ID
+cut -f1-2,44 transcript_rna_celline.tsv | sort -k3rn | head -20000 | sort -u -k1,1 -k3n,1 | cut -f2 > deeptools/beds/top_HEK293_genes.txt
+
+
+wget -qO- http://ftp.ensembl.org/pub/release-94/gtf/homo_sapiens/Homo_sapiens.GRCh38.94.gtf.gz \
+    | gunzip --stdout - \
+    | awk '$3 == "transcript"' - \
+    | grep "protein_coding" - \
+    | convert2bed -i gtf - \
+    | grep -Ff deeptools/beds/top_HEK293_genes.txt - \
+    > deeptools/beds/top_transcripts_ens2.bed
+
+wget -qO- http://ftp.ensembl.org/pub/release-94/gtf/homo_sapiens/Homo_sapiens.GRCh38.94.gtf.gz \
+    | gunzip --stdout - \
+    | awk '$3 == "gene"' - \
+    | grep "protein_coding" - \
+    | convert2bed -i gtf - \
+    > deeptools/beds/genes_prot_coding_ens.bed
+
+# alternatives
+#ftp://ftp.ebi.ac.uk/pub/databases/gencode/ensembl_ftp_files/ens_94_human/gtf/homo_sapiens/Homo_sapiens.GRCh38.94.gtf.gz
+#ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_29/gencode.v29.annotation.gtf.gz
+#ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_29/gencode.v29.annotation.gff3.gz
+# abandoned attempt at getting genes expressed in HEK293T
+# wget http://fantom.gsc.riken.jp/5/datafiles/reprocessed/hg38_latest/extra/CAGE_peaks/hg38_fair+new_CAGE_peaks_phase1and2.bed.gz
+# wget ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE99nnn/GSE99407/suppl/GSE99407%5FRNAseq%5FCuffDiff%2Egenes%2Ediff%2Egz
+# 
+# cuffdiff <- fread("zcat < ~/Downloads/GSE99407_RNAseq_CuffDiff.genes.diff.gz")
+# head(unique(cuffdiff[sample_1=="Human"][order(-value_1)]$gene),250)
+
+```
+
+
+```{r}
+
+# TSS (top expressed transcripts)
+
+computeMatrix reference-point \
+  -S deeptools/bigwigs/WTCHG_538916_221156_vs_WTCHG_538916_217108_CPM_log2.bw \
+      deeptools/bigwigs/WTCHG_538916_223180_vs_WTCHG_538916_220144_CPM_log2.bw \
+      deeptools/bigwigs/WTCHG_538916_223180_vs_WTCHG_538916_221156_CPM_log2.bw \
+      deeptools/bigwigs/WTCHG_538916_224192_vs_WTCHG_538916_221156_CPM_log2.bw \
+  -R deeptools/beds/top_transcripts_ens.bed \
+  --metagene \
+  -a 3000 \
+  -b 3000 \
+  -p 15 \
+  --skipZeros \
+  -o deeptools/matrices/deeptoolsmatrix_WTCHG_538916_CPM_log2_TSS_transcripts.gz
+
+
+plotProfile \
+  -m deeptools/matrices/deeptoolsmatrix_WTCHG_538916_CPM_log2_TSS_transcripts.gz \
+  -out deeptools/Zcwpw1_relative_CPM_log2_TSS_transcripts.pdf \
+  --perGroup \
+  --plotWidth 12 \
+  --plotHeight 10 \
+  -z "Transcription Start Sites" \
+  --samplesLabel ChpHA_ZHA-vs-Input ChpHA_ZHA_hP9V5-vs-Input ChpHA_ZHA_hP9V5-vs-ChpHA_ZHA ChpHA_ZHA_cP9V5-vs-ChpHA_ZHA \
+  
+```
+
+# absolute coverages
+
+```{r}
+# at prdm9 sites
+
+computeMatrix reference-point \
+  -S deeptools/bigwigs/WTCHG_538916_217108_CPM.bw \
+    deeptools/bigwigs/WTCHG_538916_221156_CPM.bw \
+    deeptools/bigwigs/WTCHG_538916_220144_CPM.bw \
+    deeptools/bigwigs/WTCHG_538916_223180_CPM.bw \
+    deeptools/bigwigs/WTCHG_538916_224192_CPM.bw \
+  -R deeptools/beds/prdm9_human_hg38_P_3k.bed \
+    deeptools/beds/prdm9_human_hg38_notP_3k.bed \
+    deeptools/beds/prdm9_chimp_hg38_P_3k.bed \
+    deeptools/beds/prdm9_chimp_hg38_notP_3k.bed \
+  -a 3000 \
+  -b 3000 \
+  -p 15 \
+  --skipZeros \
+  -o deeptools/matrices/deeptoolsmatrix_WTCHG_538916_CPM_abs.gz
+
+plotProfile \
+  -m deeptools/matrices/deeptoolsmatrix_WTCHG_538916_CPM_abs.gz \
+  -out deeptools/Zcwpw1_abs_CPM.pdf \
+  --refPointLabel "0" \
+  --samplesLabel In_ZHA ChpHA_ZHA In_ZHA_hP9V5 ChpHA_ZHA_hP9V5 ChpHA_ZHA_cP9V5 \
+  --numPlotsPerRow 3 \
+  --regionsLabel Human_Prdm9_Promoters_3k Human_Prdm9_NonPromoters_3k Chimp_Prdm9_Promoters_3k Chimp_Prdm9_NonPromoters_3k
+
+
+
+# at TSS of protein coding transcripts
+
+computeMatrix reference-point \
+  -S deeptools/bigwigs/WTCHG_538916_217108_CPM.bw \
+    deeptools/bigwigs/WTCHG_538916_221156_CPM.bw \
+    deeptools/bigwigs/WTCHG_538916_220144_CPM.bw \
+    deeptools/bigwigs/WTCHG_538916_223180_CPM.bw \
+    deeptools/bigwigs/WTCHG_538916_224192_CPM.bw \
+  -R deeptools/beds/top_transcripts_ens.bed \
+  --metagene \
+  -a 3000 \
+  -b 3000 \
+  -p 15 \
+  --skipZeros \
+  -o deeptools/matrices/deeptoolsmatrix_WTCHG_538916_CPM_abs_TSS.gz
+
+plotProfile \
+  -m deeptools/matrices/deeptoolsmatrix_WTCHG_538916_CPM_abs_TSS.gz \
+  -out deeptools/Zcwpw1_abs_CPM_TSS_transcripts.pdf \
+  --perGroup \
+  --plotWidth 12 \
+  --plotHeight 10 \
+  -z "Transcription Start Sites" \
+  --samplesLabel In_ZHA ChpHA_ZHA In_ZHA_hP9V5 ChpHA_ZHA_hP9V5 ChpHA_ZHA_cP9V5
+
+
+```
+
+```{r}
+bamCompare -b1 filtered/SRA_Altemose2015_SRR5627146.bam \
+      -b2 filtered/SRA_Altemose2015_SRR5627143.bam \
+      --scaleFactorsMethod None \
+      --normalizeUsing CPM \
+      --operation log2 \
+      --extendReads \
+      --centerReads \
+      --binSize 1 \
+      -r chr10 \
+      -o deeptools/bigwigs/SRA_Altemose2015_SRR5627146_vs_SRA_Altemose2015_SRR5627143_CPM_log2_smallbin.bw \
+      -p 15
+
+```
+
+
