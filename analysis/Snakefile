@@ -1,0 +1,424 @@
+# snakemake --cores 15 -npr
+
+
+from os.path import join
+
+METADATA_DIR = '../single-cell/sequencing/metadata'
+PICARD_PATH = '/homes/wells/data-on-saxony/single-cell/sequencing/software'
+GENOME = 'hg38'
+
+
+#FASTQ_DIR = 'raw_data/bsg-ftp.well.ox.ac.uk/181018_K00198_0357_BHWV5YBBXX/'
+#GROUP = 'XXXXXX'
+
+#FASTQ_DIR = 'raw_data/bsg-ftp.well.ox.ac.uk/180629_K00150_0342_AHVYHYBBXX/'
+#GROUP = '538916'
+
+FASTQ_DIR = 'raw_data/altemose/'
+GROUP = 'Altemose2015'
+
+
+SAMPLES, PAIRS = glob_wildcards(join(FASTQ_DIR, "{samples}_{pairs}.fastq.gz"))
+
+
+
+##################
+# Desired output
+##################
+
+FASTQC_REPORTS  =     expand("qc/{sample}_{pair}_fastqc.html", pair=[1,2], sample=SAMPLES)
+LIBCOMPLEX      =     expand("qc/{sample}_LibComplex.txt", sample=SAMPLES)
+BIGWIG          =     expand("bedgraphs/depth_{sample}.bigWig", sample=SAMPLES)
+FRAGPOS         =     expand("MAPeakCaller/Fragment_Position_{sample}.sorted.bed.PR{replicate}", replicate=[1,2], sample=SAMPLES)
+FLAGSTAT        =     expand("qc/{sample}_FlagStat.txt", sample=SAMPLES)
+FLAGSTAT2        =     expand("qc/{sample}_preQC_FlagStat.txt", sample=SAMPLES)
+BLACKLISTS      =     expand("blacklists/{sample}_blacklist.bed", sample=SAMPLES)
+MOSDEPTH1       =     expand("qc/{sample}.mosdepth.global.dist.txt", sample=SAMPLES)
+MOSDEPTH2       =     expand("qc/raw_{sample}.mosdepth.global.dist.txt", sample=SAMPLES)
+FRAGSIZE        =     expand("qc/{group}_frag_size.pdf", group=GROUP)
+FINGERPRINT     =     expand("qc/{group}_fingerprint.pdf", group=GROUP)
+BWCPM           =     expand("deeptools/{sample}_CPM.bw", sample=SAMPLES)
+
+
+rule all:
+    input:
+        FASTQC_REPORTS,
+        LIBCOMPLEX,
+        BIGWIG,
+        FRAGPOS,
+        FLAGSTAT,
+        FLAGSTAT2,
+        BLACKLISTS,
+        MOSDEPTH1,
+
+        FRAGSIZE,
+        FINGERPRINT,
+        BWCPM
+
+
+    message: "ChIP-seq pipeline succesfully run."		#finger crossed to see this message!
+
+
+rule fastqc:
+  input:
+    fq1=join(FASTQ_DIR, "{sample}_1.fastq.gz"),
+    fq2=join(FASTQ_DIR, "{sample}_2.fastq.gz")
+  output:
+    qc1="qc/{sample}_1_fastqc.html",
+    qc2="qc/{sample}_2_fastqc.html"
+  shell:
+    """
+    fastqc {input.fq1} -o qc
+    fastqc {input.fq2} -o qc
+    """
+
+rule download_hg38:
+  output:
+    fna=join(METADATA_DIR, "GCA_000001405.15_GRCh38_no_alt_plus_hs38d1_analysis_set.fna.gz"),
+    ann=join(METADATA_DIR, "GCA_000001405.15_GRCh38_no_alt_plus_hs38d1_analysis_set.fna.gz.ann")
+  shell:
+    """
+    wget --directory-prefix {METADATA_DIR} ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.15_GRCh38/seqs_for_alignment_pipelines.ucsc_ids/GCA_000001405.15_GRCh38_no_alt_plus_hs38d1_analysis_set.fna.gz
+    bwa index {METADATA_DIR}/GCA_000001405.15_GRCh38_no_alt_plus_hs38d1_analysis_set.fna.gz
+    """
+
+rule chr_sizes:
+  input:
+    join(METADATA_DIR, "GCA_000001405.15_GRCh38_no_alt_plus_hs38d1_analysis_set.fna.gz.ann")
+  output:
+    join(METADATA_DIR, "hg38_sizes.chrom")
+  shell:
+    "awk '{{ print $2; }}' {input} | tail -n +2 | paste - - > {output}"
+
+rule bwa_map:
+  input:
+    g=join(METADATA_DIR, "GCA_000001405.15_GRCh38_no_alt_plus_hs38d1_analysis_set.fna.gz"),
+    fq=expand(join(FASTQ_DIR, "{{sample}}_{pair}.fastq.gz"), pair=[1,2])
+  output:
+    "bams/{sample}.bam"
+  threads:
+    15
+  shell:
+    "bwa mem -t 15 {input.g} {input.fq} | \
+    samtools sort -@15 -O BAM -o {output}"
+
+rule remove_duplicates:
+  input:
+    "bams/{sample}.bam"
+  output:
+    b="undup/{sample}.bam",
+    log="undup/{sample}_metrics.txt"
+  threads:
+    15
+  shell:
+    "java -jar {PICARD_PATH}/picard.jar MarkDuplicates \
+    INPUT={input} \
+    OUTPUT={output.b} \
+    METRICS_FILE={output.log} \
+    REMOVE_DUPLICATES=true"
+
+rule remove_blacklisted:
+  input:
+    bam="undup/{sample}.bam",
+    black=join(METADATA_DIR, "{GENOME}.blacklist.bed".format(GENOME=GENOME))
+  output:
+    temp("tmp/{sample}_blacklisted.bam")
+  shell:
+    "bedtools intersect -v -a {input.bam} -b {input.black} > {output}"
+
+
+rule filter_lowq:
+  # https://broadinstitute.github.io/picard/explain-flags.html
+  # Remove  unmapped, mate unmapped
+  # not primary alignment, reads failing platform
+  # Remove low MAPQ reads
+  # namesorted
+  input:
+    "tmp/{sample}_blacklisted.bam"
+  output:
+    temp("tmp/{sample}_filtered_name_sorted.bam")
+  threads:
+    5
+  shell:
+    """
+    samtools view -q 30 -F 3852 -f 2 -u {input} | \
+      samtools sort -@ 5 -n - -o {output}
+    """
+#1804 + rm supp
+
+
+rule fixmates:
+  input:
+    "tmp/{sample}_filtered_name_sorted.bam"
+  output:
+    temp("tmp/{sample}_filtered_name_sorted_fixmate.bam")
+  threads:
+    5
+  shell:
+    """
+    samtools fixmate -@ 5 -r {input} {output}
+    """
+
+rule filter_orphans:
+  # Only keep properly paired reads
+  # position sorted
+  input:
+    "tmp/{sample}_filtered_name_sorted_fixmate.bam"
+  output:
+    "filtered/{sample}_namesorted.bam"
+  threads:
+    5
+  shell:
+    """
+    samtools view -q 30 -F 3852 -f 2 {input} -o {output}
+    """
+
+rule position_sort:
+  input:
+    "filtered/{sample}_namesorted.bam"
+  output:
+    "filtered/{sample}.bam"
+  threads:
+    5
+  shell:
+    "samtools sort -@ 5 {input} -o {output}"
+
+
+rule libcomplexity:
+  input:
+    "filtered/{sample}.bam"
+  output:
+    "qc/{sample}_LibComplex.txt"
+  threads:
+    15
+  shell:
+    "java -jar {PICARD_PATH}/picard.jar EstimateLibraryComplexity INPUT={input} OUTPUT={output}"
+
+
+rule flagstat:
+  input:
+    "filtered/{sample}.bam"
+  output:
+    "qc/{sample}_FlagStat.txt"
+  threads:
+    5
+  shell:
+    "samtools flagstat -@ 5 {input} > {output}"
+
+rule flagstat2:
+  input:
+    "bams/{sample}.bam"
+  output:
+    "qc/{sample}_preQC_FlagStat.txt"
+  threads:
+    5
+  shell:
+    "samtools flagstat -@ 5 {input} > {output}"
+
+
+rule index_bam:
+  input:
+    "filtered/{sample}.bam"
+  output:
+    "filtered/{sample}.bam.bai"
+  threads:
+    5
+  shell:
+    "samtools index -@ 5 {input}"
+
+
+rule indexcov:
+  ###### use bed index to find genome wide coverage
+  input:
+    bam="filtered/{sample}.bam",
+    idx="filtered/{sample}.bam.bai"
+  output:
+    "qc/{sample}_indexcov/{sample}_indexcov-indexcov.bed.gz"
+  params:
+    "qc/{sample}_indexcov"
+  shell:
+    "goleft indexcov --sex chrX,chrY -d {params} {input.bam}"
+
+
+rule generate_blacklist:
+  input:
+    "qc/{sample}_indexcov/{sample}_indexcov-indexcov.bed.gz"
+  output:
+    "blacklists/{sample}_blacklist.bed"
+  shell:
+    "Rscript gen_blacklist.R {input} {output}"
+
+
+  # combinding & filtering on blacklist - no longer used on bams
+  #cat blacklists/${sample}_blacklist.bed >> blacklists/${expid}_combined_blacklist.bed
+  #sort -k1,1V -k2,2n -u blacklists/${expid}_combined_blacklist.bed -o blacklists/${expid}_combined_blacklist.bed
+  #bedtools intersect -v -a undup/${sample}.bam -b blacklists/${expid}_combined_blacklist.bed > higcovfiltered/${sample}.bam
+  #samtools index higcovfiltered/${sample}.bam
+
+
+rule mosdepth:
+  #
+  # Compare depth/coverage distribution for raw & deduped
+  #
+  input:
+    bam="filtered/{sample}.bam",
+    idx="filtered/{sample}.bam.bai"
+  output:
+    "qc/{sample}.mosdepth.global.dist.txt"
+  shell:
+    "MOSDEPTH_PRECISION=5 mosdepth -n -t 4 qc/{wildcards.sample} {input.bam}"
+
+
+rule mosdepth2:
+  input:
+    "bams/{sample}.bam"
+  output:
+    "qc/raw_{sample}.mosdepth.global.dist.txt"
+  shell:
+    "MOSDEPTH_PRECISION=5 mosdepth -n -t 4 qc/raw_{wildcards.sample} {input}"
+
+rule mosdepthplot:
+  input:
+    "qc/raw_{sample}.mosdepth.global.dist.txt"
+    "qc/{sample}.mosdepth.global.dist.txt"
+  output:
+  shell:
+    # need to add to list of input sample id's here manually :(  "278163|276139|217108|220144"
+    "Rscript plot_mosdepth.R ${expid}"
+
+
+rule bamtobed2:
+  #
+  # Bam to fragment position bed file for input into peak caller
+  # Deprecated as uses read length to calculate fragment/insert size (wrong),
+  # & creates extra fragments (duplicates) when start of read 1 == start(coordinate)/end(real) of read 2
+  #
+  input:
+    "filtered/{sample}.bam"
+  output:
+    "MAPeakCaller/Fragment_Position_{sample}.sorted.bed_DEPRECATED"
+  threads:
+    2
+  shell:
+    "samtools view {input} | perl MAPeakCaller/GetFragmentPositions.pl {output} {READ_LENGTH}"
+
+
+rule bamtobed:
+  #
+  # Bam to fragment position bed file for input into peak caller
+  #
+  input:
+    "filtered/{sample}_namesorted.bam"
+  output:
+    "MAPeakCaller/Fragment_Position_{sample}.sorted.bed"
+  threads:
+    5
+  shell:
+    """
+    bedtools bamtobed -i {input} -bedpe | awk '{{print $1, $2, $6}}' OFS="\t" | LC_ALL=C sort -k1,1V -k2,2n -S5G --parallel=5 > {output}
+    """
+
+rule bedtograph:
+  #
+  # Create converage for IGV visualisation
+  #
+  input:
+    bed="MAPeakCaller/Fragment_Position_{sample}.sorted.bed",
+    sizes=join(METADATA_DIR, "{GENOME}_sizes.chrom".format(GENOME=GENOME))
+  output:
+    "bedgraphs/depth_{sample}.bedgraph"
+  threads:
+    5
+  shell:
+    "bedtools genomecov -bg -i {input.bed} -g {input.sizes} | LC_ALL=C sort -k1,1 -k2,2n -S5G --parallel=5 > {output}"
+
+
+rule graphtobigwig:
+  #
+  # Compress bedgraph to Bigwig for IVG visualisation
+  #
+  input:
+    graph="bedgraphs/depth_{sample}.bedgraph",
+    sizes=join(METADATA_DIR, "{GENOME}_sizes.chrom".format(GENOME=GENOME))
+  output:
+    "bedgraphs/depth_{sample}.bigWig"
+  threads:
+    1
+  shell:
+    "bedGraphToBigWig {input.graph} {input.sizes} {output}"
+
+
+rule pseudoreplicate:
+  #
+  # Create psuedoreplicate as required for peak caller if two real replicates not avaliable
+  #
+  input:
+    "MAPeakCaller/Fragment_Position_{sample}.sorted.bed"
+  output:
+    expand("MAPeakCaller/Fragment_Position_{{sample}}.sorted.bed.PR{replicate}", replicate=[1,2])
+  shell:
+    """
+    awk '{{print > (rand()<0.5 ? (FILENAME".PR1") : (FILENAME".PR2"))}}' {input}
+    """
+
+
+rule downloadBlacklist:
+  output:
+    join(METADATA_DIR,"/hg38.blacklist.bed"),
+    join(METADATA_DIR,"/mm10.blacklist.bed")
+  shell:
+    """
+    wget -P {METADATA_DIR} http://mitra.stanford.edu/kundaje/akundaje/release/blacklists/hg38-human/hg38.blacklist.bed.gz
+    wget -P {METADATA_DIR} http://mitra.stanford.edu/kundaje/akundaje/release/blacklists/mm10-mouse/mm10.blacklist.bed.gz
+    gzip -d {METADATA_DIR}/hg38.blacklist.bed.gz
+    gzip -d {METADATA_DIR}/mm10.blacklist.bed.gz
+    """
+
+rule fingerprint:
+  input:
+    b=expand("filtered/{sample}.bam", sample=SAMPLES),
+    idx=expand("filtered/{sample}.bam.bai", sample=SAMPLES),
+    black=join(METADATA_DIR, "{GENOME}.blacklist.bed".format(GENOME=GENOME))
+  output:
+    "qc/{GROUP}_fingerprint.pdf"
+  threads:
+    15
+  shell:
+    "plotFingerprint -b {input.b} --smartLabels -p 15 -plot {output} --blackListFileName {input.black}"
+
+# --labels {input.b}
+
+rule fragsize:
+  input:
+    b=expand("filtered/{sample}.bam", sample=SAMPLES),
+    idx=expand("filtered/{sample}.bam.bai", sample=SAMPLES),
+    black=join(METADATA_DIR, "{GENOME}.blacklist.bed".format(GENOME=GENOME))
+  output:
+    "qc/{GROUP}_frag_size.pdf"
+  threads:
+    15
+  shell:
+    "bamPEFragmentSize -b {input.b} --maxFragmentLength 1000 --samplesLabel {input.b} -p 15 -hist {output} --blackListFileName {input.black}"
+
+
+rule bamCoverageCPM:
+  input:
+    b="filtered/{sample}.bam",
+    idx="filtered/{sample}.bam.bai"
+  output:
+    "deeptools/{sample}_CPM.bw"
+  threads:
+    5
+  shell:
+    """
+    bamCoverage \
+      --bam {input.b} \
+      -o {output} \
+      --normalizeUsing CPM \
+      --centerReads \
+      --extendReads \
+      -p 5
+    """
+
+# snakemake -npr --rulegraph | dot -Tpdf > dag.pdf
+# snakemake -npr --dag --forceall | dot -Tpdf > dag.pdf

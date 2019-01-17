@@ -1,0 +1,144 @@
+# snakemake --cores 15 --snakefile Snakefile_peaks -npr
+
+from os.path import join
+METADATA_DIR = '../single-cell/sequencing/metadata'
+GENOME = 'hg38'
+
+# chip, control
+# when there are two biological replicates, seperate them using the special string '_AND_'
+# when there are pseudoreplicates, just enter the common sample name, assumes the PR1 PR2 file ending convention was used
+
+comparisons = [("WTCHG_538916_221156", "WTCHG_538916_217108"),  #Zcw only Chip vs Input
+              ("WTCHG_538916_223180", "WTCHG_538916_220144"), #Cotransfected Chip vs Cotransfected Input
+              ("WTCHG_538916_223180", "WTCHG_538916_221156"),  #Chip vs Chip with Prdm9
+              ("WTCHG_538916_224192", "WTCHG_538916_221156"), # vs chimpPrdm9
+              ("SRA_Altemose2015_SRR5627138_AND_SRA_Altemose2015_SRR5627139", "SRA_Altemose2015_SRR5627140"), # hPrdm9-Nterm vs Input
+              ("SRA_Altemose2015_SRR5627146", "SRA_Altemose2015_SRR5627143"), # hPrdm9 HA vs Input
+              ("SRA_Altemose2015_SRR5627147", "SRA_Altemose2015_SRR5627143"), # hPrdm9 V5 vs Input (HA)
+              ("SRA_Altemose2015_SRR5627146_AND_SRA_Altemose2015_SRR5627147", "SRA_Altemose2015_SRR5627143"), # hPrdm9 HA & V5 vs Input (HA)
+              ("SRA_Altemose2015_SRR5627144", "SRA_Altemose2015_SRR5627143"), # cPrdm9 vs (h) Input
+              ("SRA_Altemose2015_SRR5627152_AND_SRA_Altemose2015_SRR5627153", "SRA_Altemose2015_SRR5627143"), # H3K4 peaks wPrdm9
+              ("SRA_Altemose2015_SRR5627149", "SRA_Altemose2015_SRR5627143"), # H3K36 peaks wPprdm9
+              ("SRA_Altemose2015_SRR5627150", "SRA_Altemose2015_SRR5627142"), # untransfected H3K4 peaks
+              ("SRA_Altemose2015_SRR5627148", "SRA_Altemose2015_SRR5627142")] # untransfected H3K36 peaks
+
+rule all:
+  input:
+    ["peaks/SingleBasePeaks.{chip}_vs_{control}.p0.000001.sep250.ALL.bed".format(
+        chip = chip_id,
+        control=control_id) for chip_id, control_id in comparisons]
+    #["deeptools/bigwigs/{chip}_vs_{control}_CPM_log2.bw".format(
+    #    chip = chip_id,
+    #    control=control_id) for chip_id, control_id in comparisons],
+    #["deeptools/bigwigs/SBPsample/{chip}_vs_{control}_CPM_log2.bw".format(
+    #    chip = chip_id,
+    #    control=control_id) for chip_id, control_id in comparisons]
+
+
+def get_chips(wildcards):
+  """
+  When the input is required to be two file, return either the two biological replicates, or the two pseudoreplicates
+  """
+  if "_AND_" in wildcards.chip:
+    two_samples = wildcards.chip.split("_AND_")
+    return(list([f'MAPeakCaller/Fragment_Position_{two_samples[0]}.sorted.bed',
+                f'MAPeakCaller/Fragment_Position_{two_samples[1]}.sorted.bed']))
+  else:
+    return(list([f'MAPeakCaller/Fragment_Position_{wildcards.chip}.sorted.bed.PR1',
+                f'MAPeakCaller/Fragment_Position_{wildcards.chip}.sorted.bed.PR2']))
+
+
+def get_1chip(wildcards):
+  """
+  When the input is required to be a single file, but in some cases there are two replicates, choose the first replicate
+  """
+  if "_AND_" in wildcards.chip:
+    two_samples = wildcards.chip.split("_AND_")
+    return(list([f'filtered/{two_samples[0]}.bam'])) # use first replicate
+  else: # no real replicates
+    return(list([f'filtered/{wildcards.chip}.bam']))
+
+
+rule call_peaks:
+  input:
+    chips = get_chips ,
+    control="MAPeakCaller/Fragment_Position_{control}.sorted.bed",
+    chrsizes=join(METADATA_DIR, "hg38_sizes.chrom")
+  output:
+    c="peaks/Constants.{chip}_vs_{control}.tsv",
+    p="peaks/SingleBasePeaks.{chip}_vs_{control}.p0.000001.sep250.ALL.bed"
+  threads:
+    15
+  shell:
+    """
+    sh MAPeakCaller.sh \
+	    --intermediates peaks/ \
+	    --chrsizes {input.chrsizes} \
+	    --outconstfile {output.c} \
+	    --outpeakfile {output.p} \
+	    -a {input.chips[0]} \
+	    -b {input.chips[1]} \
+      -i {input.control} \
+      --autosomes 22 \
+      --pthresh 0.000001 \
+      --peakminsep 250
+    """
+
+
+rule bamCompare:
+  input:
+    chip="filtered/{chip}.bam",
+    control="filtered/{control}.bam",
+    black=join(METADATA_DIR, "{GENOME}.blacklist_notoverlaping.bed".format(GENOME=GENOME))
+  output:
+    "deeptools/bigwigs/{chip}_vs_{control}_CPM_log2.bw"
+  threads:
+    15
+  shell:
+    """
+    bamCompare -b1 {input.chip} \
+      -b2 {input.control} \
+      --scaleFactorsMethod None \
+      --normalizeUsing CPM \
+      --operation log2 \
+      --extendReads \
+      --centerReads \
+      -o {output} \
+      --blackListFileName {input.black} \
+      -p 15
+    """
+
+rule bamCompareSBP:
+  input:
+    chip="filtered/{chip}.bam",
+    control="filtered/{control}.bam",
+    black=join(METADATA_DIR, "{GENOME}.blacklist_notoverlaping.bed".format(GENOME=GENOME))
+  output:
+    "deeptools/bigwigs/SBPsample/{chip}_vs_{control}_CPM_log2.bw"
+  threads:
+    5
+  shell:
+    """
+    bamCompare -b1 {input.chip} \
+      -b2 {input.control} \
+      --scaleFactorsMethod None \
+      --normalizeUsing CPM \
+      --operation log2 \
+      --extendReads \
+      --centerReads \
+      --binSize 1 \
+      -r chr10 \
+      -o {output} \
+      --blackListFileName {input.black} \
+      -p 5
+    """
+
+rule deoverlap_blacklist:
+  input:
+    join(METADATA_DIR, "{GENOME}.blacklist.bed".format(GENOME=GENOME))
+  output:
+    join(METADATA_DIR, "{GENOME}.blacklist_notoverlaping.bed".format(GENOME=GENOME))
+  shell:
+    "sort -k1,1 -k2,2n {input} | bedtools merge -i stdin > {output}"
+
+
