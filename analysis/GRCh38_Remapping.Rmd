@@ -1,0 +1,100 @@
+---
+title: "GRCh38 Remapping & Calling"
+output: html_notebook
+---
+
+Remap reads to GRCh38 rather than hg19
+
+# Install BWA
+
+```{r}
+wget https://kent.dl.sourceforge.net/project/bio-bwa/bwa-0.7.17.tar.bz2
+tar jxf bwa-0.7.17.tar.bz2
+cd bwa-0.7.17
+make
+
+export PATH=/homes/wells/data-on-saxony/single-cell/sequencing/software/bwa-0.7.17/:$PATH
+
+# download reference genome
+cd metadata
+
+```
+
+
+# Download data
+
+```{r}
+# https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE99407
+
+cd /homes/wells/data-on-saxony/zcwpw1/raw_data/altemose
+
+# ChIPseq.HumanPRDM9_V5.antiV5.ProtocolC
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/007/SRR5627147/SRR5627147_1.fastq.gz
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/007/SRR5627147/SRR5627147_2.fastq.gz
+
+
+# ChIPseq.HumanPRDM9_HA.Input.ProtocolC
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/003/SRR5627143/SRR5627143_1.fastq.gz
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/003/SRR5627143/SRR5627143_2.fastq.gz
+
+
+# ChIPseq.HumanPRDM9_HA.antiHA.ProtocolC
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/006/SRR5627146/SRR5627146_1.fastq.gz
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/006/SRR5627146/SRR5627146_2.fastq.gz
+
+# ChIPseq.ChimpPRDM9_HA.antiHA.ProtocolC
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/004/SRR5627144/SRR5627144_1.fastq.gz
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/004/SRR5627144/SRR5627144_2.fastq.gz
+
+
+# ChIPseq.HumanPRDM9_HA.antiH3K36me3.ProtocolC
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/009/SRR5627149/SRR5627149_1.fastq.gz
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/009/SRR5627149/SRR5627149_2.fastq.gz
+
+# ChIPseq.HumanPRDM9_HA.antiH3K4me3.ProtocolC.Rep1
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/002/SRR5627152/SRR5627152_1.fastq.gz
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/002/SRR5627152/SRR5627152_2.fastq.gz
+
+# ChIPseq.HumanPRDM9_HA.antiH3K4me3.ProtocolC.Rep2
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/003/SRR5627153/SRR5627153_1.fastq.gz
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/003/SRR5627153/SRR5627153_2.fastq.gz
+
+
+
+# ChIPseq.Untransfected.Input.ProtocolC
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/002/SRR5627142/SRR5627142_1.fastq.gz
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/002/SRR5627142/SRR5627142_2.fastq.gz
+
+# ChIPseq.Untransfected.antiH3K4me3.Rep1.ProtocolC
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/000/SRR5627150/SRR5627150_1.fastq.gz
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/000/SRR5627150/SRR5627150_2.fastq.gz
+
+# ChIPseq.Untransfected.antiH3K4me3.Rep2.ProtocolC
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/001/SRR5627151/SRR5627151_1.fastq.gz
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/001/SRR5627151/SRR5627151_2.fastq.gz
+
+# ChIPseq.Untransfected.antiH3K36me3.ProtocolC
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/008/SRR5627148/SRR5627148_1.fastq.gz
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/008/SRR5627148/SRR5627148_2.fastq.gz
+
+for FILENAME in SRR*; do mv $FILENAME SRA_Altemose2015_$FILENAME; done
+
+
+#ChIPseq.YFP_HumanPRDM9.antiGFP.Rep1.ProtocolN
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/008/SRR5627138/SRR5627138_1.fastq.gz
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/008/SRR5627138/SRR5627138_2.fastq.gz
+
+#ChIPseq.YFP_HumanPRDM9.antiGFP.Rep2.ProtocolN
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/009/SRR5627139/SRR5627139_1.fastq.gz
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/009/SRR5627139/SRR5627139_2.fastq.gz
+
+#ChIPseq.YFP_HumanPRDM9.Input.ProtocolN
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/000/SRR5627140/SRR5627140_1.fastq.gz
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/000/SRR5627140/SRR5627140_2.fastq.gz
+
+
+cd /homes/wells/data-on-saxony/single-cell/sequencing/zcwpwp1/
+
+```
+
+
