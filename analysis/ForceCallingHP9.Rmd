@@ -1,0 +1,473 @@
+---
+title: "ForceCalling at C and N term Prdm9 peaks"
+output: 
+  html_notebook: 
+    code_folding: show
+    fig_height: 6
+    fig_width: 10.5
+    results: hold
+    fig_show: hold
+    toc: yes
+    toc_float: yes
+    number_sections: yes
+    theme: spacelab
+---
+
+
+
+# Force Calling
+
+```{bash}
+
+snakemake --cores 15 --snakefile Snakefile_forcecall -npr
+
+rsync --stats -avpn -e ssh stats2:/data/saxony/wells/zcwpw1/peaks/*Peaks* ~/Dropbox/DPhil/Zcwpw1/results/peaks
+
+```
+
+# Load Results
+
+## C term
+
+```{r}
+h3k4me3_UT_AT_HP9 <- fread("../results/peaks/ForceCalledPeaks_SRA_Altemose2015_SRR5627150_vs_SRA_Altemose2015_SRR5627142_AT_SRA_Altemose2015_SRR5627146_vs_SRA_Altemose2015_SRR5627143.bed")
+setkey(h3k4me3_UT_AT_HP9, chr, center_start, center_stop)
+
+h3k4me3_P9_AT_HP9 <- fread("../results/peaks/ForceCalledPeaks_SRA_Altemose2015_SRR5627152_AND_SRR5627153_vs_SRA_Altemose2015_SRR5627143_AT_SRA_Altemose2015_SRR5627146_vs_SRA_Altemose2015_SRR5627143.bed")
+setkey(h3k4me3_P9_AT_HP9, chr, center_start, center_stop)
+
+h3k36me3_P9_AT_HP9 <- fread("../results/peaks/ForceCalledPeaks_SRA_Altemose2015_SRR5627149_vs_SRA_Altemose2015_SRR5627143_AT_SRA_Altemose2015_SRR5627146_vs_SRA_Altemose2015_SRR5627143.bed")
+setkey(h3k36me3_P9_AT_HP9, chr, center_start, center_stop)
+
+Zcw_CVC_AT_hP9 <- fread("../results/peaks/ForceCalledPeaks_WTCHG_538916_223180_vs_WTCHG_538916_221156_AT_SRA_Altemose2015_SRR5627146_vs_SRA_Altemose2015_SRR5627143.bed")
+setkey(Zcw_CVC_AT_hP9, chr, center_start, center_stop)
+
+HP9_peaks$FC_Zcw_CVC_enrichment <- Zcw_CVC_AT_hP9$enrichment
+HP9_peaks$FC_h3k4me3_P9_enrichment <- h3k4me3_P9_AT_HP9$enrichment
+HP9_peaks$FC_h3k4me3_UT_enrichment <- h3k4me3_UT_AT_HP9$enrichment
+HP9_peaks$FC_h3k36me3_P9_enrichment <- h3k36me3_P9_AT_HP9$enrichment
+
+
+HP9_peaks$FC_Zcw_CVC_pvalue <- Zcw_CVC_AT_hP9$pvalue
+HP9_peaks$FC_h3k4me3_P9_pvalue <- h3k4me3_P9_AT_HP9$pvalue
+HP9_peaks$FC_h3k4me3_UT_pvalue <- h3k4me3_UT_AT_HP9$pvalue
+HP9_peaks$FC_h3k36me3_P9_pvalue <- h3k36me3_P9_AT_HP9$pvalue
+
+HP9_peaks$FC_Zcw_CVC_cov_input <- Zcw_CVC_AT_hP9$cov_input
+```
+
+## N term
+
+```{r}
+h3k4me3_UT_AT_HP9N <- fread("../results/peaks/ForceCalledPeaks_SRA_Altemose2015_SRR5627150_vs_SRA_Altemose2015_SRR5627142_AT_SRA_Altemose2015_SRR5627138_AND_SRR5627139_vs_SRA_Altemose2015_SRR5627140.bed")
+setkey(h3k4me3_UT_AT_HP9, chr, center_start, center_stop)
+
+h3k4me3_P9_AT_HP9N <- fread("../results/peaks/ForceCalledPeaks_SRA_Altemose2015_SRR5627152_AND_SRA_Altemose2015_SRR5627153_vs_SRA_Altemose2015_SRR5627143_AT_SRA_Altemose2015_SRR5627138_AND_SRR5627139_vs_SRA_Altemose2015_SRR5627140.bed")
+setkey(h3k4me3_P9_AT_HP9, chr, center_start, center_stop)
+
+h3k36me3_P9_AT_HP9N <- fread("../results/peaks/ForceCalledPeaks_SRA_Altemose2015_SRR5627149_vs_SRA_Altemose2015_SRR5627143_AT_SRA_Altemose2015_SRR5627138_AND_SRR5627139_vs_SRA_Altemose2015_SRR5627140.bed")
+setkey(h3k36me3_P9_AT_HP9, chr, center_start, center_stop)
+
+Zcw_CVC_AT_hP9N <- fread("../results/peaks/ForceCalledPeaks_WTCHG_538916_223180_vs_WTCHG_538916_221156_AT_SRA_Altemose2015_SRR5627138_AND_SRR5627139_vs_SRA_Altemose2015_SRR5627140.bed")
+setkey(Zcw_CVC_AT_hP9N, chr, center_start, center_stop)
+
+Zcw_wP9_AT_hP9N <- fread("../results/peaks/ForceCalledPeaks_WTCHG_538916_223180_vs_WTCHG_538916_220144_AT_SRA_Altemose2015_SRR5627138_AND_SRR5627139_vs_SRA_Altemose2015_SRR5627140.bed")
+setkey(Zcw_wP9_AT_hP9N, chr, center_start, center_stop)
+
+hP9_AT_hP9N <- fread("../results/peaks/ForceCalledPeaks_SRA_Altemose2015_SRR5627146_vs_SRA_Altemose2015_SRR5627143_AT_SRA_Altemose2015_SRR5627138_AND_SRR5627139_vs_SRA_Altemose2015_SRR5627140.bed")
+setkey(hP9_AT_hP9N, chr, center_start, center_stop)
+
+HP9N_peaks$FC_Zcw_CVC_enrichment <- Zcw_CVC_AT_hP9N$enrichment
+HP9N_peaks$FC_Zcw_wP9_enrichment <- Zcw_wP9_AT_hP9N$enrichment
+HP9N_peaks$FC_h3k4me3_P9_enrichment <- h3k4me3_P9_AT_HP9N$enrichment
+HP9N_peaks$FC_h3k4me3_UT_enrichment <- h3k4me3_UT_AT_HP9N$enrichment
+HP9N_peaks$FC_h3k36me3_P9_enrichment <- h3k36me3_P9_AT_HP9N$enrichment
+HP9N_peaks$FC_hP9_enrichment <- hP9_AT_hP9N$enrichment
+
+HP9N_peaks$FC_Zcw_CVC_pvalue <- Zcw_CVC_AT_hP9N$pvalue
+HP9N_peaks$FC_hP9_pvalue <- hP9_AT_hP9N$pvalue
+
+HP9N_peaks$FC_Zcw_CVC_cov_input <- Zcw_CVC_AT_hP9N$cov_input
+HP9N_peaks$FC_Zcw_wP9_cov_input <- Zcw_wP9_AT_hP9N$cov_input
+HP9N_peaks$FC_h3k4me3_P9_cov_input <- h3k4me3_P9_AT_HP9N$cov_input
+HP9N_peaks$FC_h3k4me3_UT_cov_input <- h3k4me3_UT_AT_HP9N$cov_input
+HP9N_peaks$FC_h3k36me3_P9_cov_input <- h3k36me3_P9_AT_HP9N$cov_input
+
+```
+
+# Sanity Checking
+
+(previous issue was due to inconsitent ordering of chromosomes numerically vs alphabetically)
+
+```{r}
+#check ordering
+mean(Zcw_CVC_AT_hP9$center_start == HP9_peaks$center_start)
+unique(Zcw_CVC_AT_hP9$chr)
+unique(HP9_peaks$chr)
+
+# check for Zcw offset vs P9
+HP9_peaks$zcw_CVC_center_start <- foverlaps(HP9_peaks, zcw_wP9_vs_chip_Z, mult="first")$center_start
+hist(HP9_peaks[cov_input>5,.(center_start-zcw_CVC_center_start)]$V1, breaks=400); abline(v=0, col='red')
+
+# check NormalCall vs ForceCall pvalue corr
+zcw_wP9_vs_chip_Z$FC_Zcw_CVC_pvalue <- foverlaps(zcw_wP9_vs_chip_Z, Zcw_CVC_AT_hP9, mult="first")$pvalue
+plot(-log10(zcw_wP9_vs_chip_Z$pvalue), -log10(zcw_wP9_vs_chip_Z$FC_Zcw_CVC_pvalue), xlim=c(0,50), ylim=c(0,40), pch="."); abline(0,1, col='red')
+
+mean(Zcw_CVC_AT_hP9$pvalue[HP9_peaks$enrichment<1 & HP9_peaks$cov_input>=5]<=1e-6)
+mean(Zcw_CVC_AT_hP9$pvalue[HP9_peaks$enrichment>1 & HP9_peaks$cov_input>=5]<=1e-6)
+mean(Zcw_CVC_AT_hP9$pvalue[HP9_peaks$enrichment>3 & HP9_peaks$cov_input>=5]<=1e-6)
+mean(Zcw_CVC_AT_hP9$pvalue[HP9_peaks$enrichment>4 & HP9_peaks$cov_input>=5]<=1e-6)
+mean(Zcw_CVC_AT_hP9$pvalue[HP9_peaks$enrichment>10 & HP9_peaks$cov_input>=5]<=1e-6)
+```
+
+# HP9 N vs HP9
+
+```{r}
+cor(HP9N_peaks$enrichment, HP9N_peaks$FC_hP9_enrichment)
+cor(HP9N_peaks$enrichment, HP9N_peaks$FC_hP9_enrichment, method = "spearman")
+plot(HP9N_peaks$enrichment, HP9N_peaks$FC_hP9_enrichment, log='xy', pch='.')
+
+fraction_overlap_FC_pthresh(HP9N_peaks[cov_input>8],"HP9N", "FC_hP9_pvalue")
+fraction_overlap_FC_pthresh(HP9N_peaks[cov_input>30],"HP9N", "FC_hP9_pvalue")
+fraction_overlap_FC_mean(HP9N_peaks[cov_input>8],"HP9N", "FC_hP9_enrichment")
+```
+
+
+# HP9N GLMs
+
+'enrichment' = hPrdm9 Nterm enrichment vs input
+Largest parameter is Zcw_CVC
+exp(1.90)=6.69
+
+```{r}
+HP9N_peaks$isDMC1 <- !is.na(HP9N_peaks$DMC1_enrichment)
+
+DMC1N_glm <- glm(isDMC1 ~ enrichment + 
+        FC_Zcw_CVC_enrichment + 
+        FC_h3k4me3_P9_enrichment+ 
+        FC_h3k4me3_UT_enrichment + 
+        FC_h3k36me3_P9_enrichment + 
+        enrichment:FC_Zcw_CVC_enrichment,
+    family=binomial(link='logit'),
+    data=HP9N_peaks[cov_input>5 & FC_Zcw_CVC_cov_input>5 & FC_h3k4me3_P9_cov_input>5 & FC_h3k4me3_UT_cov_input>5 & FC_h3k36me3_P9_cov_input>5 & chr != "chrX"])
+
+summary(DMC1N_glm)
+```
+
+## Simplified/Alt Models
+
+```{r}
+DMC1N_glmNOZCW <- glm(isDMC1 ~ enrichment + 
+        FC_h3k4me3_P9_enrichment+ 
+        FC_h3k4me3_UT_enrichment + 
+        FC_h3k36me3_P9_enrichment,
+    family=binomial(link='logit'),
+    data=HP9N_peaks[cov_input>5 & FC_Zcw_CVC_cov_input>5 & FC_h3k4me3_P9_cov_input>5 & FC_h3k4me3_UT_cov_input>5 & FC_h3k36me3_P9_cov_input>5 & chr != "chrX"])
+
+summary(DMC1N_glmNOZCW)
+
+DMC1N_glmNOP9 <- glm(isDMC1 ~
+        FC_Zcw_CVC_enrichment + 
+        FC_h3k4me3_P9_enrichment+ 
+        FC_h3k4me3_UT_enrichment + 
+        FC_h3k36me3_P9_enrichment + 
+        enrichment:FC_Zcw_CVC_enrichment,
+    family=binomial(link='logit'),
+    data=HP9N_peaks[cov_input>5 & FC_Zcw_CVC_cov_input>5 & FC_h3k4me3_P9_cov_input>5 & FC_h3k4me3_UT_cov_input>5 & FC_h3k36me3_P9_cov_input>5 & chr != "chrX"])
+
+summary(DMC1N_glmNOP9)
+
+DMC1N_glmZcw_wP9 <- glm(isDMC1 ~
+        FC_Zcw_wP9_enrichment + 
+        FC_h3k4me3_P9_enrichment+ 
+        FC_h3k4me3_UT_enrichment + 
+        FC_h3k36me3_P9_enrichment + 
+        enrichment:FC_Zcw_CVC_enrichment,
+    family=binomial(link='logit'),
+    data=HP9N_peaks[cov_input>5 & FC_Zcw_wP9_cov_input>5 & FC_h3k4me3_P9_cov_input>5 & FC_h3k4me3_UT_cov_input>5 & FC_h3k36me3_P9_cov_input>5 & chr != "chrX"])
+
+summary(DMC1N_glmZcw_wP9)
+```
+
+## Pediction Evaluation (on training...)
+Black = Full model
+
+Green = Without hPrdm9 N term
+
+Blue = Without Zcw_CVC
+
+Without Zcw_CVC seems to do better despite having a larger coefficient...?
+
+```{r}
+library(PRROC)
+
+probs = predict(DMC1N_glm,
+                newdata = HP9N_peaks[cov_input>5 & FC_Zcw_CVC_cov_input>5 & FC_h3k4me3_P9_cov_input>5 & FC_h3k4me3_UT_cov_input>5 & FC_h3k36me3_P9_cov_input>5 & chr != "chrX"],
+                type = "response")
+dmc1label = HP9N_peaks[cov_input>5 & FC_Zcw_CVC_cov_input>5 & FC_h3k4me3_P9_cov_input>5 & FC_h3k4me3_UT_cov_input>5 & FC_h3k36me3_P9_cov_input>5 & chr != "chrX"]$isDMC1
+
+probsNOZCW = predict(DMC1N_glmNOZCW,
+  newdata=HP9N_peaks[cov_input>5 & FC_Zcw_CVC_cov_input>5 & FC_h3k4me3_P9_cov_input>5 & FC_h3k4me3_UT_cov_input>5 & FC_h3k36me3_P9_cov_input>5 & chr != "chrX"], type="response")
+
+probsNOP9 = predict(DMC1N_glmNOP9,
+  newdata=HP9N_peaks[cov_input>5 & FC_Zcw_CVC_cov_input>5 & FC_h3k4me3_P9_cov_input>5 & FC_h3k4me3_UT_cov_input>5 & FC_h3k36me3_P9_cov_input>5 & chr != "chrX"], type="response")
+
+confusionMatrix(data = as.factor(probs>0.5),
+                reference = as.factor(dmc1label), positive = "TRUE")
+
+# ROC Curve
+tmpNOZCW <- roc.curve(scores.class0 = probsNOZCW, weights.class0 = dmc1label, curve = T)$curve
+tmpNOP9 <- roc.curve(scores.class0 = probsNOP9, weights.class0 = dmc1label, curve = T)$curve
+tmp <- roc.curve(scores.class0 = probs, weights.class0 = dmc1label, curve = T)$curve
+
+plot(tmp, type='l', ylim=c(0,1), ylab='Sensitivity (TPR, Recall)', xlab='1-Specificity (1-FPR)', main='ROC') + abline(0,1, col='red')
+lines(tmpNOP9, col='green')
+lines(tmpNOZCW, col='blue')
+
+# PR Curve
+tmpNOZCW <- pr.curve(scores.class0 = probsNOZCW, weights.class0 = dmc1label, curve = T)$curve
+tmpNOP9 <- pr.curve(scores.class0 = probsNOP9, weights.class0 = dmc1label, curve = T)$curve
+tmp <- pr.curve(scores.class0 = probs, weights.class0 = dmc1label, curve = T)$curve
+
+plot(tmp, type='l', ylim=c(0,1), ylab='Precision (PPV)', xlab='Recall (TPR, Sensitivity)', main='PROC') + abline(h=0.0615, col='red')
+lines(tmpNOP9, col='green')
+lines(tmpNOZCW, col='blue')
+
+```
+
+## All interactions
+
+```{r}
+summary(glm(isDMC1 ~ enrichment + 
+        FC_Zcw_CVC_enrichment + 
+        FC_h3k4me3_P9_enrichment+ 
+        FC_h3k4me3_UT_enrichment + 
+        FC_h3k36me3_P9_enrichment +
+        enrichment*FC_Zcw_CVC_enrichment*FC_h3k4me3_P9_enrichment*FC_h3k4me3_UT_enrichment*FC_h3k36me3_P9_enrichment,
+    family=binomial(link='logit'),
+    data=HP9N_peaks[cov_input>5 & FC_Zcw_CVC_cov_input>5 & FC_h3k4me3_P9_cov_input>5 & FC_h3k4me3_UT_cov_input>5 & FC_h3k36me3_P9_cov_input>5 & chr != "chrX"]))
+```
+
+
+
+```{r}
+# no_each <- length(which(HP9N_peaks[cov_input>5 & FC_Zcw_CVC_cov_input>5 & FC_h3k4me3_P9_cov_input>5 & FC_h3k4me3_UT_cov_input>5 & FC_h3k36me3_P9_cov_input>5 & chr != "chrX"]$isDMC1==T))
+# set.seed(42)
+# subsetNeg <- sample(which(HP9_peaks[cov_input>8]$isDMC1==F), no_each, replace = F)
+# 
+# DMC1_glm2 <- glm(isDMC1 ~ enrichment + 
+#                   FC_Zcw_CVC_enrichment + 
+#                   FC_h3k4me3_P9_enrichment+ 
+#                   FC_h3k4me3_UT_enrichment + 
+#                   FC_h3k36me3_P9_enrichment,
+#     family=binomial(link='logit'),
+#     data=HP9N_peaks[cov_input>5 & FC_Zcw_CVC_cov_input>5 & FC_h3k4me3_P9_cov_input>5 & FC_h3k4me3_UT_cov_input>5 & FC_h3k36me3_P9_cov_input>5 & chr != "chrX"][c(subsetNeg, which(HP9N_peaks[cov_input>5 & FC_Zcw_CVC_cov_input>5 & FC_h3k4me3_P9_cov_input>5 & FC_h3k4me3_UT_cov_input>5 & FC_h3k36me3_P9_cov_input>5 & chr != "chrX"]$isDMC1==T))],
+#     weights = c(rep(1, no_each), rep(10, no_each)))
+# 
+# summary(DMC1_glm2)
+# 
+# confusionMatrix(data = as.factor(predict(DMC1_glm2,
+#                                          newdata=HP9N_peaks[cov_input>5 & FC_Zcw_CVC_cov_input>5 & FC_h3k4me3_P9_cov_input>5 & FC_h3k4me3_UT_cov_input>5 & FC_h3k36me3_P9_cov_input>5 & chr != "chrX"], type="response")>0.9988),
+#                 reference = as.factor(HP9N_peaks[cov_input>5 & FC_Zcw_CVC_cov_input>5 & FC_h3k4me3_P9_cov_input>5 & FC_h3k4me3_UT_cov_input>5 & FC_h3k36me3_P9_cov_input>5 & chr != "chrX"]$isDMC1==T), positive="TRUE")
+```
+
+## Bayesian GLM
+b_enrichment = hPrdm9 Nterm
+```{r}
+library(brms)
+bGLMN = brm(
+  isDMC1 ~ enrichment + 
+                  FC_Zcw_CVC_enrichment + 
+                  FC_h3k4me3_P9_enrichment+ 
+                  FC_h3k4me3_UT_enrichment + 
+                  FC_h3k36me3_P9_enrichment +
+                  enrichment:FC_Zcw_CVC_enrichment,
+  data = HP9N_peaks[cov_input>5 & FC_Zcw_CVC_cov_input>5 & FC_h3k4me3_P9_cov_input>5 & FC_h3k4me3_UT_cov_input>5 & FC_h3k36me3_P9_cov_input>5 & chr != "chrX"], 
+  family = 'bernoulli', 
+  prior = set_prior('normal(0, 3)'),
+  iter = 1000, 
+  chains = 3, 
+  cores = 3)
+
+summary(bGLMN)
+
+posterior <- as.array(bGLMN)
+bayesplot::mcmc_areas(posterior, pars=c("b_enrichment", "b_FC_Zcw_CVC_enrichment", "b_FC_h3k4me3_P9_enrichment", "b_FC_h3k4me3_UT_enrichment","b_FC_h3k36me3_P9_enrichment", "b_enrichment:FC_Zcw_CVC_enrichment"))
+```
+
+# HP9 Cterm GLM
+
+Cterm doesn't seem to work as well, enrichment = hPrdm9 Cterm, has estimate near 0
+
+```{r}
+HP9_peaks$isDMC1 <- !is.na(HP9_peaks$DMC1_enrichment)
+
+summary(glm(isDMC1 ~ enrichment + 
+                  FC_Zcw_CVC_enrichment + 
+                  FC_h3k4me3_P9_enrichment+ 
+                  FC_h3k4me3_UT_enrichment + 
+                  FC_h3k36me3_P9_enrichment,
+    family=binomial(link='logit'),
+    data=HP9_peaks[cov_input>5 & FC_Zcw_CVC_cov_input>5 & chr != "chrX"]))
+```
+
+# Prdm9 peaks vs Force Called Zcw
+
+NB absolute numbers similar
+
+```{r}
+sum(HP9_peaks[cov_input>8]$FC_Zcw_CVC_pvalue<1e-6)
+sum(HP9N_peaks[cov_input>8]$FC_Zcw_CVC_pvalue<1e-6)
+```
+
+
+```{r}
+fraction_overlap_FC_pthresh <- function(dt,x,y,n=100){
+  setorder(dt, enrichment)
+  binning_vector <- cut(1:nrow(dt), n)
+    plot(1:n/n, tapply(dt[,get(y)]<1e-6, binning_vector, mean),
+         xlab=paste("Fraction of",x,"Peaks (ordered low to high enrichment)"),
+         ylab=paste("Fraction of",y,"ForceCalled peaks with pvalue<1e-6"))  
+}
+
+fraction_overlap_FC_mean <- function(dt,x,y,n=100){
+  setorder(dt, enrichment)
+  binning_vector <- cut(1:nrow(dt), n)
+    plot(1:n/n, tapply(dt[,get(y)], binning_vector, mean),
+         xlab=paste("Fraction of",x,"Peaks  (ordered low to high enrichment)"),
+         ylab=paste("Mean Enrichment of ",y,"ForceCalled peaks"))  
+}
+
+
+fraction_overlap_FC_pthresh(HP9_peaks[cov_input>8],"HP9", "FC_Zcw_CVC_pvalue")
+fraction_overlap_FC_pthresh(HP9N_peaks[cov_input>8],"HP9 N", "FC_Zcw_CVC_pvalue")
+
+fraction_overlap_FC_mean(HP9_peaks[cov_input>8 & FC_Zcw_CVC_enrichment<10],"HP9", "FC_Zcw_CVC_enrichment")
+fraction_overlap_FC_mean(HP9N_peaks[cov_input>8 & FC_Zcw_CVC_enrichment<10],"HP9 N", "FC_Zcw_CVC_enrichment")
+
+head(Zcw_CVC_AT_hP9[order(-enrichment)],10)
+head(Zcw_CVC_AT_hP9N[order(-enrichment)],10)
+
+```
+
+# Visualising Discrimination, C vs N term
+
+```{r}
+ggplot(HP9_peaks[cov_input>5], aes(enrichment, FC_Zcw_CVC_enrichment)) +
+  geom_point(size=0.1, alpha=0.5) +
+  scale_y_log10() + scale_x_log10() + facet_wrap(~isDMC1)
+
+ggplot(HP9N_peaks[cov_input>5], aes(enrichment, FC_Zcw_CVC_enrichment)) +
+  geom_point(size=0.1, alpha=0.5) +
+  scale_y_log10() + scale_x_log10() + facet_wrap(~isDMC1)
+
+ggplot(HP9_peaks[cov_input>5 & FC_Zcw_CVC_cov_input>5], aes(FC_Zcw_CVC_enrichment, color=isDMC1)) +
+  geom_density() +
+  scale_x_log10() + ggtitle("Cterm")
+
+ggplot(HP9N_peaks[cov_input>5 & FC_Zcw_CVC_cov_input>5], aes(FC_Zcw_CVC_enrichment, color=isDMC1)) +
+  geom_density() +
+  scale_x_log10() + ggtitle("Nterm")
+```
+
+# Average DMC1 Overlap HP9 C term
+
+3 to 7 ratio in DMC1 overlap
+
+```{r}
+#% HP9 C that have 0 Zcw_CVC enrich
+mean(HP9_peaks[cov_input>8]$FC_Zcw_CVC_enrichment==0)
+
+#% HP9 C that overlap DMC1
+mean(HP9_peaks[cov_input>8 & chr != "chrX"]$isDMC1)
+
+quantile(HP9_peaks$FC_Zcw_CVC_enrichment)
+
+# %DMC1 overlap for 1st and 2nd half of data by Zcw_CVC enrichment
+mean(HP9_peaks[cov_input>8 & chr != "chrX" & FC_Zcw_CVC_enrichment<quantile(HP9_peaks$FC_Zcw_CVC_enrichment, 0.5)]$isDMC1)
+mean(HP9_peaks[cov_input>8 & chr != "chrX" & FC_Zcw_CVC_enrichment>quantile(HP9_peaks$FC_Zcw_CVC_enrichment, 0.5)]$isDMC1)
+
+# %DMC1 overlap for bottom 25% and top 15% data by Zcw_CVC enrichment
+mean(HP9_peaks[cov_input>8 & chr != "chrX" & FC_Zcw_CVC_enrichment<quantile(HP9_peaks$FC_Zcw_CVC_enrichment, 0.25)]$isDMC1)
+mean(HP9_peaks[cov_input>8 & chr != "chrX" & FC_Zcw_CVC_enrichment>quantile(HP9_peaks$FC_Zcw_CVC_enrichment, 0.85)]$isDMC1)
+```
+
+# Average DMC1 Overlap HP9 N
+
+High fraction of 0 Zcw_CVC enrichments - maybe because it's going to the Prdm9-Cterm sites?
+
+2.6 to 4.8 fold ratio in % DMC1
+
+```{r}
+# % HP9 N that have 0 Zcw_CVC enrich
+mean(HP9N_peaks[cov_input>8]$FC_Zcw_CVC_enrichment==0)
+
+# % HP9 N that overlap DMC1
+mean(HP9N_peaks[cov_input>8& chr != "chrX"]$isDMC1)
+
+quantile(HP9N_peaks$FC_Zcw_CVC_enrichment)
+
+# %DMC1 overlap for 1st and 2nd half of data by Zcw_CVC enrichment
+mean(HP9N_peaks[cov_input>8 & chr != "chrX" & FC_Zcw_CVC_cov_input>5& FC_Zcw_CVC_enrichment<quantile(HP9N_peaks[cov_input>8 & FC_Zcw_CVC_cov_input>5 & chr!="chrX"]$FC_Zcw_CVC_enrichment, 0.5)]$isDMC1)
+mean(HP9N_peaks[cov_input>8 & chr != "chrX" & FC_Zcw_CVC_cov_input>5& FC_Zcw_CVC_enrichment>quantile(HP9N_peaks[cov_input>8 & FC_Zcw_CVC_cov_input>5 & chr!="chrX"]$FC_Zcw_CVC_enrichment, 0.5)]$isDMC1)
+
+# %DMC1 overlap for bottom 25% and top 15% data by Zcw_CVC enrichment
+mean(HP9N_peaks[cov_input>8 & chr != "chrX" & FC_Zcw_CVC_cov_input>5& FC_Zcw_CVC_enrichment<=quantile(HP9N_peaks[cov_input>8 & FC_Zcw_CVC_cov_input>5 & chr!="chrX"]$FC_Zcw_CVC_enrichment, 0.25)]$isDMC1)
+mean(HP9N_peaks[cov_input>8 & chr != "chrX" & FC_Zcw_CVC_cov_input>5& FC_Zcw_CVC_enrichment>quantile(HP9N_peaks[cov_input>8 & FC_Zcw_CVC_cov_input>5 & chr!="chrX"]$FC_Zcw_CVC_enrichment, 0.85)]$isDMC1)
+```
+
+# Line splitting
+
+```{r}
+
+fraction_overlap_FC6 <- function(dt,n=100){
+     setorder(dt, enrichment)
+     binning_vector <- cut(1:nrow(dt), n)
+     return(tapply(!is.na(dt$DMC1_enrichment), binning_vector, mean))
+}
+
+
+bins=15
+plot(fraction_overlap_FC6(HP9_peaks[cov_input>8 & FC_Zcw_CVC_cov_input>5 & chr!="chrX"],n=bins), ylim=c(0,0.6), xlab="Bin HP9 Peaks, low to high enrich", ylab="DMC1 Overlap", main="Cterm, black=all, blue is ZcwCVCenrich<0.8, red>0.8")
+points(fraction_overlap_FC6(HP9_peaks[cov_input>8 & FC_Zcw_CVC_cov_input>5 & chr!="chrX"][FC_Zcw_CVC_enrichment<0.8],n=bins), ylim=c(0,0.5), col='blue')
+points(fraction_overlap_FC6(HP9_peaks[cov_input>8 & FC_Zcw_CVC_cov_input>5 & chr!="chrX"][FC_Zcw_CVC_enrichment>0.8], n=bins), col='red')
+
+
+plot(fraction_overlap_FC6(HP9N_peaks[cov_input>8 & FC_Zcw_CVC_cov_input>5 & chr!="chrX"],n=bins), ylim=c(0,0.6), xlab="Bin HP9 N Peaks, low to high enrich",  ylab="DMC1 Overlap", main="Nterm, black=all, blue is ZcwCVCenrich<0.8, red>0.8")
+points(fraction_overlap_FC6(HP9N_peaks[cov_input>8 & FC_Zcw_CVC_cov_input>5 & chr!="chrX"][FC_Zcw_CVC_enrichment<0.8],n=bins), ylim=c(0,0.5), col='blue')
+points(fraction_overlap_FC6(HP9N_peaks[cov_input>8 & FC_Zcw_CVC_cov_input>5 & chr!="chrX"][FC_Zcw_CVC_enrichment>0.8], n=bins), col='red')
+```
+
+
+
+
+```{r}
+plot(fraction_overlap_FC6(HP9N_peaks[cov_input>8 & FC_Zcw_CVC_cov_input>5 & chr!="chrX"],n=bins), ylim=c(0,0.7), ylab="DMC1 Overlap", xlab="Bin HP9 N Peaks, low to high enrich", main="Nterm, black=all, red is ZcwCVCenrich<1, green>0.2")
+points(fraction_overlap_FC6(HP9N_peaks[cov_input>8 & FC_Zcw_CVC_cov_input>5 & chr!="chrX"][FC_Zcw_CVC_enrichment<0.2],n=bins), ylim=c(0,0.5), col='green')
+points(fraction_overlap_FC6(HP9N_peaks[cov_input>8 & FC_Zcw_CVC_cov_input>5 & chr!="chrX"][FC_Zcw_CVC_enrichment>1], n=bins), col='red')
+
+bins=15
+plot(fraction_overlap_FC6(HP9_peaks[cov_input>8 & FC_Zcw_CVC_cov_input>5 & chr!="chrX"][FC_Zcw_CVC_enrichment>1], n=bins) /
+      fraction_overlap_FC6(HP9_peaks[cov_input>8 & FC_Zcw_CVC_cov_input>5 & chr!="chrX"][FC_Zcw_CVC_enrichment<0.2],n=bins), 
+     ylab='DMC1 enrichment ratio ZcwCVCenrich>1 vs <0.2', xlab="Cterm Prdm9 Enrichment bin", ylim=c(1,50), log='y')
+
+plot(fraction_overlap_FC6(HP9N_peaks[cov_input>8 & FC_Zcw_CVC_cov_input>5 & chr!="chrX"][FC_Zcw_CVC_enrichment>1], n=bins) /
+         fraction_overlap_FC6(HP9N_peaks[cov_input>8 & FC_Zcw_CVC_cov_input>5 & chr!="chrX"][FC_Zcw_CVC_enrichment<0.2],n=bins), 
+     ylab='DMC1 enrichment ratio ZcwCVCenrich>1 vs <0.2', xlab="Nterm Prdm9 Enrichment bin", ylim=c(1,50), log='y')
+
+fraction_overlap_FC7 <- function(dt,x,y,n=100){
+     setorder(dt, FC_Zcw_CVC_enrichment)
+     binning_vector <- cut(1:nrow(dt), n)
+     plot(1:n/n, tapply(!is.na(dt$DMC1_enrichment), binning_vector, mean),
+          xlab=paste("Fraction of hPrdm9 Peaks (ordered low to high ZCW_CVC enrichment)"),
+          ylab=paste("Fraction of hPrdm9 peaks overlapping with DMC1 peak"))  
+}
+
+fraction_overlap_FC7(HP9_peaks[cov_input>8 & FC_Zcw_CVC_cov_input>5 & chr!="chrX"], x="ZCVC",y="DMC1")
+
+```
+
+
+
+
+
