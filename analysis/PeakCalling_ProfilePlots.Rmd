@@ -17,7 +17,7 @@ output: html_notebook
 # head -1000 depth_bamCoverage.bedgraph  > sample_depth_bamCoverage.bedgraph
 
 
-#########
+####################################
 
 # Project P180312 (62GB)
 # WTCHG_538916_217108 Sample:Input_ZCWPW1-HA Count:61279859
@@ -31,6 +31,16 @@ output: html_notebook
 wget -r ftp://baquifta:pouma-motru-36@bsg-ftp.well.ox.ac.uk/180629_K00150_0342_AHVYHYBBXX
 
 md5sum -c P180312-md5sum.txt > P180312-md5sumCHECK.txt
+
+
+####################################
+
+# Project P180586 (57GB)
+# WTCHG_594404_276139 Sample:Input_PWDB6F1 Count:75761495
+# WTCHG_594404_277151 Sample:ChIPZCWPW1_PWDB6F1 Count:55372208
+
+# WTCHG_594404_278163 Sample:Input_PWDB6humF1 Count:100880333
+# WTCHG_594404_279175 Sample:ChIPZCWPW1_PWDB6humF1 Count:49620935
 
 wget -r ftp://aifojhoo:kavfi-hethu-03@bsg-ftp.well.ox.ac.uk/181018_K00198_0357_BHWV5YBBXX
 
