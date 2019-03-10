@@ -98,7 +98,9 @@ rule index_bam:
 rule bamCompare:
   input:
     chip="filtered/{chip}.bam",
+    chip_indexes="filtered/{chip}.bam.bai",
     control="filtered/{control}.bam",
+    control_indexes="filtered/{control}.bam.bai",
     black=join(METADATA_DIR, "{GENOME}.blacklist_notoverlaping.bed".format(GENOME=GENOME))
   output:
     "deeptools/bigwigs/{chip}_vs_{control}_CPM_log2.bw"
