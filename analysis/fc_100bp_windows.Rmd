@@ -1,0 +1,53 @@
+---
+title: "FC 100bp Windows"
+output: html_notebook
+---
+
+
+```{r}
+h3k4me3_UT_100bp <- fread("grep -P 'chr1\\t|chr\\t' peaks/ForceCalledPeaks_SRA_Altemose2015_SRR5627150_vs_SRA_Altemose2015_SRR5627142_AT_genome.windows.100wide.100slide.bed.bed")
+h3k4me3_hP9_100bp <- fread("grep -P 'chr1\\t|chr\\t' peaks/ForceCalledPeaks_SRA_Altemose2015_SRR5627152_AND_SRA_Altemose2015_SRR5627153_vs_SRA_Altemose2015_SRR5627143_AT_genome.windows.100wide.100slide.bed.bed")
+
+h3k36me3_hP9_100bp <- fread("grep -P 'chr1\\t|chr\\t' peaks/ForceCalledPeaks_SRA_Altemose2015_SRR5627149_vs_SRA_Altemose2015_SRR5627143_AT_genome.windows.100wide.100slide.bed.bed")
+
+
+zcw_100bp <- fread("grep -P 'chr1\\t|chr\\t' peaks/ForceCalledPeaks_WTCHG_538916_221156_vs_WTCHG_538916_217108_AT_genome.windows.100wide.100slide.bed.bed")
+zcw_hP9_100bp <- fread("grep -P 'chr1\\t|chr\\t' peaks/ForceCalledPeaks_WTCHG_538916_223180_vs_WTCHG_538916_220144_AT_genome.windows.100wide.100slide.bed.bed")
+
+
+h3k4me3_UT_100bp$h3k4me3_hP9_enrichment <- h3k4me3_hP9_100bp$enrichment
+h3k4me3_UT_100bp$zcw_enrichment <- zcw_100bp$enrichment
+h3k4me3_UT_100bp$zcw_pvalue <- zcw_100bp$pvalue
+h3k4me3_UT_100bp$zcw_P9_enrichment <- zcw_hP9_100bp$enrichment
+h3k4me3_UT_100bp$zcw_P9_pvalue <- zcw_hP9_100bp$pvalue
+h3k4me3_UT_100bp$h3k36me3_hP9_enrichment <- h3k36me3_hP9_100bp$enrichment
+
+plot(h3k4me3_UT_100bp$zcw_enrichment,h3k4me3_UT_100bp$zcw_P9_enrichment, pch=".", col='#00000002')
+plot(h3k4me3_UT_100bp$zcw_enrichment,h3k4me3_UT_100bp$zcw_P9_enrichment, pch=".", log="xy")
+
+plot(h3k4me3_UT_100bp$h3k36me3_hP9_enrichment, h3k4me3_UT_100bp$h3k4me3_hP9_enrichment, pch=".", col='#00000010')
+points(h3k4me3_UT_100bp[zcw_P9_enrichment>1 & zcw_P9_pvalue<1e-6]$h3k36me3_hP9_enrichment,
+       h3k4me3_UT_100bp[zcw_P9_enrichment>1 & zcw_P9_pvalue<1e-6]$h3k4me3_hP9_enrichment, pch=".", col='#FF000010')
+
+qplot(h3k4me3_UT_100bp$enrichment, h3k4me3_UT_100bp$P9_enrichment, stroke=I(0), alpha=I(0.1), col=h3k4me3_UT_100bp$zcw_enrichment>1)
+
+plot(h3k4me3_UT_100bp[zcw_P9_enrichment<1]$enrichment, h3k4me3_UT_100bp[zcw_P9_enrichment<1]$P9_enrichment, pch=".", col='#00000005')
+points(h3k4me3_UT_100bp[zcw_P9_enrichment>1 & zcw_P9_pvalue<1e-6]$enrichment, h3k4me3_UT_100bp[zcw_P9_enrichment>1 & zcw_P9_pvalue<1e-6]$P9_enrichment, pch=".", col='#FF000005')
+
+
+plot(h3k4me3_UT_100bp[zcw_enrichment<1]$enrichment+0.01, h3k4me3_UT_100bp[zcw_enrichment<1]$P9_enrichment+0.01, pch=".", col='#00000010')
+
+plot(h3k4me3_UT_100bp[zcw_enrichment<1]$enrichment+0.01, h3k4me3_UT_100bp[zcw_enrichment<1]$P9_enrichment+0.01, pch=".", col='#00000010')
+points(h3k4me3_UT_100bp[zcw_enrichment>1 & zcw_pvalue<1e-6]$enrichment+0.01, h3k4me3_UT_100bp[zcw_enrichment>1 & zcw_pvalue<1e-6]$P9_enrichment+0.01, pch=".", col='#FF000010')
+
+
+plot(h3k4me3_UT_100bp[zcw_enrichment<1]$enrichment+0.01, h3k4me3_UT_100bp[zcw_enrichment<1]$P9_enrichment+0.01, pch=".", col='#00000010', log="xy")
+
+plot(h3k4me3_UT_100bp[zcw_enrichment<1]$enrichment+0.01, h3k4me3_UT_100bp[zcw_enrichment<1]$P9_enrichment+0.01, pch=".", col='#00000010', log="xy")
+points(h3k4me3_UT_100bp[zcw_enrichment>1 & zcw_pvalue<1e-6]$enrichment+0.01, h3k4me3_UT_100bp[zcw_enrichment>1 & zcw_pvalue<1e-6]$P9_enrichment+0.01, pch=".", col='#FF000010')
+
+
+plot(h3k4me3_UT_100bp$enrichment, h3k4me3_UT_100bp$P9_enrichment, pch=".", log="xy")
+plot(h3k4me3_UT_100bp$enrichment+0.1, h3k4me3_UT_100bp$P9_enrichment+0.1, pch=".", log="xy")
+```
+
