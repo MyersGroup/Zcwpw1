@@ -60,12 +60,27 @@ rule estconst:
     """
 
 
+
+rule extend_peaks:
+  input:
+    forcepos="peaks/SingleBasePeaks.{forcecallAT}.p0.000001.sep250.ALL.bed",
+    chrsizes=join(METADATA_DIR, "hg38_sizes.chrom")
+  output:
+    "peaks/SingleBasePeaks.{forcecallAT}.flank{flank}.p0.000001.sep250.ALL.bed"
+  threads:
+    1
+  shell:
+    """
+    # bedtools doesn't like the header so use tail -n +2
+    tail {input.forcepos} -n +2 | bedtools slop -i - -g {input.chrsizes} -b {wildcards.flank} > {output}
+    """
+
 rule call_peaks:
   input:
     chips = get_chips ,
     control="MAPeakCaller/Fragment_Position_{control}.sorted.bed",
     chrsizes=join(METADATA_DIR, "hg38_sizes.chrom"),
-    forcepos="peaks/SingleBasePeaks.{forcecallAT}.p0.000001.sep250.ALL.bed",
+    forcepos= lambda wc: "forcepeaks/{forcecallAT}" if(".bed" in wc.forcecallAT) else "peaks/SingleBasePeaks.{forcecallAT}.p0.000001.sep250.ALL.bed",
     consts="peaks/Constants.{chip}_vs_{control}.tsv"
   output:
     p="peaks/ForceCalledPeaks_{chip}_vs_{control}_AT_{forcecallAT}.bed"
