@@ -50,6 +50,7 @@ FRAGSIZE        =     expand("qc/deeptools/{group}_frag_size.pdf", group=GROUP)
 FINGERPRINT     =     expand("qc/deeptools/{group}_fingerprint.pdf", group=GROUP)
 INDEXCOVA      =     expand("qc/indexcov/{group}_indexcovALL/{group}_indexcovALL-indexcov.bed.gz", group=GROUP)
 BWCPM           =     expand("deeptools/bigwigs/{sample}_CPM.bw", sample=SAMPLES)
+BAMSAMPLE       =     expand("sample_regions/sample_{sample}.bam", sample=SAMPLES)
 PCA             =     expand("qc/deeptools/PCA_{group}.png", group=GROUP)
 COR             =     expand("qc/deeptools/Cor_{group}.png", group=GROUP)
 
@@ -70,6 +71,7 @@ rule all:
         FINGERPRINT,
         INDEXCOVA,
         BWCPM,
+        BAMSAMPLE,
         PCA,
         COR
 
@@ -500,6 +502,23 @@ rule bamCoverageCPM:
       --extendReads \
       -p 5
     """
+
+
+rule sampleBAM:
+  input:
+    b="filtered/{sample}.bam",
+    idx="filtered/{sample}.bam.bai",
+    reg="chr19_sample.bed"
+  output:
+    "sample_regions/sample_{sample}.bam"
+  threads:
+    1
+  shell:
+    """
+    samtools view {input.b} -L {input.reg} -b -o {output}
+    samtools index {output}
+    """
+
 
 # snakemake -npr --rulegraph | dot -Tpdf > dag.pdf
 # snakemake -npr --dag --forceall | dot -Tpdf > dag.pdf
