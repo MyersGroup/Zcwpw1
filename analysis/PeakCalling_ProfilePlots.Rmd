@@ -47,6 +47,34 @@ wget -r ftp://aifojhoo:kavfi-hethu-03@bsg-ftp.well.ox.ac.uk/181018_K00198_0357_B
 md5sum -c P180586-md5sum.txt > P180586-md5sumCHECK.txt
 
 
+####################################
+
+
+# Project P180717 (61GB)
+# WTCHG_659233_233110 Sample:Input_ZCWPW1-HA+hPRDM9-ZFonly-V5 Count:24871157
+# WTCHG_659233_234122 Sample:ChIPHA_ZCWPW1-HA+hPRDM9-ZFonly-V5 Count:22347286
+# WTCHG_659233_235134 Sample:ChIPH3K4me3_ZCWPW1-HA+hPRDM9-ZFonly-V5 Count:25369086
+
+# WTCHG_659233_249112 Sample:Input_ZCWPW1-HA+hPRDM9-V5 Count:30499498
+# WTCHG_659233_250124 Sample:ChIPHA_ZCWPW1-HA+hPRDM9-V5 Count:27818259
+# WTCHG_659233_251136 Sample:ChIPH3K4me3_ZCWPW1-HA+hPRDM9-V5 Count:25895561
+
+# WTCHG_659233_252148 Sample:Input_ZCWPW1-HA+cPRDM9-V5 Count:29613874
+# WTCHG_659233_253160 Sample:ChIPHA_ZCWPW1-HA+cPRDM9-V5 Count:26200675
+# WTCHG_659233_254172 Sample:ChIPH3K4me3_ZCWPW1-HA+cPRDM9-V5 Count:25669210
+
+# WTCHG_659233_255184 Sample:Input_hPRDM9-ZFonly-V5 Count:27442139
+# WTCHG_659233_256196 Sample:ChIPV5_hPRDM9-ZFonly-V5 Count:29978613
+
+
+wget -r ftp://meigakuj:rygri-sekgo-36@bsg-ftp.well.ox.ac.uk/190301_K00181_0120_BH3NTJBBXY
+
+cd bsg-ftp.well.ox.ac.uk/190301_K00181_0120_BH3NTJBBXY/
+md5sum -c P180717-md5sum.txt > P180717-md5sumCHECK.txt
+
+####################################
+
+
 #SRR5627143 ChIPseq.HumanPRDM9_HA.Input.ProtocolC
 #SRR5627146 ChIPseq.HumanPRDM9_HA.antiHA.ProtocolC
 #SRR5627144 ChIPseq.ChimpPRDM9_HA.antiHA.ProtocolC
@@ -68,6 +96,7 @@ md5sum -c P180586-md5sum.txt > P180586-md5sumCHECK.txt
 # tar jxvf bedops_linux_x86_64-v2.4.35.tar.bz2
 
 
+####################################
 
 export PATH=/homes/wells/data-on-saxony/single-cell/sequencing/software/fastqc/FastQC/:$PATH
 export PATH=/homes/wells/data-on-saxony/single-cell/sequencing/software/bedtools/bedtools2/bin/:$PATH
@@ -82,6 +111,7 @@ export PATH=/homes/wells/data-on-saxony/single-cell/sequencing/software/bin/:$PA
 snakemake --cores 15 -npr
 snakemake --snakefile Snakefile_peaks -npr
 
+####################################
 
 # 223180 mapping
 /data/saxony/wells/zcwpw1/.snakemake/log/2018-12-17T113936.560665.snakemake.log
@@ -98,6 +128,9 @@ snakemake --snakefile Snakefile_peaks -npr
 # altemose2015 peak calling
 /data/saxony/wells/zcwpw1/.snakemake/log/2018-12-18T195115.331409.snakemake.log
 
+# 659233 mapping
+223 of 223 steps (100%) done
+Complete log: /data/saxony/wells/zcwpw1/.snakemake/log/2019-03-06T162340.527449.snakemake.log
 
 ```
 
