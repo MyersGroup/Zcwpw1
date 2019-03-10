@@ -1,22 +1,31 @@
-# snakemake --cores 15 -npr
-
+# snakemake --cores 15 -npr --config GROUP="659233"
+# snakemake --cores 15 -npr --config GROUP="538916"
+# snakemake --cores 15 -npr --config GROUP="594404"
+# snakemake --cores 15 -npr --config GROUP="Altemose2015"
 
 from os.path import join
 
 METADATA_DIR = '../single-cell/sequencing/metadata'
 PICARD_PATH = '/homes/wells/data-on-saxony/single-cell/sequencing/software'
-GENOME = 'hg38'
-
 
 #FASTQ_DIR = 'raw_data/bsg-ftp.well.ox.ac.uk/181018_K00198_0357_BHWV5YBBXX/'
-#GROUP = 'XXXXXX'
+#GROUP = '594404'
 
 #FASTQ_DIR = 'raw_data/bsg-ftp.well.ox.ac.uk/180629_K00150_0342_AHVYHYBBXX/'
 #GROUP = '538916'
 
-FASTQ_DIR = 'raw_data/altemose/'
-GROUP = 'Altemose2015'
+#FASTQ_DIR = 'raw_data/altemose/'
+#GROUP = 'Altemose2015'
 
+#FASTQ_DIR = 'raw_data/bsg-ftp.well.ox.ac.uk/190301_K00181_0120_BH3NTJBBXY/'
+#GROUP = '659233'
+
+configfile: 'config.yml'
+
+GROUP = config["GROUP"]
+
+FASTQ_DIR = config["fastq_dir"][GROUP]
+GENOME = config["genome"][GROUP]
 
 SAMPLES, PAIRS = glob_wildcards(join(FASTQ_DIR, "{samples}_{pairs}.fastq.gz"))
 
