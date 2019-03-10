@@ -134,6 +134,380 @@ Complete log: /data/saxony/wells/zcwpw1/.snakemake/log/2019-03-06T162340.527449.
 
 ```
 
+
+
+# Mark TSS
+
+```{r}
+load_tss <- function(file="../data/hg38.wgEncodeGencodeCompV28.bed", flank=400){
+encode_tss <- fread(file)
+names(encode_tss) <- gsub("hg38.wgEncodeGencodeCompV28.|hg38.wgEncodeGencodeAttrsV28.","",names(encode_tss))
+
+encode_tss[strand=='+', CI_start_ext := txStart - flank]
+encode_tss[strand=='+', CI_stop_ext := txStart + flank]
+encode_tss[strand=='-', CI_start_ext := txEnd - flank]
+encode_tss[strand=='-', CI_stop_ext := txEnd + flank]
+setnames(encode_tss,'chrom','chr')
+setnames(encode_tss,'#name','tss')
+
+encode_tss <- encode_tss[,.(chr, CI_start_ext, CI_stop_ext,tss)]
+setkey(encode_tss, chr, CI_start_ext, CI_stop_ext)
+return(encode_tss)
+}
+
+encode_tss <- load_tss(flank=500)
+
+HP9combo_peaks$tss <- foverlaps(HP9combo_peaks, encode_tss, mult = 'first')$tss
+HP9N_peaks$tss <- foverlaps(HP9N_peaks, encode_tss, mult = 'first')$tss
+
+CP9combo_peaks$tss <- foverlaps(CP9combo_peaks, encode_tss, mult = 'first')$tss
+
+
+
+zcw_wP9_vs_chip_Z$tss <- foverlaps(zcw_wP9_vs_chip_Z, encode_tss, mult = 'first')$tss
+zcw_wP9_peaks_cin$tss <- foverlaps(zcw_wP9_peaks_cin, encode_tss, mult = 'first')$tss
+zcw_peaks$tss <- foverlaps(zcw_peaks, encode_tss, mult = 'first')$tss
+
+```
+
+# Chip Overlap with TSS
+
+```{r}
+h3k4me3_UT_peaks$tss <- foverlaps(h3k4me3_UT_peaks, encode_tss, mult = 'first')$tss
+fraction_overlapN2(h3k4me3_UT_peaks[cov_input>10], encode_tss,  "h3k4me3_UT_peaks", "TSS", shift=1e5)
+```
+
+
+```{r}
+fraction_overlapN2(HP9combo_peaks[cov_input>5], encode_tss,  "HP9combo_peaks", "TSS", shift=1e5)
+fraction_overlapN2(HP9N_peaks[cov_input>5], encode_tss,  "HP9N_peaks", "TSS", shift=1e5)
+
+fraction_overlapN2(zcw_wP9_vs_chip_Z[cov_input>5], encode_tss,  "Zcw CVC", "TSS", shift=1e5)
+```
+
+
+# Export beds
+
+```{r}
+fwrite(zcw_wP9_vs_chip_Z[cov_input>5][order(enrichment)][,.(chr, center_start, center_stop, enrichment)], "../data/zcw_wP9_vs_chip_Z.bed", col.names = FALSE, sep = "\t")
+
+
+fwrite(HP9combo_peaks[cov_input>5][!is.na(tss)][order(enrichment)][,.(chr, center_start, center_stop, enrichment)], "../data/HP9combo_peaks_Promoters.bed", col.names = FALSE, sep = "\t")
+fwrite(HP9combo_peaks[cov_input>5][is.na(tss)][order(enrichment)][,.(chr, center_start, center_stop, enrichment)], "../data/HP9combo_peaks_NonPromoters.bed", col.names = FALSE, sep = "\t")
+
+split -d -n l/4 deeptools/beds/HP9combo_peaks_Promoters.bed deeptools/beds/HP9combo_peaks_Promoters.bed
+split -d -n l/4 deeptools/beds/HP9combo_peaks_NonPromoters.bed deeptools/beds/HP9combo_peaks_NonPromoters.bed
+
+
+
+fwrite(CP9combo_peaks[cov_input>5][!is.na(tss)][order(enrichment)][,.(chr, center_start, center_stop, enrichment)], "../data/CP9combo_peaks_Promoters.bed", col.names = FALSE, sep = "\t")
+fwrite(CP9combo_peaks[cov_input>5][is.na(tss)][order(enrichment)][,.(chr, center_start, center_stop, enrichment)], "../data/CP9combo_peaks_NonPromoters.bed", col.names = FALSE, sep = "\t")
+
+split -d -n l/4 deeptools/beds/CP9combo_peaks_Promoters.bed deeptools/beds/CP9combo_peaks_Promoters.bed
+split -d -n l/4 deeptools/beds/CP9combo_peaks_NonPromoters.bed deeptools/beds/CP9combo_peaks_NonPromoters.bed
+
+```
+
+# ZcwCVC Non Overlaping with HP9combo
+
+```{r}
+
+
+computeMatrix reference-point \
+  -S deeptools/bigwigs/WTCHG_538916_221156_vs_WTCHG_538916_217108_CPM_log2.bw \
+    deeptools/bigwigs/WTCHG_538916_223180_vs_WTCHG_538916_220144_CPM_log2.bw \
+    deeptools/bigwigs/WTCHG_538916_223180_vs_WTCHG_538916_221156_CPM_log2.bw \
+    deeptools/bigwigs/SRA_Altemose2015_SRR5627138_AND_SRA_Altemose2015_SRR5627139_vs_SRA_Altemose2015_SRR5627140_CPM_log2.bw \
+    deeptools/bigwigs/SRA_Altemose2015_SRR5627146_AND_SRA_Altemose2015_SRR5627147_vs_SRA_Altemose2015_SRR5627143_CPM_log2.bw \
+    deeptools/bigwigs/SRA_Altemose2015_SRR5627152_vs_SRA_Altemose2015_SRR5627143_CPM_log2.bw \
+    deeptools/bigwigs/SRA_Altemose2015_SRR5627149_vs_SRA_Altemose2015_SRR5627143_CPM_log2.bw \
+    deeptools/bigwigs/SRA_Altemose2015_SRR5627150_vs_SRA_Altemose2015_SRR5627142_CPM_log2.bw \
+    deeptools/bigwigs/SRA_Altemose2015_SRR5627148_vs_SRA_Altemose2015_SRR5627142_CPM_log2.bw \
+  -R deeptools/beds/Zcw_CVC_NonOverlapping_HP9combo_peaks.bed \
+    deeptools/beds/Zcw_CVC_Overlapping_HP9combo_peaks.bed \
+  -a 1000 \
+  -b 1000 \
+  -p 15 \
+  --skipZeros \
+  -o deeptools/matrices/deeptoolsmatrix_WTCHG_538916_CPM_log2_Zcw_CVC_NonOverlapping_HP9combo.gz
+
+plotProfile \
+  -m deeptools/matrices/deeptoolsmatrix_WTCHG_538916_CPM_log2_Zcw_CVC_NonOverlapping_HP9combo.gz \
+  -out deeptools/Zcwpw1_relative_CPM_log2_Zcw_CVC_NonOverlapping_HP9combo.pdf \
+  --refPointLabel "0" \
+  --samplesLabel ChpHA_ZHA-vs-In_ZHA_CPM ChpHA_ZHA_hP9V5-vs-Input ChpHA_ZHA_hP9V5-vs-ChpHA_ZHA hPrdm9_Nterm-vs-Input hPrdm9_Cterm-vs-Input H3K4wPrdm9_v_in H3K36wPrdm9_v_in H3K4_untransfected_v_in H3K36_untransfected_v_in \
+  --numPlotsPerRow 3 \
+  --regionsLabel Zcw_CVC_NonOverlapping_HP9combo_peaks Zcw_CVC_Overlapping_HP9combo_peaks \
+  --yMax 0.3 0.8 0.5 0.2 0.6 0.5 0.1 0.15 0.05
+
+```
+
+
+# Match P9 for Zcw CVC
+
+```{r}
+
+HP9combo_peaks_tomatch <- HP9combo_peaks[cov_input>5][is.na(tss)]
+
+#match_peaks <- function(peaks, )
+HP9combo_peaks_tomatch[order(enrichment), ID := 1:nrow(HP9combo_peaks_tomatch)]
+
+setkey(HP9combo_peaks_tomatch, enrichment, ID)
+
+set.seed(42)
+HP9combo_peaks_tomatch$random_order <- runif(nrow(HP9combo_peaks_tomatch))
+
+peak_pool <- HP9combo_peaks_tomatch[is.na(zcw_CVC_enrichment)]$ID
+
+matches <- c(NA, NA)
+
+for (i in HP9combo_peaks_tomatch[!is.na(zcw_CVC_enrichment)][order(random_order)]$ID){
+  target_enrich <- HP9combo_peaks_tomatch[ID==i]$enrichment
+  #match <- HP9combo_peaks_tomatch[ID %in% peak_pool, .SD[which.min(abs(target_enrich-enrichment))]]$ID
+  match <- HP9combo_peaks_tomatch[ID %in% peak_pool ][ abs(target_enrich-enrichment) == min(abs(target_enrich-enrichment))]$ID[1]
+  
+  peak_pool <- peak_pool[peak_pool!=match]
+  
+  matches <- rbind(matches, c(i, match))
+}
+
+
+saveRDS(matches, "../data/HP9combo_ZcwCVC_matches_V2.rds")
+
+matches <- cbind(matches, matches[,1] - matches[,2])
+
+plot(abs(matches[,3]), log='y')
+
+good_matches <- c(matches[abs(matches[,3])<100,1:2])
+
+matches <- readRDS("../data/HP9combo_ZcwCVC_matches_V2.rds")
+
+ggplot(HP9combo_peaks_tomatch, aes(enrichment, colour=is.na(zcw_CVC_enrichment))) + geom_density() + scale_x_log10()
+
+ggplot(HP9combo_peaks_tomatch[ID %in% c(good_matches)], aes(enrichment, colour=is.na(zcw_CVC_enrichment))) + geom_density() + scale_x_log10()
+
+plot(HP9combo_peaks_tomatch[ID %in% c(good_matches)][is.na(zcw_CVC_enrichment)]$enrichment,
+     HP9combo_peaks_tomatch[ID %in% c(good_matches)][!is.na(zcw_CVC_enrichment)]$enrichment, log='xy'); abline(0,1,col='red')
+
+
+fwrite(HP9combo_peaks_tomatch[ID %in% c(good_matches)][!is.na(zcw_CVC_enrichment)][order(enrichment)][,.(chr, center_start, center_stop, enrichment)], "../data/HP9combo_peaks_NonPromoters_Zcw_CVC.bed", col.names = FALSE, sep = "\t")
+fwrite(HP9combo_peaks_tomatch[ID %in% c(good_matches)][is.na(zcw_CVC_enrichment)][order(enrichment)][,.(chr, center_start, center_stop, enrichment)], "../data/HP9combo_peaks_NonPromoters_NonZcw_CVC.bed", col.names = FALSE, sep = "\t")
+
+
+# fwrite(HP9combo_peaks[cov_input>5][is.na(tss)][!is.na(zcw_wP9_enrichment)][order(enrichment)][,.(chr, center_start, center_stop, enrichment)], "../data/HP9combo_peaks_NonPromoters_Zcw_wP9.bed", col.names = FALSE, sep = "\t")
+# fwrite(HP9combo_peaks[cov_input>5][is.na(tss)][is.na(zcw_wP9_enrichment)][order(enrichment)][,.(chr, center_start, center_stop, enrichment)], "../data/HP9combo_peaks_NonPromoters_NonZcw_wP9.bed", col.names = FALSE, sep = "\t")
+
+
+```
+
+
+## Split P9 by ZcwCVC
+
+```{r}
+
+# Zcw CVC
+
+computeMatrix reference-point \
+  -S deeptools/bigwigs/WTCHG_538916_221156_vs_WTCHG_538916_217108_CPM_log2.bw \
+    deeptools/bigwigs/WTCHG_538916_223180_vs_WTCHG_538916_220144_CPM_log2.bw \
+    deeptools/bigwigs/WTCHG_538916_223180_vs_WTCHG_538916_221156_CPM_log2.bw \
+    deeptools/bigwigs/SRA_Altemose2015_SRR5627138_AND_SRA_Altemose2015_SRR5627139_vs_SRA_Altemose2015_SRR5627140_CPM_log2.bw \
+    deeptools/bigwigs/SRA_Altemose2015_SRR5627146_AND_SRA_Altemose2015_SRR5627147_vs_SRA_Altemose2015_SRR5627143_CPM_log2.bw \
+    deeptools/bigwigs/SRA_Altemose2015_SRR5627152_vs_SRA_Altemose2015_SRR5627143_CPM_log2.bw \
+    deeptools/bigwigs/SRA_Altemose2015_SRR5627149_vs_SRA_Altemose2015_SRR5627143_CPM_log2.bw \
+    deeptools/bigwigs/SRA_Altemose2015_SRR5627150_vs_SRA_Altemose2015_SRR5627142_CPM_log2.bw \
+    deeptools/bigwigs/SRA_Altemose2015_SRR5627148_vs_SRA_Altemose2015_SRR5627142_CPM_log2.bw \
+  -R deeptools/beds/HP9combo_peaks_NonPromoters_Zcw_CVC.bed \
+    deeptools/beds/HP9combo_peaks_NonPromoters_NonZcw_CVC.bed \
+  -a 2000 \
+  -b 2000 \
+  -p 15 \
+  --skipZeros \
+  -o deeptools/matrices/deeptoolsmatrix_WTCHG_538916_CPM_log2_Split_P9.gz
+
+plotProfile \
+  -m deeptools/matrices/deeptoolsmatrix_WTCHG_538916_CPM_log2_Split_P9.gz \
+  -out deeptools/Zcwpw1_relative_CPM_log2_Split_P9.pdf \
+  --refPointLabel "0" \
+  --samplesLabel ChpHA_ZHA-vs-In_ZHA_CPM ChpHA_ZHA_hP9V5-vs-Input ChpHA_ZHA_hP9V5-vs-ChpHA_ZHA hPrdm9_Nterm-vs-Input hPrdm9_Cterm-vs-Input H3K4wPrdm9_v_in H3K36wPrdm9_v_in H3K4_untransfected_v_in H3K36_untransfected_v_in \
+  --numPlotsPerRow 3 \
+  --regionsLabel Zcw_CVC_P9_Peaks Non_Zcw_CVC_P9_Peaks \
+  --yMax 0.4 0.8 0.4 0.25 0.65 0.4 0.1 0.1 0.05
+
+```
+
+# Match P9 for DMC1
+
+```{r}
+
+
+HP9combo_peaks_tomatch <- HP9combo_peaks[cov_input>5][is.na(tss)]
+
+#match_peaks <- function(peaks, )
+HP9combo_peaks_tomatch[order(enrichment), ID := 1:nrow(HP9combo_peaks_tomatch)]
+
+setkey(HP9combo_peaks_tomatch, enrichment, ID)
+
+set.seed(42)
+HP9combo_peaks_tomatch$random_order <- runif(nrow(HP9combo_peaks_tomatch))
+
+peak_pool <- HP9combo_peaks_tomatch[isDMC1==FALSE]$ID
+
+matches <- c(NA, NA)
+
+for (i in HP9combo_peaks_tomatch[isDMC1==TRUE][order(random_order)]$ID){
+  target_enrich <- HP9combo_peaks_tomatch[ID==i]$enrichment
+  #match <- HP9combo_peaks_tomatch[ID %in% peak_pool, .SD[which.min(abs(target_enrich-enrichment))]]$ID
+  match <- HP9combo_peaks_tomatch[ID %in% peak_pool ][ abs(target_enrich-enrichment) == min(abs(target_enrich-enrichment))]$ID[1]
+  
+  peak_pool <- peak_pool[peak_pool!=match]
+  
+  matches <- rbind(matches, c(i, match))
+}
+
+saveRDS(matches, "../data/HP9combo_DMC1_matches.rds")
+
+matches <- cbind(matches, matches[,1] - matches[,2])
+
+plot(abs(matches[,3]), log='y')
+
+good_matches <- c(matches[abs(matches[,3])<100,1:2])
+
+matches <- readRDS("../data/HP9combo_DMC1_matches.rds")
+
+ggplot(HP9combo_peaks_tomatch, aes(enrichment, colour=isDMC1)) + geom_density() + scale_x_log10()
+
+ggplot(HP9combo_peaks_tomatch[ID %in% c(good_matches)], aes(enrichment, colour=isDMC1)) + geom_density() + scale_x_log10()
+
+plot(HP9combo_peaks_tomatch[ID %in% c(good_matches)][isDMC1==TRUE]$enrichment,
+     HP9combo_peaks_tomatch[ID %in% c(good_matches)][isDMC1==FALSE]$enrichment, log='xy'); abline(0,1,col='red')
+
+
+fwrite(HP9combo_peaks_tomatch[ID %in% c(good_matches)][isDMC1==TRUE][order(enrichment)][,.(chr, center_start, center_stop, enrichment)], "../data/HP9combo_peaks_NonPromoters_DMC1.bed", col.names = FALSE, sep = "\t")
+fwrite(HP9combo_peaks_tomatch[ID %in% c(good_matches)][isDMC1==FALSE][order(enrichment)][,.(chr, center_start, center_stop, enrichment)], "../data/HP9combo_peaks_NonPromoters_NonDMC1.bed", col.names = FALSE, sep = "\t")
+
+
+
+```
+
+
+## Split P9 by DMC1
+
+```{r}
+computeMatrix reference-point \
+  -S deeptools/bigwigs/WTCHG_538916_221156_vs_WTCHG_538916_217108_CPM_log2.bw \
+    deeptools/bigwigs/WTCHG_538916_223180_vs_WTCHG_538916_220144_CPM_log2.bw \
+    deeptools/bigwigs/WTCHG_538916_223180_vs_WTCHG_538916_221156_CPM_log2.bw \
+    deeptools/bigwigs/SRA_Altemose2015_SRR5627138_AND_SRA_Altemose2015_SRR5627139_vs_SRA_Altemose2015_SRR5627140_CPM_log2.bw \
+    deeptools/bigwigs/SRA_Altemose2015_SRR5627146_AND_SRA_Altemose2015_SRR5627147_vs_SRA_Altemose2015_SRR5627143_CPM_log2.bw \
+    deeptools/bigwigs/SRA_Altemose2015_SRR5627152_vs_SRA_Altemose2015_SRR5627143_CPM_log2.bw \
+    deeptools/bigwigs/SRA_Altemose2015_SRR5627149_vs_SRA_Altemose2015_SRR5627143_CPM_log2.bw \
+    deeptools/bigwigs/SRA_Altemose2015_SRR5627150_vs_SRA_Altemose2015_SRR5627142_CPM_log2.bw \
+    deeptools/bigwigs/SRA_Altemose2015_SRR5627148_vs_SRA_Altemose2015_SRR5627142_CPM_log2.bw \
+  -R deeptools/beds/HP9combo_peaks_NonPromoters_DMC1.bed \
+    deeptools/beds/HP9combo_peaks_NonPromoters_NonDMC1.bed \
+  -a 2000 \
+  -b 2000 \
+  -p 15 \
+  --skipZeros \
+  -o deeptools/matrices/deeptoolsmatrix_WTCHG_538916_CPM_log2_Split_P9_DMC1.gz
+
+plotProfile \
+  -m deeptools/matrices/deeptoolsmatrix_WTCHG_538916_CPM_log2_Split_P9_DMC1.gz \
+  -out deeptools/Zcwpw1_relative_CPM_log2_Split_P9_DMC1.pdf \
+  --refPointLabel "0" \
+  --samplesLabel ChpHA_ZHA-vs-In_ZHA_CPM ChpHA_ZHA_hP9V5-vs-Input ChpHA_ZHA_hP9V5-vs-ChpHA_ZHA hPrdm9_Nterm-vs-Input hPrdm9_Cterm-vs-Input H3K4wPrdm9_v_in H3K36wPrdm9_v_in H3K4_untransfected_v_in H3K36_untransfected_v_in \
+  --numPlotsPerRow 3 \
+  --regionsLabel Zcw_CVC_DMC1_Peaks Non_Zcw_CVC_NonDMC1_Peaks \
+  --yMax 0.4 0.8 0.4 0.25 0.65 0.4 0.1 0.1 0.05
+
+```
+
+
+
+
+## Human Motif & Strand
+
+```{r}
+# make higher resolution bam comparisons
+
+bamCompare -b1 filtered/SRA_Altemose2015_SRR5627152.bam \
+      -b2 filtered/SRA_Altemose2015_SRR5627143.bam \
+      --scaleFactorsMethod None \
+      --normalizeUsing CPM \
+      --operation log2 \
+      --extendReads \
+      --centerReads \
+      --binSize 5 \
+      --smoothLength 1 \
+      -o deeptools/bigwigs/SRA_Altemose2015_SRR5627152_vs_SRA_Altemose2015_SRR5627143_CPM_log2_bs5.bw \
+      --blackListFileName ../single-cell/sequencing/metadata/hg38.blacklist_notoverlaping.bed \
+      -p 15
+
+bamCompare -b1 filtered/SRA_Altemose2015_SRR5627149.bam \
+      -b2 filtered/SRA_Altemose2015_SRR5627143.bam \
+      --scaleFactorsMethod None \
+      --normalizeUsing CPM \
+      --operation log2 \
+      --extendReads \
+      --centerReads \
+      --binSize 5 \
+      --smoothLength 1 \
+      -o deeptools/bigwigs/SRA_Altemose2015_SRR5627149_vs_SRA_Altemose2015_SRR5627143_CPM_log2_NEW.bw \
+      --blackListFileName ../single-cell/sequencing/metadata/hg38.blacklist_notoverlaping.bed \
+      -p 15
+
+```
+
+# Zoom in on Nucleosomes
+
+```{r}
+computeMatrix reference-point \
+    -S deeptools/bigwigs/WTCHG_538916_223180_vs_WTCHG_538916_221156_CPM_log2.bw \
+    deeptools/bigwigs/SRA_Altemose2015_SRR5627152_vs_SRA_Altemose2015_SRR5627143_CPM_log2.bw \
+    deeptools/bigwigs/SRA_Altemose2015_SRR5627152_vs_SRA_Altemose2015_SRR5627143_CPM_log2_bs5.bw \
+    deeptools/bigwigs/SRA_Altemose2015_SRR5627149_vs_SRA_Altemose2015_SRR5627143_CPM_log2.bw \
+    deeptools/bigwigs/SRA_Altemose2015_SRR5627149_vs_SRA_Altemose2015_SRR5627143_CPM_log2_NEW.bw \
+    -R deeptools/beds/HP9N_peaks_NonPromoters_MotifCenteredStranded.bed  \
+      deeptools/beds/HP9combo_peaks_NonPromoters_MotifCenteredStranded.bed \
+    -a 600 \
+    -b 600 \
+    -p 15 \
+    --skipZeros \
+    -o deeptools/matrices/deeptoolsmatrix_WTCHG_538916_CPM_log2_nucleosomes.gz
+
+plotProfile \
+  -m deeptools/matrices/deeptoolsmatrix_WTCHG_538916_CPM_log2_nucleosomes.gz \
+  -out deeptools/Zcwpw1_relative_CPM_log2__nucleosomes.pdf \
+  --refPointLabel "Motif Center" \
+  --samplesLabel ChpHA_ZHA_hP9V5-vs-ChpHA_ZHA H3K4wPrdm9_v_in H3K4wPrdm9_v_in_bs5 H3K36wPrdm9_v_in H3K36wPrdm9_v_in_SB \
+  --numPlotsPerRow 2 \
+  --regionsLabel Human_Prdm9_Nterm_NonPromoters Human_Prdm9_Cterm_Combo_NonPromoters_stranded \
+  --yMax 0.4 0.6 0.6 0.1 0.05
+
+
+```
+
+
+# Make profile plot using Nick's perl script
+
+```{r}
+
+## cut f1-3,6 deeptools/beds/HP9combo_peaks_NonPromoters_MotifCenteredStranded.bed > HP9combo_peaks_NonPromoters_MotifCenteredStranded.bed
+
+perl MakeProfilePlot.pl deeptools/beds/HP9combo_peaks_NonPromoters_MotifCenteredStranded_chr.bed \
+      bedgraphs/depth_SRA_Altemose2015_SRR5627149.bedgraph \
+      SRA_Altemose2015_SRR5627149.profile
+
+perl MakeProfilePlot.pl deeptools/beds/HP9combo_peaks_NonPromoters_MotifCenteredStranded_chr.bed \
+      bedgraphs/depth_SRA_Altemose2015_SRR5627143.bedgraph \
+      SRA_Altemose2015_SRR5627143.profile
+
+prof=fread("SRA_Altemose2015_SRR5627149.profile")
+prof2=fread("SRA_Altemose2015_SRR5627143.profile")
+
+```
+
 # Profile Plots for WTCHG_538916 (in vitro transfections)
 
 ```{r}
@@ -166,115 +540,6 @@ plotProfile \
   --numPlotsPerRow 2 \
   --regionsLabel Human_Prdm9_Promoters_3k Human_Prdm9_NonPromoters_15k Human_Prdm9_NonPromoters_3k Human_Prdm9_NonPromoters_1k Chimp_Prdm9_Promoters_3k Chimp_Prdm9_NonPromoters_15k Chimp_Prdm9_NonPromoters_3k Chimp_Prdm9_NonPromoters_1k
 
-```
-
-# Altemose2015 relative
-
-```{r}
-
-  computeMatrix reference-point \
-    -S deeptools/bigwigs/SRA_Altemose2015_SRR5627146_vs_SRA_Altemose2015_SRR5627143_CPM_log2.bw \
-      deeptools/bigwigs/SRA_Altemose2015_SRR5627144_vs_SRA_Altemose2015_SRR5627143_CPM_log2.bw \
-      deeptools/bigwigs/SRA_Altemose2015_SRR5627152_vs_SRA_Altemose2015_SRR5627143_CPM_log2.bw \
-      deeptools/bigwigs/SRA_Altemose2015_SRR5627149_vs_SRA_Altemose2015_SRR5627143_CPM_log2.bw \
-      deeptools/bigwigs/SRA_Altemose2015_SRR5627150_vs_SRA_Altemose2015_SRR5627142_CPM_log2.bw \
-      deeptools/bigwigs/SRA_Altemose2015_SRR5627148_vs_SRA_Altemose2015_SRR5627142_CPM_log2.bw \
-    -R deeptools/beds/prdm9_human_hg38_P_3k.bed \
-      deeptools/beds/prdm9_human_hg38_notP_15k.bed \
-      deeptools/beds/prdm9_human_hg38_notP_3k.bed \
-      deeptools/beds/prdm9_human_hg38_notP_1k.bed \
-      deeptools/beds/prdm9_chimp_hg38_P_3k.bed \
-      deeptools/beds/prdm9_chimp_hg38_notP_15k.bed \
-      deeptools/beds/prdm9_chimp_hg38_notP_3k.bed \
-      deeptools/beds/prdm9_chimp_hg38_notP_1k.bed \
-    -a 3000 \
-    -b 3000 \
-    -p 15 \
-    --skipZeros \
-    -o deeptools/matrices/deeptoolsmatrix_SRA_Altemose2015_CPM_log2.gz
-
-
-plotProfile \
-  -m deeptools/matrices/deeptoolsmatrix_SRA_Altemose2015_CPM_log2.gz \
-  -out deeptools/SRA_Altemose2015_relative_CPM_log2.pdf \
-  --refPointLabel "0" \
-  --samplesLabel hPrdm9-vs-Input cPrdm9-vs-Input H3K4wPrdm9 H3K36wPrdm9 H3K4_untransfected H3K36_untransfected \
-  --numPlotsPerRow 2 \
-  --regionsLabel Human_Prdm9_Promoters_3k Human_Prdm9_NonPromoters_15k Human_Prdm9_NonPromoters_3k Human_Prdm9_NonPromoters_1k Chimp_Prdm9_Promoters_3k Chimp_Prdm9_NonPromoters_15k Chimp_Prdm9_NonPromoters_3k Chimp_Prdm9_NonPromoters_1k
-
-```
-
-
-## Relative TSS
-
-
-```{r}
-wget https://www.proteinatlas.org/download/transcript_rna_celline.tsv.zip
-unzip transcript_rna_celline.tsv.zip
-
-# cut HEK239 expression
-# get top 20k expressed genes
-# for each gene get top expressed transcript
-# cut ensembl transcript ID
-cut -f1-2,44 transcript_rna_celline.tsv | sort -k3rn | head -20000 | sort -u -k1,1 -k3n,1 | cut -f2 > deeptools/beds/top_HEK293_genes.txt
-
-
-wget -qO- http://ftp.ensembl.org/pub/release-94/gtf/homo_sapiens/Homo_sapiens.GRCh38.94.gtf.gz \
-    | gunzip --stdout - \
-    | awk '$3 == "transcript"' - \
-    | grep "protein_coding" - \
-    | convert2bed -i gtf - \
-    | grep -Ff deeptools/beds/top_HEK293_genes.txt - \
-    > deeptools/beds/top_transcripts_ens2.bed
-
-wget -qO- http://ftp.ensembl.org/pub/release-94/gtf/homo_sapiens/Homo_sapiens.GRCh38.94.gtf.gz \
-    | gunzip --stdout - \
-    | awk '$3 == "gene"' - \
-    | grep "protein_coding" - \
-    | convert2bed -i gtf - \
-    > deeptools/beds/genes_prot_coding_ens.bed
-
-# alternatives
-#ftp://ftp.ebi.ac.uk/pub/databases/gencode/ensembl_ftp_files/ens_94_human/gtf/homo_sapiens/Homo_sapiens.GRCh38.94.gtf.gz
-#ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_29/gencode.v29.annotation.gtf.gz
-#ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_29/gencode.v29.annotation.gff3.gz
-# abandoned attempt at getting genes expressed in HEK293T
-# wget http://fantom.gsc.riken.jp/5/datafiles/reprocessed/hg38_latest/extra/CAGE_peaks/hg38_fair+new_CAGE_peaks_phase1and2.bed.gz
-# wget ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE99nnn/GSE99407/suppl/GSE99407%5FRNAseq%5FCuffDiff%2Egenes%2Ediff%2Egz
-# 
-# cuffdiff <- fread("zcat < ~/Downloads/GSE99407_RNAseq_CuffDiff.genes.diff.gz")
-# head(unique(cuffdiff[sample_1=="Human"][order(-value_1)]$gene),250)
-
-```
-
-
-```{r}
-
-# TSS (top expressed transcripts)
-
-computeMatrix reference-point \
-  -S deeptools/bigwigs/WTCHG_538916_221156_vs_WTCHG_538916_217108_CPM_log2.bw \
-      deeptools/bigwigs/WTCHG_538916_223180_vs_WTCHG_538916_220144_CPM_log2.bw \
-      deeptools/bigwigs/WTCHG_538916_223180_vs_WTCHG_538916_221156_CPM_log2.bw \
-      deeptools/bigwigs/WTCHG_538916_224192_vs_WTCHG_538916_221156_CPM_log2.bw \
-  -R deeptools/beds/top_transcripts_ens.bed \
-  --metagene \
-  -a 3000 \
-  -b 3000 \
-  -p 15 \
-  --skipZeros \
-  -o deeptools/matrices/deeptoolsmatrix_WTCHG_538916_CPM_log2_TSS_transcripts.gz
-
-
-plotProfile \
-  -m deeptools/matrices/deeptoolsmatrix_WTCHG_538916_CPM_log2_TSS_transcripts.gz \
-  -out deeptools/Zcwpw1_relative_CPM_log2_TSS_transcripts.pdf \
-  --perGroup \
-  --plotWidth 12 \
-  --plotHeight 10 \
-  -z "Transcription Start Sites" \
-  --samplesLabel ChpHA_ZHA-vs-Input ChpHA_ZHA_hP9V5-vs-Input ChpHA_ZHA_hP9V5-vs-ChpHA_ZHA ChpHA_ZHA_cP9V5-vs-ChpHA_ZHA \
-  
 ```
 
 # absolute coverages
@@ -350,5 +615,4 @@ bamCompare -b1 filtered/SRA_Altemose2015_SRR5627146.bam \
       -p 15
 
 ```
-
 
