@@ -84,6 +84,16 @@ rule call_peaks:
       --peakminsep 250
     """
 
+rule index_bam:
+  input:
+    "filtered/{sample}.bam"
+  output:
+    "filtered/{sample}.bam.bai"
+  threads:
+    5
+  shell:
+    "samtools index -@ 5 {input}"
+
 
 rule bamCompare:
   input:
