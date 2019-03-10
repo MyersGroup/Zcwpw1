@@ -1,0 +1,362 @@
+---
+title: "Motif Finding"
+output: html_notebook
+---
+
+
+# Export Peak Locations
+
+```{r}
+
+
+fwrite(HP9combo_peaks[cov_input>5][is.na(tss)][order(-enrichment)][,.(gsub("chr","",chr), center_start-150, center_stop+150, enrichment)], "../data/HP9combo_peaks_NonPromoters_300w.bed", col.names = FALSE, sep = "\t")
+
+fwrite(HP9N_peaks[cov_input>5][is.na(tss)][order(-enrichment)][,.(gsub("chr","",chr), center_start-150, center_stop+150, enrichment)], "../data/HP9N_peaks_NonPromoters_300w.bed", col.names = FALSE, sep = "\t")
+
+fwrite(CP9combo_peaks[cov_input>5][is.na(tss)][order(-enrichment)][,.(gsub("chr","",chr), center_start-150, center_stop+150, enrichment)], "../data/CP9combo_peaks_NonPromoters_300w.bed", col.names = FALSE, sep = "\t")
+
+fwrite(HP9N_peaks[cov_input>5][is.na(tss)][order(-enrichment)][,.(gsub("chr","",chr), center_start-1000, center_stop+1000, enrichment)], "../data/HP9N_peaks_NonPromoters_2000w.bed", col.names = FALSE, sep = "\t")
+
+fwrite(zcw_wP9_vs_chip_Z[cov_input>5][is.na(tss)][order(-enrichment)][,.(gsub("chr","",chr), center_start-1000, center_stop+1000, enrichment)], "../data/zcw_wP9_vs_chip_Z_NonPromoters_2000w.bed", col.names = FALSE, sep = "\t")
+
+fwrite(zcw_wP9_vs_chip_Z[,.(gsub("chr","",chr), center_start-250, center_stop+250)], "../data/zcw_wP9_vs_chip_Z_ALL_500w.bed", col.names = FALSE, sep = "\t")
+
+fwrite(zcw_wP9_peaks_cin[cov_input>5][is.na(tss)][order(-enrichment)][,.(gsub("chr","",chr), center_start-150, center_stop+150, enrichment)], "../data/zcw_wP9_peaks_cin_NonPromoters_300w.bed", col.names = FALSE, sep = "\t")
+
+fwrite(zcw_peaks[cov_input>5][is.na(tss)][order(-enrichment)][,.(gsub("chr","",chr), center_start-150, center_stop+150, enrichment)], "../data/zcw_peaks_NonPromoters_300w.bed", col.names = FALSE, sep = "\t")
+
+```
+
+
+# extract FASTA
+
+```{r}
+
+# Download Fasta
+download.file("ftp://ftp.ensembl.org/pub/release-95/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa.gz",
+              "motifs/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa.gz")
+system("gunzip motifs/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa.gz")
+system("samtools faidx motifs/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa")
+
+
+system("bedtools getfasta -s -fi motifs/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa -bed motifs/HP9combo_peaks_NonPromoters_300w.bed -name > motifs/HP9combo_peaks_NonPromoters_300w.fasta")
+
+system("bedtools getfasta -s -fi motifs/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa -bed motifs/CP9combo_peaks_NonPromoters_300w.bed -name > motifs/CP9combo_peaks_NonPromoters_300w.fasta")
+
+system("bedtools getfasta -s -fi motifs/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa -bed motifs/HP9N_peaks_NonPromoters_300w.bed -name > motifs/HP9N_peaks_NonPromoters_300w.fasta")
+
+system("bedtools getfasta -s -fi motifs/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa -bed motifs/HP9N_peaks_NonPromoters_2000w.bed -name > motifs/HP9N_peaks_NonPromoters_2000w.fasta")
+
+system("bedtools getfasta -s -fi motifs/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa -bed motifs/zcw_wP9_vs_chip_Z_NonPromoters_2000w.bed -name > motifs/zcw_wP9_vs_chip_Z_NonPromoters_2000w.fasta")
+
+system("bedtools getfasta -s -fi motifs/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa -bed motifs/zcw_wP9_peaks_cin_NonPromoters_300w.bed -name > motifs/zcw_wP9_peaks_cin_NonPromoters_300w.fasta")
+
+system("bedtools getfasta -s -fi motifs/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa -bed motifs/zcw_peaks_NonPromoters_300w.bed -name > motifs/zcw_peaks_NonPromoters_300w.fasta")
+
+system("bedtools getfasta -s -fi motifs/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa -bed motifs/zcw_wP9_vs_chip_Z_ALL_500w.bed -name > motifs/zcw_wP9_vs_chip_Z_ALL_500w.fasta")
+```
+
+
+## Prdm9 deNovo
+
+```{r}
+
+
+HP9combo_peaks_NonPromoters_300w <- load_sequences("motifs/HP9combo_peaks_NonPromoters_300w.fasta")
+HP9N_peaks_NonPromoters_300w <- load_sequences("motifs/HP9N_peaks_NonPromoters_300w.fasta")
+
+motif_found_HP9combo <- findamotif(head(HP9combo_peaks_NonPromoters_300w,1000), len=7, seed=42)
+motif_found_HP9N <- findamotif(head(HP9N_peaks_NonPromoters_300w,1000), len=7, seed=42)
+
+pdf(width=10, height=5, file="motifs/P9_denovo_motifs.pdf")
+ggseqlogo::ggseqlogo(get_PWM(motif_found_HP9combo))
+ggseqlogo::ggseqlogo(get_PWM(motif_found_HP9combo, complement=T))
+plot_motif_location(motif_found_HP9combo)
+plot(motif_found_HP9combo$prior)
+
+ggseqlogo::ggseqlogo(get_PWM(motif_found_HP9N))
+ggseqlogo::ggseqlogo(get_PWM(motif_found_HP9N, complement=T))
+plot_motif_location(motif_found_HP9N)
+plot(motif_found_HP9N$prior)
+dev.off()
+```
+
+```{r}
+########################################################################
+
+tmp <- plot_motif_location2(motif_found_HP9N, returndf=T)
+tmp$seqID <- as.numeric(factor(tmp$sequence, levels = unique(tmp[order(maxregprob)]$sequence)))
+
+# ggplot(tmp, aes(whichpos)) +
+#   geom_density(data=tmp[whichstrand==0], aes(whichpos+motif_found_HP9N$scorematdim/2,  colour="red")) +
+#   geom_density(data=tmp[whichstrand==1], aes(motifend-motif_found_HP9N$scorematdim/2,  colour="blue")) +
+#   geom_vline(xintercept = 150-5, linetype="dotted") + geom_vline(xintercept = 150+5, linetype="dotted")
+
+
+pdf(file="motifs/oddstrands.pdf",width=10, height=5)
+plot_motif_location(motif_found_HP9N)
+plot_motif_location(motif_found_HP9N, size=0.5)
+plot_motif_location(motif_found_HP9N, size=0.25)
+plot_motif_location(motif_found_HP9N) + facet_wrap(~whichstrand, ncol=1)
+ggplot(tmp, aes(whichpos+motif_found_HP9N$scorematdim/2,  colour=whichstrand)) + geom_density() +
+    geom_vline(xintercept = 150-5, linetype="dotted") + geom_vline(xintercept = 150+5, linetype="dotted")
+
+ggplot(tmp, aes(whichpos+motif_found_HP9N$scorematdim/2, seqID, colour=whichstrand)) + geom_point()
+
+plot(motif_found_HP9N$prior)
+dev.off()
+
+
+# Complement
+
+rev_seqs_c <- c(motif_found_HP9N$seqs[!1:1000 %in% motif_found_HP9N$whichregs],
+              motif_found_HP9N$seqs[motif_found_HP9N$whichregs][motif_found_HP9N$whichstrand==1],
+              sapply(motif_found_HP9N$seqs[motif_found_HP9N$whichregs][motif_found_HP9N$whichstrand==0], function(x) stringi::stri_reverse(chartr("ATGC","TACG",x))))
+
+# Restimate positions
+
+motif_found_HP9N_rev_c_positions <- getmotifs(motif_found_HP9N$scoremat, nrow(motif_found_HP9N$scoremat), 
+                                                  rev_seqs_c, maxwidth = max(nchar(rev_seqs_c)),
+                                                  alpha = 0.6, maxits = 50, updatemot = 0, ourprior = rep(0.1, 10))
+
+tmp <- plot_motif_location2(motif_found_HP9N_rev_c_positions, returndf=T)
+tmp$seqID <- as.numeric(factor(tmp$sequence, levels = unique(tmp[order(maxregprob)]$sequence)))
+
+
+pdf(file="motifs/oddstrands_reversed_complmented_positions_only.pdf",width=10, height=5)
+plot_motif_location(motif_found_HP9N_rev_c_positions)
+plot(motif_found_HP9N_rev_c_positions$prior)
+
+plot_motif_location(motif_found_HP9N_rev_c_positions)
+plot_motif_location(motif_found_HP9N_rev_c_positions, size=0.5)
+plot_motif_location(motif_found_HP9N_rev_c_positions, size=0.25)
+plot_motif_location(motif_found_HP9N_rev_c_positions) + facet_wrap(~whichstrand, ncol=1)
+ggplot(tmp, aes(whichpos+motif_found_HP9N_rev_c$scorematdim/2,  colour=whichstrand)) +
+  geom_density() +
+  geom_vline(xintercept = 150-5, linetype="dotted") + 
+  geom_vline(xintercept = 150+5, linetype="dotted")
+
+ggplot(tmp, aes(whichpos+motif_found_HP9N_rev_c$scorematdim/2,  fill=whichstrand)) +
+  geom_histogram(binwidth = 1, position = ) +
+  facet_wrap(~whichstrand, ncol=1)
+
+ggplot(tmp, aes(whichpos+motif_found_HP9N_rev_c$scorematdim/2, seqID, colour=whichstrand)) + geom_point()
+dev.off()
+
+
+# Restimate motif *&* positions
+
+motif_found_HP9N_rev_c <- findamotif(rev_seqs_c, len=7, seed=42)
+
+tmp <- plot_motif_location2(motif_found_HP9N_rev_c, returndf=T)
+tmp$seqID <- as.numeric(factor(tmp$sequence, levels = unique(tmp[order(maxregprob)]$sequence)))
+
+pdf(file="motifs/oddstrands_reversed_complmented.pdf",width=10, height=5)
+ggseqlogo::ggseqlogo(get_PWM(motif_found_HP9N_rev_c))
+ggseqlogo::ggseqlogo(get_PWM(motif_found_HP9N_rev_c, complement=T))
+ggseqlogo::ggseqlogo(get_PWM(motif_found_HP9N_rev, complement=T))
+plot_motif_location(motif_found_HP9N_rev_c)
+plot(motif_found_HP9N_rev_c$prior)
+
+plot_motif_location(motif_found_HP9N_rev_c)
+plot_motif_location(motif_found_HP9N_rev_c, size=0.5)
+plot_motif_location(motif_found_HP9N_rev_c, size=0.25)
+plot_motif_location(motif_found_HP9N_rev_c) + facet_wrap(~whichstrand, ncol=1)
+ggplot(tmp, aes(whichpos+motif_found_HP9N_rev_c$scorematdim/2,  colour=whichstrand)) + geom_density() +
+    geom_vline(xintercept = 150-5, linetype="dotted") + geom_vline(xintercept = 150+5, linetype="dotted")
+
+ggplot(tmp, aes(whichpos+motif_found_HP9N_rev_c$scorematdim/2, seqID, colour=whichstrand)) + geom_point()
+dev.off()
+
+
+### Complement a second time
+
+rev_seqs_c2 <- c(motif_found_HP9N_rev_c$seqs[!1:1000 %in% motif_found_HP9N_rev_c$whichregs],
+              motif_found_HP9N_rev_c$seqs[motif_found_HP9N_rev_c$whichregs][motif_found_HP9N_rev_c$whichstrand==1],
+              sapply(motif_found_HP9N_rev_c$seqs[motif_found_HP9N_rev_c$whichregs][motif_found_HP9N_rev_c$whichstrand==0], function(x) stringi::stri_reverse(chartr("ATGC","TACG",x))))
+
+
+motif_found_HP9N_rev_c_positions2 <- getmotifs(motif_found_HP9N_rev_c$scoremat, nrow(motif_found_HP9N_rev_c$scoremat), 
+                                                  rev_seqs_c2, maxwidth = max(nchar(rev_seqs_c2)),
+                                                  alpha = 0.6, maxits = 50, updatemot = 0, ourprior = rep(0.1, 10))
+
+tmp <- plot_motif_location2(motif_found_HP9N_rev_c_positions2, returndf=T)
+tmp$seqID <- as.numeric(factor(tmp$sequence, levels = unique(tmp[order(maxregprob)]$sequence)))
+
+
+pdf(file="motifs/oddstrands_reversed_complmented_positions_only_afterfullre-est.pdf",width=10, height=5)
+plot_motif_location(motif_found_HP9N_rev_c_positions2)
+plot(motif_found_HP9N_rev_c_positions2$prior)
+
+plot_motif_location(motif_found_HP9N_rev_c_positions2)
+plot_motif_location(motif_found_HP9N_rev_c_positions2, size=0.5)
+plot_motif_location(motif_found_HP9N_rev_c_positions2, size=0.25)
+plot_motif_location(motif_found_HP9N_rev_c_positions2) + facet_wrap(~whichstrand, ncol=1)
+ggplot(tmp, aes(whichpos+motif_found_HP9N_rev_c_positions2$scorematdim/2,  colour=whichstrand)) +
+  geom_density() +
+  geom_vline(xintercept = 150-5, linetype="dotted") + 
+  geom_vline(xintercept = 150+5, linetype="dotted")
+
+ggplot(tmp, aes(whichpos+motif_found_HP9N_rev_c_positions2$scorematdim/2,  fill=whichstrand)) +
+  geom_histogram(binwidth = 1, position = ) +
+  facet_wrap(~whichstrand, ncol=1)
+
+ggplot(tmp, aes(whichpos+motif_found_HP9N_rev_c_positions2$scorematdim/2, seqID, colour=whichstrand)) + geom_point()
+dev.off()
+```
+
+
+# Download Altemose Prdm9 Motifs
+
+```{r}
+
+download.file("https://github.com/altemose/PRDM9-map/raw/master/3_MotifFinding/Human_Motif_Results_Final_iter240.r",
+              "Human_Motif_Results_Final_iter240.r")
+
+load("Human_Motif_Results_Final_iter240.r")
+
+transform_published_motifs <- function(znew){
+  compvec=c(0,1,0,0,0,0,1,1,0,0,1,1,0,0,0,1,1) #specify whether to take reverse complement of each motif for final output (0=no, 1=yes)
+  keep=c(4,6,8,9,10,15,17,5,11,13,7,16,2,3,12,14,1) #specify the indices of motifs to keep (non-degenerate motifs)
+  keep=c(4,6,8,9,10,15,17)
+
+
+  prior=znew$prior
+  starts=c(1,cumsum(znew$scorematdim)+1)
+  starts=starts[1:length(znew$scorematdim)]
+  ends=cumsum(znew$scorematdim)
+  mot=matrix(nrow=0,ncol=4)
+  sizes=vector(length=0)
+  for(j in keep){
+ 	  scoremat = znew$scoremat[starts[j]:ends[j],]
+ 	  if(compvec[j]==1){
+ 		  compmat=scoremat[,c(4:1)]
+		  compmat=compmat[nrow(compmat):1,]
+		  scoremat=compmat
+	  }
+	  mot=rbind(mot,scoremat)
+	  sizes=c(sizes,nrow(scoremat))
+  }
+  return(list(mot=mot, sizes=sizes, prior=prior))
+}
+
+znew <- transform_published_motifs(znew)
+
+# Plot motifs to check
+tmp <- t(exp(znew[[1]]))
+rownames(tmp) <- c("A", "C", "G", "T")
+
+pdf(width=10, height=5, file="motifs/Altemose_Prdm9.pdf")
+  pos <- cumsum(c(1,znew[[2]]))
+  for(i in 1:7){
+    print(ggseqlogo::ggseqlogo(tmp[,pos[i]:(pos[i+1]-1)]))
+  }
+dev.off()
+```
+
+# Locate P9 Motifs at Zcw sites
+
+```{r}
+zcw_CVC_ALL_500w <- load_sequences("motifs/zcw_wP9_vs_chip_Z_ALL_500w.fasta", flank=250, sm.rm=F)
+
+zcw_CVC_ALL_500w_positions <- getmotifs(znew$mot, znew$sizes, 
+                                        head(zcw_CVC_ALL_500w,5000), maxwidth = max(nchar(zcw_CVC_ALL_500w)),
+                                        alpha = 0.6, maxits = 50, updatemot = 0, ourprior = znew$prior)
+
+pdf(width=10, height=5, file="motifs/P9_motif_locations_at_Zcw.pdf")
+plot_motif_location(zcw_CVC_ALL_500w_positions)
+plot(zcw_CVC_ALL_500w_positions$prior)
+ggplot(melt(data.table(cbind(zcw_CVC_ALL_500w_positions$alphas, seq=1:50)), id="seq"), aes(seq, value, colour=variable)) + geom_line()
+dev.off()
+```
+
+# Locate P9 Motifs at P9 peak
+
+```{r}
+
+HP9combo_peaks_NonPromoters_300w <- load_sequences("motifs/HP9combo_peaks_NonPromoters_300w.fasta", sm.rm = F)
+CP9combo_peaks_NonPromoters_300w <- load_sequences("motifs/CP9combo_peaks_NonPromoters_300w.fasta", sm.rm = F)
+HP9N_peaks_NonPromoters_300w <- load_sequences("motifs/HP9N_peaks_NonPromoters_300w.fasta", sm.rm = F)
+
+HP9combo_peaks_NonPromoters_300w_positions <- getmotifs(znew$mot, znew$sizes, 
+                                        HP9combo_peaks_NonPromoters_300w, maxwidth = max(nchar(HP9combo_peaks_NonPromoters_300w)),
+                                        alpha = 0.2, maxits = 10, updatemot = 0, ourprior = znew$prior, seed=42)
+
+CP9combo_peaks_NonPromoters_300w_positions <- getmotifs(znew$mot, znew$sizes, 
+                                        CP9combo_peaks_NonPromoters_300w, maxwidth = max(nchar(HP9combo_peaks_NonPromoters_300w)),
+                                        alpha = 0.2, maxits = 10, updatemot = 0, ourprior = znew$prior, seed=42)
+
+HP9N_peaks_NonPromoters_300w_positions <- getmotifs(znew$mot, znew$sizes, 
+                                        HP9N_peaks_NonPromoters_300w, maxwidth = max(nchar(HP9N_peaks_NonPromoters_300w)),
+                                        alpha = 0.2, maxits = 10, updatemot = 0, ourprior = znew$prior, seed=42)
+
+pdf(width=10, height=5, file="motifs/P9_motif_locations_at_P9.pdf")
+plot_motif_location(HP9N_peaks_NonPromoters_300w_positions, top_n=1000)
+plot_motif_location(HP9combo_peaks_NonPromoters_300w_positions, top_n=1000)
+
+plot(HP9N_peaks_NonPromoters_300w_positions$prior)
+plot(HP9combo_peaks_NonPromoters_300w_positions$prior)
+
+# check convergence
+ggplot(melt(data.table(cbind(HP9N_peaks_NonPromoters_300w_positions$alphas, seq=1:10)), id="seq"), aes(seq, value, colour=variable)) + geom_line()
+ggplot(melt(data.table(cbind(HP9combo_peaks_NonPromoters_300w_positions$alphas, seq=1:10)), id="seq"), aes(seq, value, colour=variable)) + geom_line()
+dev.off()
+
+
+
+export_locations <- function(HP9N_peaks_NonPromoters_300w_positions){
+tmp <- HP9N_peaks_NonPromoters_300w_positions$dt[!is.na(whichpos)] #HP9combo_peaks_NonPromoters_300w_positions
+tmp$sequence <- as.integer(tmp$sequence)
+setorder(tmp, sequence)
+
+motifcenters <- data.table(whichmotif=1:7,motifcenterZF7C=c(19, 21, 21, 26, 11, 11, 19), 
+                           motifcenterZF4T=c(11, 12, 12, 21, 6, 6, 14), # NB motifcenterZF4T makes no disernable difference
+                           motif_len=HP9combo_peaks_NonPromoters_300w_positions$scorematdim)
+
+
+# head(extract_matches(HP9combo_peaks_NonPromoters_300w_positions))
+
+tmp <- tmp[motifcenters, on="whichmotif"]
+tmp[whichstrand==0, whichstrand := -1]
+
+tmp[whichstrand==1, whichpos := whichpos + motifcenterZF7C]
+tmp[whichstrand==-1,whichpos := whichpos + motif_len - motifcenterZF7C]
+
+tmp[,whichpos := whichpos-150]
+
+tmp[whichstrand==-1, strand := "-"]
+tmp[whichstrand==1, strand := "+"]
+
+return(tmp)
+}
+
+tmp <- export_locations(HP9N_peaks_NonPromoters_300w_positions)
+
+HP9N_peaks_NonPromoters <- fread("motifs/HP9N_peaks_NonPromoters_300w.bed")
+HP9N_peaks_NonPromoters$sequence <- 1:nrow(HP9N_peaks_NonPromoters)
+
+pdf(file="motifs/P9N_Regprob_by_enrichment.pdf")
+plot(HP9N_peaks_NonPromoters[tmp, on="sequence"][order(-V4)]$regprob, pch=".")
+dev.off()
+
+fwrite(HP9N_peaks_NonPromoters[tmp, on="sequence"][,.(V1, V2+150+whichpos, V3-150+whichpos, sequence, V4, strand)][order(-V4)], file="deeptools/beds/HP9N_peaks_NonPromoters_MotifCenteredStranded.bed", col.names = FALSE, sep = "\t")
+
+fwrite(HP9N_peaks_NonPromoters[tmp, on="sequence"][regprob>0.5,.(V1, V2+150+whichpos, V3-150+whichpos, sequence, V4, strand)][order(-V4)], file="deeptools/beds/HP9N_peaks_NonPromoters_MotifCenteredStranded_highreg.bed", col.names = FALSE, sep = "\t")
+
+
+tmp <- export_locations(HP9combo_peaks_NonPromoters_300w_positions)
+
+HP9combo_peaks_NonPromoters <- fread("motifs/HP9combo_peaks_NonPromoters_300w.bed")
+HP9combo_peaks_NonPromoters$sequence <- 1:nrow(HP9combo_peaks_NonPromoters)
+
+pdf(file="motifs/P9C_Regprob_by_enrichment.pdf")
+plot(HP9combo_peaks_NonPromoters[tmp, on="sequence"][order(-V4)]$regprob, pch=".")
+dev.off()
+
+fwrite(HP9combo_peaks_NonPromoters[tmp, on="sequence"][,.(V1, V2+150+whichpos, V3-150+whichpos, sequence, V4, strand)][order(-V4)], file="deeptools/beds/HP9combo_peaks_NonPromoters_MotifCenteredStranded.bed", col.names = FALSE, sep = "\t")
+
+# fwrite(HP9combo_peaks_NonPromoters[tmp, on="sequence"][,.(paste0("chr",V1), V2+150+whichpos, V3-150+whichpos, strand)], file="deeptools/beds/HP9combo_peaks_NonPromoters_MotifCenteredStranded_chr.bed", col.names = FALSE, sep = "\t")
+
+```
+
+
