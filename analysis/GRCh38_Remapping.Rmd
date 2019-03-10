@@ -28,6 +28,10 @@ cd metadata
 
 cd /homes/wells/data-on-saxony/zcwpw1/raw_data/altemose
 
+# ChIPseq.ChimpPRDM9_V5.antiV5.ProtocolC
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/005/SRR5627145/SRR5627145_1.fastq.gz
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/005/SRR5627145/SRR5627145_2.fastq.gz
+
 # ChIPseq.HumanPRDM9_V5.antiV5.ProtocolC
 wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/007/SRR5627147/SRR5627147_1.fastq.gz
 wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/007/SRR5627147/SRR5627147_2.fastq.gz
