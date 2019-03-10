@@ -36,18 +36,22 @@ SAMPLES = list(set(SAMPLES))
 # Desired output
 ##################
 
-FASTQC_REPORTS  =     expand("qc/{sample}_{pair}_fastqc.html", pair=[1,2], sample=SAMPLES)
-LIBCOMPLEX      =     expand("qc/{sample}_LibComplex.txt", sample=SAMPLES)
+FASTQC_REPORTS  =     expand("qc/fastqc/{sample}_{pair}_fastqc.html", pair=[1,2], sample=SAMPLES)
+LIBCOMPLEX      =     expand("qc/LibComplex/{sample}_LibComplex.txt", sample=SAMPLES)
 BIGWIG          =     expand("bedgraphs/depth_{sample}.bigWig", sample=SAMPLES)
 FRAGPOS         =     expand("MAPeakCaller/Fragment_Position_{sample}.sorted.bed.PR{replicate}", replicate=[1,2], sample=SAMPLES)
-FLAGSTAT        =     expand("qc/{sample}_FlagStat.txt", sample=SAMPLES)
-FLAGSTAT2        =     expand("qc/{sample}_preQC_FlagStat.txt", sample=SAMPLES)
+FLAGSTAT        =     expand("qc/FlagStat/{sample}_FlagStat.txt", sample=SAMPLES)
+FLAGSTAT2       =     expand("qc/FlagStat/{sample}_preQC_FlagStat.txt", sample=SAMPLES)
 BLACKLISTS      =     expand("blacklists/{sample}_blacklist.bed", sample=SAMPLES)
-MOSDEPTH1       =     expand("qc/{sample}.mosdepth.global.dist.txt", sample=SAMPLES)
-MOSDEPTH2       =     expand("qc/raw_{sample}.mosdepth.global.dist.txt", sample=SAMPLES)
-FRAGSIZE        =     expand("qc/{group}_frag_size.pdf", group=GROUP)
-FINGERPRINT     =     expand("qc/{group}_fingerprint.pdf", group=GROUP)
-BWCPM           =     expand("deeptools/{sample}_CPM.bw", sample=SAMPLES)
+MOSDEPTH1       =     expand("qc/mosdepth/{sample}.mosdepth.global.dist.txt", sample=SAMPLES)
+MOSDEPTH2       =     expand("qc/mosdepth/raw_{sample}.mosdepth.global.dist.txt", sample=SAMPLES)
+MOSDEPTHP       =     expand("qc/mosdepth/mosdepth_{group}.pdf", group=GROUP)
+FRAGSIZE        =     expand("qc/deeptools/{group}_frag_size.pdf", group=GROUP)
+FINGERPRINT     =     expand("qc/deeptools/{group}_fingerprint.pdf", group=GROUP)
+INDEXCOVA      =     expand("qc/indexcov/{group}_indexcovALL/{group}_indexcovALL-indexcov.bed.gz", group=GROUP)
+BWCPM           =     expand("deeptools/bigwigs/{sample}_CPM.bw", sample=SAMPLES)
+PCA             =     expand("qc/deeptools/PCA_{group}.png", group=GROUP)
+COR             =     expand("qc/deeptools/Cor_{group}.png", group=GROUP)
 
 
 rule all:
@@ -60,13 +64,17 @@ rule all:
         FLAGSTAT2,
         BLACKLISTS,
         MOSDEPTH1,
-
+        MOSDEPTH2,
+        MOSDEPTHP,
         FRAGSIZE,
         FINGERPRINT,
-        BWCPM
+        INDEXCOVA,
+        BWCPM,
+        PCA,
+        COR
 
 
-    message: "ChIP-seq pipeline succesfully run."		#finger crossed to see this message!
+    message: "ChIP-seq pipeline succesfully run."
 
 
 rule fastqc:
@@ -198,7 +206,7 @@ rule libcomplexity:
   input:
     "filtered/{sample}.bam"
   output:
-    "qc/{sample}_LibComplex.txt"
+    "qc/LibComplex/{sample}_LibComplex.txt"
   threads:
     15
   shell:
@@ -209,7 +217,7 @@ rule flagstat:
   input:
     "filtered/{sample}.bam"
   output:
-    "qc/{sample}_FlagStat.txt"
+    "qc/FlagStat/{sample}_FlagStat.txt"
   threads:
     5
   shell:
@@ -219,7 +227,7 @@ rule flagstat2:
   input:
     "bams/{sample}.bam"
   output:
-    "qc/{sample}_preQC_FlagStat.txt"
+    "qc/FlagStat/{sample}_preQC_FlagStat.txt"
   threads:
     5
   shell:
@@ -228,9 +236,9 @@ rule flagstat2:
 
 rule index_bam:
   input:
-    "filtered/{sample}.bam"
+    "{sample}.bam"
   output:
-    "filtered/{sample}.bam.bai"
+    "{sample}.bam.bai"
   threads:
     5
   shell:
@@ -239,20 +247,36 @@ rule index_bam:
 
 rule indexcov:
   ###### use bed index to find genome wide coverage
+  ###### Used to generate blacklist regions using rule:generate_blacklist
   input:
     bam="filtered/{sample}.bam",
     idx="filtered/{sample}.bam.bai"
   output:
-    "qc/{sample}_indexcov/{sample}_indexcov-indexcov.bed.gz"
+    "qc/indexcov/{sample}_indexcov/{sample}_indexcov-indexcov.bed.gz"
   params:
-    "qc/{sample}_indexcov"
+    "qc/indexcov/{sample}_indexcov"
   shell:
     "goleft indexcov --sex chrX,chrY -d {params} {input.bam}"
 
 
+rule indexcovAll:
+  ###### use bed index to find genome wide coverage of all samples together
+  ###### The PCA plot generated in index.html can be useful for QC
+  ###### testing correct sex, and that input has high ChrM coverage
+  input:
+    b=expand("filtered/{sample}.bam", sample=SAMPLES),
+    idx=expand("filtered/{sample}.bam.bai", sample=SAMPLES),
+  output:
+    "qc/indexcov/{GROUP}_indexcovALL/{GROUP}_indexcovALL-indexcov.bed.gz"
+  params:
+    "qc/indexcov/{GROUP}_indexcovALL"
+  shell:
+    "goleft indexcov --sex chrX,chrY -d {params} {input.b}"
+
+
 rule generate_blacklist:
   input:
-    "qc/{sample}_indexcov/{sample}_indexcov-indexcov.bed.gz"
+    "qc/indexcov/{sample}_indexcov/{sample}_indexcov-indexcov.bed.gz"
   output:
     "blacklists/{sample}_blacklist.bed"
   shell:
@@ -274,27 +298,31 @@ rule mosdepth:
     bam="filtered/{sample}.bam",
     idx="filtered/{sample}.bam.bai"
   output:
-    "qc/{sample}.mosdepth.global.dist.txt"
+    "qc/mosdepth/{sample}.mosdepth.global.dist.txt"
   shell:
-    "MOSDEPTH_PRECISION=5 mosdepth -n -t 4 qc/{wildcards.sample} {input.bam}"
+    "MOSDEPTH_PRECISION=5 mosdepth -n -t 4 qc/mosdepth/{wildcards.sample} {input.bam}"
 
 
 rule mosdepth2:
   input:
-    "bams/{sample}.bam"
+    bam="bams/{sample}.bam",
+    idx="bams/{sample}.bam.bai"
   output:
-    "qc/raw_{sample}.mosdepth.global.dist.txt"
+    "qc/mosdepth/raw_{sample}.mosdepth.global.dist.txt"
   shell:
-    "MOSDEPTH_PRECISION=5 mosdepth -n -t 4 qc/raw_{wildcards.sample} {input}"
+    "MOSDEPTH_PRECISION=5 mosdepth -n -t 4 qc/mosdepth/raw_{wildcards.sample} {input.bam}"
+
 
 rule mosdepthplot:
   input:
-    "qc/raw_{sample}.mosdepth.global.dist.txt"
-    "qc/{sample}.mosdepth.global.dist.txt"
+    expand("qc/mosdepth/raw_{sample}.mosdepth.global.dist.txt", sample=SAMPLES),
+    expand("qc/mosdepth/{sample}.mosdepth.global.dist.txt", sample=SAMPLES)
   output:
+    "qc/mosdepth/mosdepth_{GROUP}.pdf"
+  params:
+    g=GROUP
   shell:
-    # need to add to list of input sample id's here manually :(  "278163|276139|217108|220144"
-    "Rscript plot_mosdepth.R ${expid}"
+    "Rscript plot_mosdepth.R {params}"
 
 
 rule bamtobed2:
@@ -358,6 +386,50 @@ rule graphtobigwig:
     "bedGraphToBigWig {input.graph} {input.sizes} {output}"
 
 
+rule multiBigWigSummary:
+  input:
+    b=expand("bedgraphs/depth_{sample}.bigWig", sample=SAMPLES),
+    black=join(METADATA_DIR, "{GENOME}.blacklist.bed".format(GENOME=GENOME))
+  output:
+    "qc/deeptools/{GROUP}_multibigwigSummary.npz"
+  threads:
+    15
+  shell:
+    "multiBigwigSummary bins -p 15 -b {input.b} -bl {input.black} -o {output}"
+
+
+rule PCA:
+  # For QC
+  input:
+    "qc/deeptools/{GROUP}_multibigwigSummary.npz"
+  output:
+    p="qc/deeptools/PCA_{GROUP}.png",
+    t="qc/deeptools/PCA_{GROUP}.tsv",
+    p2="qc/deeptools/PCA_{GROUP}_T.png",
+    t2="qc/deeptools/PCA_{GROUP}_T.tsv"
+  shell:
+    """
+    plotPCA -in {input} -o {output.p} --outFileNameData {output.t}
+    plotPCA -in {input} --transpose -o {output.p2} --outFileNameData {output.t2}
+    """
+
+
+rule Corr:
+  # For QC
+  input:
+    "qc/deeptools/{GROUP}_multibigwigSummary.npz"
+  output:
+    p="qc/deeptools/Cor_{GROUP}.png",
+    p2="qc/deeptools/Cor_{GROUP}_pear.png",
+    p3="qc/deeptools/Cor_{GROUP}_pear_scatter.png"
+  shell:
+    """
+    plotCorrelation -in {input} --corMethod spearman --skipZeros --whatToPlot heatmap -o {output.p}
+    plotCorrelation -in {input} --corMethod pearson --skipZeros --whatToPlot heatmap -o {output.p2}
+    plotCorrelation -in {input} --corMethod pearson --skipZeros --whatToPlot scatterplot -o {output.p3}
+    """
+
+
 rule pseudoreplicate:
   #
   # Create psuedoreplicate as required for peak caller if two real replicates not avaliable
@@ -390,13 +462,12 @@ rule fingerprint:
     idx=expand("filtered/{sample}.bam.bai", sample=SAMPLES),
     black=join(METADATA_DIR, "{GENOME}.blacklist.bed".format(GENOME=GENOME))
   output:
-    "qc/{GROUP}_fingerprint.pdf"
+    "qc/deeptools/{GROUP}_fingerprint.pdf"
   threads:
     15
   shell:
     "plotFingerprint -b {input.b} --smartLabels -p 15 -plot {output} --blackListFileName {input.black}"
 
-# --labels {input.b}
 
 rule fragsize:
   input:
@@ -404,7 +475,7 @@ rule fragsize:
     idx=expand("filtered/{sample}.bam.bai", sample=SAMPLES),
     black=join(METADATA_DIR, "{GENOME}.blacklist.bed".format(GENOME=GENOME))
   output:
-    "qc/{GROUP}_frag_size.pdf"
+    "qc/deeptools/{GROUP}_frag_size.pdf"
   threads:
     15
   shell:
@@ -416,7 +487,7 @@ rule bamCoverageCPM:
     b="filtered/{sample}.bam",
     idx="filtered/{sample}.bam.bai"
   output:
-    "deeptools/{sample}_CPM.bw"
+    "deeptools/bigwigs/{sample}_CPM.bw"
   threads:
     5
   shell:
