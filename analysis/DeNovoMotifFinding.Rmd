@@ -1,0 +1,154 @@
+---
+title: "DeNovo Motif Finding"
+output: html_notebook
+---
+
+
+# Find ZCVC motif
+
+```{r}
+
+zcw_CVC_NonPromoters_300w <- load_sequences("motifs/zcw_wP9_vs_chip_Z_NonPromoters_2000w.fasta", flank=250)
+
+motif_found_ZcwCVC <- findamotif(head(zcw_CVC_NonPromoters_300w,2000), len=7, motif_rank=1, seed=138624)
+
+
+
+
+# Where is Zcw motif located?
+zcw_CVC_NonPromoters_2000w <- load_sequences("motifs/zcw_wP9_vs_chip_Z_NonPromoters_2000w.fasta", flank=1000, sm.rm=F)
+zcw_CVC_NonPromoters_2000w_positions <- getmotifs(motif_found_ZcwCVC$scoremat, nrow(motif_found_ZcwCVC$scoremat), 
+                                                  head(zcw_CVC_NonPromoters_2000w,1000), maxwidth = max(nchar(zcw_CVC_NonPromoters_2000w)),
+                                                  alpha = 0.6, maxits = 10, updatemot = 0, ourprior = rep(0.1, 10))
+
+# Discovery in broader window
+
+zcw_CVC_NonPromoters_2000w <- load_sequences("motifs/zcw_wP9_vs_chip_Z_NonPromoters_2000w.fasta", flank=500)
+motif_found_ZcwCVC_NonPromoters_2000w <- findamotif(head(zcw_CVC_NonPromoters_2000w,1000), len=7, seed=286438, nits=50)
+
+pdf(width=10, height=5, file="motifs/Zcw_denovo.pdf")
+ggseqlogo::ggseqlogo(get_PWM(motif_found_ZcwCVC))
+ggseqlogo::ggseqlogo(get_PWM(motif_found_ZcwCVC, complement=T))
+
+plot_motif_location(motif_found_ZcwCVC)
+plot(motif_found_ZcwCVC$prior)
+
+plot_motif_location(zcw_CVC_NonPromoters_2000w_positions)
+plot(zcw_CVC_NonPromoters_2000w_positions$prior)
+
+ggseqlogo::ggseqlogo(get_PWM(motif_found_ZcwCVC_NonPromoters_2000w))
+ggseqlogo::ggseqlogo(get_PWM(motif_found_ZcwCVC_NonPromoters_2000w, complement=T))
+plot_motif_location(motif_found_ZcwCVC_NonPromoters_2000w)
+plot(motif_found_ZcwCVC_NonPromoters_2000w$prior)
+
+dev.off()
+
+export_PWM(motif_found_ZcwCVC_NonPromoters_2000w, file="motif_found_ZcwCVC_NonPromoters_2000w.pwm", name="motif_found_ZcwCVC_NonPromoters_2000w")
+```
+
+# Find Zcw &/ wP9 motif
+
+```{r}
+zcw_wP9_NonPromoters_300w <- load_sequences("motifs/zcw_wP9_peaks_cin_NonPromoters_300w.fasta")
+zcw_NonPromoters_300w <- load_sequences("motifs/zcw_peaks_NonPromoters_300w.fasta")
+
+motif_found_Zcw_wP9 <- findamotif(head(zcw_wP9_NonPromoters_300w,1000), len=6)
+motif_found_Zcw <- findamotif(head(zcw_NonPromoters_300w,1000), len=6)
+
+pdf(width=10, height=5, file="motifs/denovo_Zcw_wP9.pdf")
+ggseqlogo::ggseqlogo(get_PWM(motif_found_Zcw_wP9))
+ggseqlogo::ggseqlogo(get_PWM(motif_found_Zcw_wP9, complement=T))
+plot_motif_location(motif_found_Zcw_wP9)
+plot(motif_found_Zcw_wP9$prior)
+
+ggseqlogo::ggseqlogo(get_PWM(motif_found_Zcw))
+ggseqlogo::ggseqlogo(get_PWM(motif_found_Zcw, complement=T))
+plot_motif_location(motif_found_Zcw)
+plot(motif_found_Zcw$prior)
+
+dev.off()
+
+
+
+```
+
+
+```{r}
+zcw_CVC_NonPromoters_300w <- load_sequences("motifs/zcw_wP9_vs_chip_Z_NonPromoters_2000w.fasta", flank=500)
+
+zcw_CVC_NonPromoters_300w_Prdm9_locations <- getmotifs(znew$mot, znew$sizes, 
+                                        head(zcw_CVC_NonPromoters_300w,1000), maxwidth = max(nchar(zcw_CVC_NonPromoters_300w)),
+                                        alpha = 0.2, maxits = 10, updatemot = 0, ourprior = znew$prior, updateprior=1)
+
+HP9N_peaks_NonPromoters_300w_ZcwM_locations <- getmotifs(motif_found_ZcwCVC$scoremat, motif_found_ZcwCVC$scorematdim, 
+                                        head(HP9N_peaks_NonPromoters_300w,5000), maxwidth = max(nchar(HP9N_peaks_NonPromoters_300w)),
+                                        alpha = 0.2, maxits = 50, updatemot = 0, ourprior = motif_found_ZcwCVC$prior, updateprior=1)
+
+pdf(file="motifs/ZCW_at_P9.pdf")
+plot_motif_location(zcw_CVC_NonPromoters_300w_Prdm9_locations)
+plot(zcw_CVC_NonPromoters_300w_Prdm9_locations$prior)
+
+plot_motif_location(HP9N_peaks_NonPromoters_300w_ZcwM_locations)
+plot(HP9N_peaks_NonPromoters_300w_ZcwM_locations$prior)
+dev.off()
+
+
+tmp <- copy(HP9N_peaks_NonPromoters_300w_positions$dt)
+
+tmp <- merge(HP9N_peaks_NonPromoters_300w_ZcwM_locations$dt, tmp, by='sequence', suffixes = c(".Zcw",".P9"), all=T)[!(is.na(whichpos.Zcw) & is.na(whichpos.P9))]
+
+tmp <- data.table(whichmotif.P9=1:7, length=znew$sizes)[tmp,on="whichmotif.P9"]
+tmp[,P9.end := whichpos.P9 + length]
+tmp[,Zcw.end := whichpos.Zcw + motif_found_ZcwCVC$scorematdim]
+
+motifcenters$whichmotif.P9 = motifcenters$whichmotif
+
+tmp <- motifcenters[tmp, on="whichmotif.P9"]
+
+tmp[!is.na(whichpos.Zcw) & !is.na(whichpos.P9)]
+# 3049 P9 motif containing sequences, also have Zcw motif, out of 5k
+
+plot(tmp[!is.na(whichpos.Zcw) & !is.na(whichpos.P9)]$whichpos.P9,
+     tmp[!is.na(whichpos.Zcw) & !is.na(whichpos.P9)]$whichpos.Zcw)
+
+cor(tmp[!is.na(whichpos.Zcw) & !is.na(whichpos.P9)][whichstrand.P9==whichstrand.Zcw]$whichpos.P9,
+     tmp[!is.na(whichpos.Zcw) & !is.na(whichpos.P9)][whichstrand.P9==whichstrand.Zcw]$whichpos.Zcw, method="spearman")
+# 27%
+
+# calculate relative positioning
+tmp[!is.na(whichpos.Zcw) & !is.na(whichpos.P9) & whichstrand.P9==1 & whichstrand.Zcw==1 ,relative_position := whichpos.P9 + motifcenterZF4T - whichpos.Zcw]
+tmp[!is.na(whichpos.Zcw) & !is.na(whichpos.P9) & whichstrand.P9==0 & whichstrand.Zcw==0 ,relative_position := -1 * (whichpos.P9 + length - motifcenterZF4T - Zcw.end)]
+
+# which is most common relative position
+sort(table(tmp[!is.na(whichpos.Zcw) & !is.na(whichpos.P9)][whichstrand.P9==1 & whichstrand.Zcw==1]$relative_position))
+sort(table(tmp[!is.na(whichpos.Zcw) & !is.na(whichpos.P9)][whichstrand.P9==0 & whichstrand.Zcw==0]$relative_position))
+
+sort(table(tmp[!is.na(whichpos.Zcw) & !is.na(whichpos.P9)][whichstrand.P9==whichstrand.Zcw]$relative_position))
+#-4   22    4   -5   -1    8
+#71   72   74   85  216  238
+
+tmp[!is.na(whichpos.Zcw) & !is.na(whichpos.P9)][whichstrand.P9==whichstrand.Zcw, mean(relative_position), by=whichmotif.P9]
+
+tmp[!is.na(whichpos.Zcw) & !is.na(whichpos.P9)][,.N, by=whichmotif.P9]
+
+
+pdf(file="motifs/ZCW_at_P9_2.pdf")
+ggplot(head(tmp[!is.na(whichpos.Zcw) & !is.na(whichpos.P9)][order(-regprob.Zcw-regprob.P9)],250)) +
+  geom_segment(aes(x=whichpos.P9, xend=P9.end, y=sequence, yend=sequence), size=1, alpha=0.5, colour="red") +
+  geom_segment(aes(x=whichpos.Zcw, xend=Zcw.end, y=sequence, yend=sequence), size=1, alpha=0.5, colour="blue") +
+  facet_wrap(~whichstrand.P9 + whichstrand.Zcw) + ggtitle("red = P9, blue = Zcw motif, 0/1 = strand, most confident")
+
+ggplot(head(tmp[!is.na(whichpos.Zcw) & !is.na(whichpos.P9) & relative_position==8][order(-regprob.Zcw-regprob.P9)],250)) +
+  geom_segment(aes(x=whichpos.P9, xend=P9.end, y=sequence, yend=sequence), size=1, alpha=0.5, colour="red") +
+  geom_segment(aes(x=whichpos.Zcw, xend=Zcw.end, y=sequence, yend=sequence), size=1, alpha=0.5, colour="blue") +
+  facet_wrap(~whichstrand.P9 + whichstrand.Zcw) + ggtitle("red = P9, blue = Zcw motif, 0/1 = strand, relative_position=8")
+
+plot(table(tmp[!is.na(whichpos.Zcw) & !is.na(whichpos.P9)][whichstrand.P9==whichstrand.Zcw]$relative_position), xlim=c(-20,50))
+plot(table(tmp[!is.na(whichpos.Zcw) & !is.na(whichpos.P9)][whichstrand.P9==whichstrand.Zcw & whichmotif.P9!=1]$relative_position), xlim=c(-20,50))
+plot(table(tmp[!is.na(whichpos.Zcw) & !is.na(whichpos.P9)][whichstrand.P9==whichstrand.Zcw & whichmotif.P9==1]$relative_position), xlim=c(-20,50))
+dev.off()
+
+tmp[!is.na(whichpos.Zcw) & !is.na(whichpos.P9)][,cor(whichstrand.P9,whichstrand.Zcw), by=whichmotif.P9]
+# up to 87.5% +ve strand correlation
+
+```
