@@ -29,6 +29,7 @@ GENOME = config["genome"][GROUP]
 
 SAMPLES, PAIRS = glob_wildcards(join(FASTQ_DIR, "{samples}_{pairs}.fastq.gz"))
 
+SAMPLES = list(set(SAMPLES))
 
 
 ##################
