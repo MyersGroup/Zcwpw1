@@ -1,0 +1,35 @@
+fastq_dir:
+  594404: 'raw_data/bsg-ftp.well.ox.ac.uk/181018_K00198_0357_BHWV5YBBXX/'
+  538916: 'raw_data/bsg-ftp.well.ox.ac.uk/180629_K00150_0342_AHVYHYBBXX/'
+  Altemose2015: 'raw_data/altemose/'
+  659233: 'raw_data/bsg-ftp.well.ox.ac.uk/190301_K00181_0120_BH3NTJBBXY/'
+
+genome:
+  594404: 'mm10'
+  538916: 'hg38'
+  Altemose2015: 'hg38'
+  659233: 'hg38'
+
+samples:
+  - 'HP9combo_peaks_NonPromoters_MotifCenteredStranded'
+  - 'zcw_wP9_vs_chip_Z'
+  - 'HP9N_peaks_NonPromoters_MotifCenteredStranded'
+  - 'HP9N_peaks_NonPromoters_MotifCenteredStranded_highreg'
+  - 'CP9V5_peaks_NonPromoters'
+  - 'top_transcripts_ens'
+
+ymax:
+  HP9combo_peaks_NonPromoters_MotifCenteredStranded: "0.3 0.6 0.6 0.4 0.1 0.4 0.9 0.1 0.5 0.3 0.1 0.05 0.1 0.1 0.1 0.1 0.25 0.1 0.5 0.1 0.1"
+  zcw_wP9_vs_chip_Z: "0.4 0.8 0.8 0.6 0.15 0.3 0.6 0.1 0.6 0.3 0.1 0.05 0.15 0.1 0.6 0.6 0.6 0.6 0.6 0.6 0.6"
+  HP9N_peaks_NonPromoters_MotifCenteredStranded: "0.2 0.3 0.3 0.2 0.1 0.5 0.6 0.1 0.3 0.2 0.1 0.05 0.25 0.1 0.1 0.1 0.25 0.1 0.25 0.1 0.1"
+  HP9N_peaks_NonPromoters_MotifCenteredStranded_highreg: "0.2 0.3 0.3 0.2 0.1 0.5 0.6 0.1 0.3 0.2 0.1 0.05 0.25 0.1 0.1 0.1 0.25 0.1 0.25 0.1 0.1"
+  CP9V5_peaks_NonPromoters: "0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.6 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2"
+  top_transcripts_ens: "0.3 0.4 0.4 0.1 0.1 0.2 0.2 0.2 1.5 1 0.1 0.1 2.5 0.1 0.1 0.1 1.5 0.1 1.5 0.1 0.3"
+
+center_label:
+  HP9combo_peaks_NonPromoters_MotifCenteredStranded: "Motif Center"
+  zcw_wP9_vs_chip_Z: "Peak Center"
+  HP9N_peaks_NonPromoters_MotifCenteredStranded: "Motif Center"
+  HP9N_peaks_NonPromoters_MotifCenteredStranded_highreg: "Motif Center"
+  CP9V5_peaks_NonPromoters: "Peak Center"
+  top_transcripts_ens: "TSS"
