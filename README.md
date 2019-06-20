@@ -20,20 +20,20 @@ The directory containing fastq files for each group and the genome specification
 
 ```{bash}
 # Map reads to genome etc.
-snakemake --cores 15 -npr --config GROUP="659233"
-snakemake --cores 15 -npr --config GROUP="538916"
-snakemake --cores 15 -npr --config GROUP="594404"
-snakemake --cores 15 -npr --config GROUP="Altemose2015"
-snakemake --cores 15 -npr --config GROUP="Dmc1_r1"
+snakemake --cores 15 --snakefile pipelines/Map_Reads.py -npr --config GROUP="659233"
+snakemake --cores 15 --snakefile pipelines/Map_Reads.py -npr --config GROUP="538916"
+snakemake --cores 15 --snakefile pipelines/Map_Reads.py -npr --config GROUP="594404"
+snakemake --cores 15 --snakefile pipelines/Map_Reads.py -npr --config GROUP="Altemose2015"
+snakemake --cores 15 --snakefile pipelines/Map_Reads.py -npr --config GROUP="Dmc1_r1"
 
 # Call Peaks
-snakemake --cores 15 --snakefile pipelines/Snakefile_peaks -npr
+snakemake --cores 15 --snakefile pipelines/Call_Peaks.py -npr
 
 # make enrichment profile plots (& center/strand by motif if possible)
-snakemake --cores 15 --snakefile pipelines/snakemake_profileplot -npr
+snakemake --cores 15 --snakefile pipelines/Plot_Profile.py -npr
 
 # force-call
-snakemake --cores 15 --snakefile pipelines/Snakefile_forcecall -npr
+snakemake --cores 15 --snakefile pipelines/Force_Call_Peaks.py -npr
 
 # plot profile over gene
 metagene_plot.sh
