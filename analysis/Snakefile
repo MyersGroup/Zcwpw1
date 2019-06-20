@@ -2,35 +2,27 @@
 # snakemake --cores 15 -npr --config GROUP="538916"
 # snakemake --cores 15 -npr --config GROUP="594404"
 # snakemake --cores 15 -npr --config GROUP="Altemose2015"
+# snakemake --cores 15 -npr --config GROUP="Dmc1_r1"
+
+# snakemake --dag | dot | display
 
 from os.path import join
 
 METADATA_DIR = '../single-cell/sequencing/metadata'
-PICARD_PATH = '/homes/wells/data-on-saxony/single-cell/sequencing/software'
-
-#FASTQ_DIR = 'raw_data/bsg-ftp.well.ox.ac.uk/181018_K00198_0357_BHWV5YBBXX/'
-#GROUP = '594404'
-
-#FASTQ_DIR = 'raw_data/bsg-ftp.well.ox.ac.uk/180629_K00150_0342_AHVYHYBBXX/'
-#GROUP = '538916'
-
-#FASTQ_DIR = 'raw_data/altemose/'
-#GROUP = 'Altemose2015'
-
-#FASTQ_DIR = 'raw_data/bsg-ftp.well.ox.ac.uk/190301_K00181_0120_BH3NTJBBXY/'
-#GROUP = '659233'
+PICARD_PATH = '/homes/wells/saxony/single-cell/sequencing/software'
 
 configfile: 'config.yml'
 
 GROUP = config["GROUP"]
 
 FASTQ_DIR = config["fastq_dir"][GROUP]
+print(FASTQ_DIR)
 GENOME = config["genome"][GROUP]
 
 SAMPLES, PAIRS = glob_wildcards(join(FASTQ_DIR, "{samples}_{pairs}.fastq.gz"))
 
 SAMPLES = list(set(SAMPLES))
-
+print(SAMPLES)
 
 ##################
 # Desired output
@@ -66,7 +58,7 @@ rule all:
         BLACKLISTS,
         MOSDEPTH1,
         MOSDEPTH2,
-        MOSDEPTHP,
+        #MOSDEPTHP,
         FRAGSIZE,
         FINGERPRINT,
         INDEXCOVA,
@@ -78,19 +70,22 @@ rule all:
 
     message: "ChIP-seq pipeline succesfully run."
 
+join(FASTQ_DIR, "{sample}_1.fastq.gz"),
 
 rule fastqc:
   input:
     fq1=join(FASTQ_DIR, "{sample}_1.fastq.gz"),
     fq2=join(FASTQ_DIR, "{sample}_2.fastq.gz")
   output:
-    qc1="qc/{sample}_1_fastqc.html",
-    qc2="qc/{sample}_2_fastqc.html"
+    qc1="qc/fastqc/{sample}_1_fastqc.html",
+    qc2="qc/fastqc/{sample}_2_fastqc.html"
   shell:
     """
-    fastqc {input.fq1} -o qc
-    fastqc {input.fq2} -o qc
+    fastqc {input.fq1} -o qc/fastqc
+    fastqc {input.fq2} -o qc/fastqc
     """
+
+# https://lh3.github.io/2017/11/13/which-human-reference-genome-to-use
 
 rule download_hg38:
   output:
@@ -102,6 +97,18 @@ rule download_hg38:
     bwa index {METADATA_DIR}/GCA_000001405.15_GRCh38_no_alt_plus_hs38d1_analysis_set.fna.gz
     """
 
+
+# https://www.biostars.org/p/342482/
+rule download_mm10:
+  output:
+    fna=join(METADATA_DIR, "Mus_musculus.GRCm38.dna_sm.primary_assembly.fa.gz"),
+    ann=join(METADATA_DIR, "Mus_musculus.GRCm38.dna_sm.primary_assembly.fa.gz.ann")
+  shell:
+    """
+    wget --directory-prefix {METADATA_DIR} ftp://ftp.ensembl.org/pub/release-96/fasta/mus_musculus/dna/Mus_musculus.GRCm38.dna_sm.primary_assembly.fa.gz
+    bwa index {METADATA_DIR}/Mus_musculus.GRCm38.dna_sm.primary_assembly.fa.gz
+    """
+
 rule chr_sizes:
   input:
     join(METADATA_DIR, "GCA_000001405.15_GRCh38_no_alt_plus_hs38d1_analysis_set.fna.gz.ann")
@@ -110,9 +117,27 @@ rule chr_sizes:
   shell:
     "awk '{{ print $2; }}' {input} | tail -n +2 | paste - - > {output}"
 
+rule chr_sizesMm10:
+  input:
+    join(METADATA_DIR, "Mus_musculus.GRCm38.dna_sm.primary_assembly.fa.gz.ann")
+  output:
+    join(METADATA_DIR, "mm10_sizes.chrom")
+  shell:
+    "awk '{{ print $2; }}' {input} | tail -n +2 | paste - - > {output}"
+
+
+def get_fna(wildcards):
+  """
+  Get FNA file for bwa mapping depending on if mouse or hum an
+  """
+  if "hg38" in GENOME:
+    return(join(METADATA_DIR, "GCA_000001405.15_GRCh38_no_alt_plus_hs38d1_analysis_set.fna.gz"))
+  else:
+    return(join(METADATA_DIR, "Mus_musculus.GRCm38.dna_sm.primary_assembly.fa.gz"))
+
 rule bwa_map:
   input:
-    g=join(METADATA_DIR, "GCA_000001405.15_GRCh38_no_alt_plus_hs38d1_analysis_set.fna.gz"),
+    g=get_fna ,
     fq=expand(join(FASTQ_DIR, "{{sample}}_{pair}.fastq.gz"), pair=[1,2])
   output:
     "bams/{sample}.bam"
@@ -136,6 +161,7 @@ rule remove_duplicates:
     OUTPUT={output.b} \
     METRICS_FILE={output.log} \
     REMOVE_DUPLICATES=true"
+
 
 rule remove_blacklisted:
   input:
@@ -246,6 +272,15 @@ rule index_bam:
   shell:
     "samtools index -@ 5 {input}"
 
+def get_sex(wildcards):
+  """
+  Get FNA file for bwa mapping depending on if mouse or hum an
+  """
+  if "hg38" in GENOME:
+    return("chrX,chrY")
+  else:
+    return("X,Y")
+
 
 rule indexcov:
   ###### use bed index to find genome wide coverage
@@ -256,9 +291,10 @@ rule indexcov:
   output:
     "qc/indexcov/{sample}_indexcov/{sample}_indexcov-indexcov.bed.gz"
   params:
-    "qc/indexcov/{sample}_indexcov"
+    d="qc/indexcov/{sample}_indexcov",
+    sex=get_sex
   shell:
-    "goleft indexcov --sex chrX,chrY -d {params} {input.bam}"
+    "goleft indexcov --sex {params.sex} -d {params.d} {input.bam}"
 
 
 rule indexcovAll:
@@ -271,9 +307,10 @@ rule indexcovAll:
   output:
     "qc/indexcov/{GROUP}_indexcovALL/{GROUP}_indexcovALL-indexcov.bed.gz"
   params:
-    "qc/indexcov/{GROUP}_indexcovALL"
+    d="qc/indexcov/{GROUP}_indexcovALL",
+    sex=get_sex
   shell:
-    "goleft indexcov --sex chrX,chrY -d {params} {input.b}"
+    "goleft indexcov --sex {params.sex} -d {params.d} {input.b}"
 
 
 rule generate_blacklist:
@@ -325,6 +362,14 @@ rule mosdepthplot:
     g=GROUP
   shell:
     "Rscript plot_mosdepth.R {params}"
+
+#Removed 479 rows containing missing values (geom_path).
+#Warning message:
+#In eval(jsub, SDenv, parent.frame()) : NAs introduced by coercion
+#Error in mutate_impl(.data, dots) :
+#  Evaluation error: `as_dictionary()` is defunct as of rlang 0.3.0.
+#Please use `as_data_pronoun()` instead.
+#Calls: +.gg ... as.data.frame -> mutate -> mutate.tbl_df -> mutate_impl
 
 
 rule bamtobed2:
@@ -448,8 +493,8 @@ rule pseudoreplicate:
 
 rule downloadBlacklist:
   output:
-    join(METADATA_DIR,"/hg38.blacklist.bed"),
-    join(METADATA_DIR,"/mm10.blacklist.bed")
+    join(METADATA_DIR,"hg38.blacklist.bed"),
+    join(METADATA_DIR,"mm10.blacklist.bed")
   shell:
     """
     wget -P {METADATA_DIR} http://mitra.stanford.edu/kundaje/akundaje/release/blacklists/hg38-human/hg38.blacklist.bed.gz
