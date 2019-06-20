@@ -17,14 +17,19 @@ output:
 
 ```{r}
 
+# peak bed files
 rsync --stats -avpn -e ssh stats2:/data/saxony/wells/zcwpw1/peaks/*Peaks* ~/Dropbox/DPhil/Zcwpw1/results/peaks
 
+# plots
 rsync --stats -avpn --delete -e ssh stats2:/data/saxony/wells/zcwpw1/deeptools/*.pdf ~/Dropbox/DPhil/Zcwpw1/results/deeptools
 
+# bigwigs for IGV
 rsync --stats -avpn -e ssh stats2:/data/saxony/wells/zcwpw1/bedgraphs/*.bigWig ~/Downloads/BigWigs/
 
+# log2 bigwigs for IGV
 rsync --stats -avpn -e ssh stats2:/data/saxony/wells/zcwpw1/deeptools/bigwigs/*log2.bw ~/Downloads/BigWigs/log2/
   
+# single base pair resolution bigwigs for IGV
 rsync --stats -avpn -e ssh stats2:/data/saxony/wells/zcwpw1/deeptools/bigwigs/SBPsample/*log2.bw ~/Downloads/BigWigs/log2/SBPsample/
 
 # format for IGV
@@ -45,11 +50,16 @@ library(data.table)
 
 ```{r}
 
+# HA TAG UNLESS OTHERWISE SPECIFIED
+
 zcw_peaks <- fread("../results/peaks/SingleBasePeaks.WTCHG_538916_221156_vs_WTCHG_538916_217108.p0.000001.sep250.ALL.bed")
 zcw_wP9_peaks <- fread("../results/peaks/SingleBasePeaks.WTCHG_538916_223180_vs_WTCHG_538916_220144.p0.000001.sep250.ALL.bed")
 zcw_wP9_peaks_cin <- fread("../results/peaks/SingleBasePeaks.WTCHG_538916_223180_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144.p0.000001.sep250.ALL.bed")
 
 zcw_wP9_vs_chip_Z <- fread("../results/peaks/SingleBasePeaks.WTCHG_538916_223180_vs_WTCHG_538916_221156.p0.000001.sep250.ALL.bed")
+
+zcw_wcP9_peaks_cin <- fread("../results/peaks/SingleBasePeaks.WTCHG_538916_224192_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144.p0.000001.sep250.ALL.bed")
+
 
 HP9_peaks <- fread("../results/peaks/SingleBasePeaks.SRA_Altemose2015_SRR5627146_vs_SRA_Altemose2015_SRR5627143.p0.000001.sep250.ALL.bed")
 HP9V5_peaks <- fread("../results/peaks/SingleBasePeaks.SRA_Altemose2015_SRR5627147_vs_SRA_Altemose2015_SRR5627143.p0.000001.sep250.ALL.bed")
@@ -74,15 +84,53 @@ h3k36me3_UT_peaks <- fread("../results/peaks/SingleBasePeaks.SRA_Altemose2015_SR
 
 ```
 
+
+# Mark TSS
+
 ```{r}
-# zcw_peaks[chr=="chr15" & center_start==101600252]
-# 
-# zcw_peaks[chr=="chr10" & center_start>70919153 & center_stop<70919409]
-# #chr10:70,919,153-70,919,409
-# 
-# zcw_peaks$zcw_wP9_enrichment <- foverlaps(zcw_peaks, zcw_wP9_peaks, mult="first")$enrichment
+load_tss <- function(file="../data/hg38.wgEncodeGencodeCompV28.bed", flank=400){
+encode_tss <- fread(file)
+names(encode_tss) <- gsub("hg38.wgEncodeGencodeCompV28.|hg38.wgEncodeGencodeAttrsV28.","",names(encode_tss))
+
+encode_tss[strand=='+', CI_start_ext := txStart - flank]
+encode_tss[strand=='+', CI_stop_ext := txStart + flank]
+encode_tss[strand=='-', CI_start_ext := txEnd - flank]
+encode_tss[strand=='-', CI_stop_ext := txEnd + flank]
+setnames(encode_tss,'chrom','chr')
+setnames(encode_tss,'#name','tss')
+
+encode_tss <- encode_tss[,.(chr, CI_start_ext, CI_stop_ext,tss)]
+setkey(encode_tss, chr, CI_start_ext, CI_stop_ext)
+return(encode_tss)
+}
+
+encode_tss <- load_tss(flank=500)
+
+HP9combo_peaks$tss <- foverlaps(HP9combo_peaks, encode_tss, mult = 'first')$tss
+HP9N_peaks$tss <- foverlaps(HP9N_peaks, encode_tss, mult = 'first')$tss
+
+CP9combo_peaks$tss <- foverlaps(CP9combo_peaks, encode_tss, mult = 'first')$tss
+
+
+zcw_wP9_vs_chip_Z$tss <- foverlaps(zcw_wP9_vs_chip_Z, encode_tss, mult = 'first')$tss
+zcw_wP9_peaks_cin$tss <- foverlaps(zcw_wP9_peaks_cin, encode_tss, mult = 'first')$tss
+zcw_peaks$tss <- foverlaps(zcw_peaks, encode_tss, mult = 'first')$tss
+
 ```
 
+# Export beds
+
+```{r}
+fwrite(zcw_wP9_vs_chip_Z[cov_input>5][order(enrichment)][,.(chr, center_start, center_stop, enrichment)], "../data/zcw_wP9_vs_chip_Z.bed", col.names = FALSE, sep = "\t")
+
+
+fwrite(HP9combo_peaks[cov_input>5][!is.na(tss)][order(enrichment)][,.(chr, center_start, center_stop, enrichment)], "../data/HP9combo_peaks_Promoters.bed", col.names = FALSE, sep = "\t")
+fwrite(HP9combo_peaks[cov_input>5][is.na(tss)][order(enrichment)][,.(chr, center_start, center_stop, enrichment)], "../data/HP9combo_peaks_NonPromoters.bed", col.names = FALSE, sep = "\t")
+
+fwrite(CP9combo_peaks[cov_input>5][!is.na(tss)][order(enrichment)][,.(chr, center_start, center_stop, enrichment)], "../data/CP9combo_peaks_Promoters.bed", col.names = FALSE, sep = "\t")
+fwrite(CP9combo_peaks[cov_input>5][is.na(tss)][order(enrichment)][,.(chr, center_start, center_stop, enrichment)], "../data/CP9combo_peaks_NonPromoters.bed", col.names = FALSE, sep = "\t")
+
+```
 
 ## Number of peaks
 
