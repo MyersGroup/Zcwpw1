@@ -25,19 +25,43 @@ samples:
   - 'HP9N_peaks_NonPromoters_MotifCenteredStranded_highreg'
   - 'CP9V5_peaks_NonPromoters'
   - 'top_transcripts_ens'
+  - 'SingleBasePeaks.SRA_Altemose2015_SRR5627138_AND_SRA_Altemose2015_SRR5627139_vs_SRA_Altemose2015_SRR5627140.p0.000001.sep250.ALL_MotifCenteredStranded'
+  - 'SingleBasePeaks.SRA_Altemose2015_SRR5627146_AND_SRA_Altemose2015_SRR5627147_vs_SRA_Altemose2015_SRR5627143.p0.000001.sep250.ALL_MotifCenteredStranded'
+  - 'SingleBasePeaks.SRA_Altemose2015_SRR5627145_AND_SRA_Altemose2015_SRR5627144_vs_SRA_Altemose2015_SRR5627143.p0.000001.sep250.ALL'
+  - 'SingleBasePeaks.WTCHG_538916_223180_vs_WTCHG_538916_221156.p0.000001.sep250.ALL'
+
+prdm9_allele:
+  SingleBasePeaks.SRA_Altemose2015_SRR5627138_AND_SRA_Altemose2015_SRR5627139_vs_SRA_Altemose2015_SRR5627140.p0.000001.sep250.ALL_MotifCenteredStranded: 'Human'
+  SingleBasePeaks.SRA_Altemose2015_SRR5627146_AND_SRA_Altemose2015_SRR5627147_vs_SRA_Altemose2015_SRR5627143.p0.000001.sep250.ALL_MotifCenteredStranded: 'Human'
+  SingleBasePeaks.SRA_Altemose2015_SRR5627145_AND_SRA_Altemose2015_SRR5627144_vs_SRA_Altemose2015_SRR5627143.p0.000001.sep250.ALL: 'Chimp'
+  SingleBasePeaks.WTCHG_538916_223180_vs_WTCHG_538916_221156.p0.000001.sep250.ALL: "None"
+  HP9combo_peaks_NonPromoters_MotifCenteredStranded: "None"
+  zcw_wP9_vs_chip_Z: "None"
+  HP9N_peaks_NonPromoters_MotifCenteredStranded: "None"
+  HP9N_peaks_NonPromoters_MotifCenteredStranded_highreg: "None"
+  CP9V5_peaks_NonPromoters: "None"
+  top_transcripts_ens: "None"
 
 ymax:
   HP9combo_peaks_NonPromoters_MotifCenteredStranded: "0.3 0.6 0.6 0.4 0.1 0.4 0.9 0.1 0.5 0.3 0.1 0.05 0.1 0.1 0.1 0.1 0.25 0.1 0.5 0.1 0.1"
   zcw_wP9_vs_chip_Z: "0.4 0.8 0.8 0.6 0.15 0.3 0.6 0.1 0.6 0.3 0.1 0.05 0.15 0.1 0.6 0.6 0.6 0.6 0.6 0.6 0.6"
+  SingleBasePeaks.WTCHG_538916_223180_vs_WTCHG_538916_221156.p0.000001.sep250.ALL: "0.4 0.8 0.8 0.6 0.15 0.3 0.6 0.1 0.6 0.3 0.1 0.05 0.15 0.1 0.6 0.6 0.6 0.6 0.6 0.6 0.6"
   HP9N_peaks_NonPromoters_MotifCenteredStranded: "0.2 0.3 0.3 0.2 0.1 0.5 0.6 0.1 0.3 0.2 0.1 0.05 0.25 0.1 0.1 0.1 0.25 0.1 0.25 0.1 0.1"
   HP9N_peaks_NonPromoters_MotifCenteredStranded_highreg: "0.2 0.3 0.3 0.2 0.1 0.5 0.6 0.1 0.3 0.2 0.1 0.05 0.25 0.1 0.1 0.1 0.25 0.1 0.25 0.1 0.1"
   CP9V5_peaks_NonPromoters: "0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.6 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2"
   top_transcripts_ens: "0.3 0.4 0.4 0.1 0.1 0.2 0.2 0.2 1.5 1 0.1 0.1 2.5 0.1 0.1 0.1 1.5 0.1 1.5 0.1 0.3"
+  SingleBasePeaks.SRA_Altemose2015_SRR5627138_AND_SRA_Altemose2015_SRR5627139_vs_SRA_Altemose2015_SRR5627140.p0.000001.sep250.ALL_MotifCenteredStranded:  "0.2 0.3 0.3 0.2 0.1 0.6 0.5 0.1 0.4 0.3 0.1 0.05 0.35 0.1 0.1 0.1 0.35 0.1 0.35 0.1 0.1"
+  SingleBasePeaks.SRA_Altemose2015_SRR5627146_AND_SRA_Altemose2015_SRR5627147_vs_SRA_Altemose2015_SRR5627143.p0.000001.sep250.ALL_MotifCenteredStranded:  "0.3 0.6 0.6 0.4 0.1 0.4 0.9 0.1 0.5 0.3 0.1 0.05 0.1 0.1 0.1 0.1 0.25 0.1 0.5 0.1 0.1"
+  SingleBasePeaks.SRA_Altemose2015_SRR5627145_AND_SRA_Altemose2015_SRR5627144_vs_SRA_Altemose2015_SRR5627143.p0.000001.sep250.ALL: "0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.6 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2"
 
 center_label:
   HP9combo_peaks_NonPromoters_MotifCenteredStranded: "Motif Center"
   zcw_wP9_vs_chip_Z: "Peak Center"
+  SingleBasePeaks.WTCHG_538916_223180_vs_WTCHG_538916_221156.p0.000001.sep250.ALL: "Peak Center"
   HP9N_peaks_NonPromoters_MotifCenteredStranded: "Motif Center"
   HP9N_peaks_NonPromoters_MotifCenteredStranded_highreg: "Motif Center"
   CP9V5_peaks_NonPromoters: "Peak Center"
   top_transcripts_ens: "TSS"
+  SingleBasePeaks.SRA_Altemose2015_SRR5627138_AND_SRA_Altemose2015_SRR5627139_vs_SRA_Altemose2015_SRR5627140.p0.000001.sep250.ALL_MotifCenteredStranded: "Motif Center"
+  SingleBasePeaks.SRA_Altemose2015_SRR5627146_AND_SRA_Altemose2015_SRR5627147_vs_SRA_Altemose2015_SRR5627143.p0.000001.sep250.ALL_MotifCenteredStranded: "Motif Center"
+  SingleBasePeaks.SRA_Altemose2015_SRR5627145_AND_SRA_Altemose2015_SRR5627144_vs_SRA_Altemose2015_SRR5627143.p0.000001.sep250.ALL: "Peak Center"
