@@ -20,4 +20,4 @@ dependencies:
   - picard=2.20.2
   - goleft=0.2.0
   - mosdepth=0.2.5
-  - ucsc-bedgraphtobigwig
+  - ucsc-bedgraphtobigwig=357
