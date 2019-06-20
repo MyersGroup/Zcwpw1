@@ -1,0 +1,23 @@
+name: zcwpw1
+channels:
+  - bioconda
+  - defaults
+dependencies:
+  - python=3.6
+  - numpy
+  - pandas
+  - fastqc=0.11.8
+  - bedtools=2.28
+  - samtools=1.9
+  - htslib=1.9
+  - bwa=0.7.17
+  - bowtie=1.2.2
+  - bedops=2.4.36
+  - deeptools=3.3.0
+  - r-essentials
+  - r-base
+  - snakemake=5.5.1
+  - picard=2.20.2
+  - goleft=0.2.0
+  - mosdepth=0.2.5
+  - ucsc-bedgraphtobigwig
