@@ -1,38 +1,24 @@
----
-title: "Zcwpw1 Project"
-output: html_document
----
+#Zcwpw1 Project
 
+Zcwpw1 is co-expressed with Prdm9 and has domains that bind to both H3K4me3 and H3K36me3 (which are desposited by Prdm9 and required for its role in recombination.)
 
+Software dependencies are managed as a Conda environment:
 
-
-```{r setup, include=FALSE}
-
-# Load required software dependencies
-
-export PATH=/homes/wells/saxony/single-cell/sequencing/software/fastqc/FastQC/:$PATH
-export PATH=/homes/wells/saxony/single-cell/sequencing/software/bedtools/bedtools2/bin/:$PATH
-export PATH=/homes/wells/saxony/single-cell/sequencing/software/samtools/samtools-1.7/:$PATH
-export LD_LIBRARY_PATH=/homes/wells/saxony/single-cell/sequencing/software/htslib_1.9/lib/:$LD_LIBRARY_PATH
-export PATH=/homes/wells/saxony/single-cell/sequencing/software/:$PATH
-export PATH=/homes/wells/saxony/single-cell/sequencing/software/MAPeakCaller/:$PATH
-export PATH=/homes/wells/saxony/single-cell/sequencing/software/bwa-0.7.17/:$PATH
-export PATH=/homes/wells/saxony/single-cell/sequencing/software/bowtie/bowtie-1.2.2-linux-x86_64/:$PATH
-export PATH=/homes/wells/saxony/single-cell/sequencing/software/bin/:$PATH # bedops
-
-
-```
-
-
-Details of the original files, the ID to description mappings are included in Sample_Manifest.txt
-
-```{r}
-
-# The directory containing fastq files for each group and the genome specification is contained in the file config.yml
-
+```{bash}
 source ~/saxony/anaconda3/bin/activate
 conda init
 
+conda env create -f environment.yml
+source activate zcwpw1
+```
+
+Details of the original FASTQ files, and ID-to-description mappings are included in [Sample_Manifest.Rmd](analysis/Sample_Manifest.Rmd)
+
+Most of the analyses are arranged as snakemake pipelines for reproducibility.
+
+The directory containing fastq files for each group and the genome specification is contained in the file [config.yml](analysis/config.yml)
+
+```{bash}
 # Map reads to genome etc.
 snakemake --cores 15 -npr --config GROUP="659233"
 snakemake --cores 15 -npr --config GROUP="538916"
@@ -51,6 +37,5 @@ snakemake --cores 15 --snakefile Snakefile_forcecall -npr
 
 # plot profile over gene
 metagene_plot.sh
-
 ```
 
