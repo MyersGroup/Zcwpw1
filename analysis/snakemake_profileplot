@@ -1,11 +1,8 @@
+
+# for each of the bed files in deeptools/beds/ specified as samples in config.yml
+# make a profile plot for each of the bigwig files listed below
+
 # snakemake --cores 15 --snakefile snakemake_profileplot -npr
-
-
-#comparisons = ["HP9combo_peaks_NonPromoters_MotifCenteredStranded",
-#                "zcw_wP9_vs_chip_Z",
-#                "HP9N_peaks_NonPromoters_MotifCenteredStranded",
-#                "CP9V5_peaks_NonPromoters",
-#                "top_transcripts_ens"]
 
 configfile: 'config.yml'
 
@@ -14,14 +11,91 @@ rule all:
     [f"deeptools/plots/{location}.pdf" for location in config["samples"]]
 
 
-rule quantiseBeds:
+# remove peak if it's center overlaps with region (CI peak) of H3K4me3 peak
+# cov_input >5
+# sort by enrichment descending
+# remove peaks with greater than 99.9% input
+rule removeUTH3K4:
   input:
-    "deeptools/beds/{locations}.bed"
+    bed = "peaks/{sample}.bed",
+    UTh3k4 = "peaks/SingleBasePeaks.SRA_Altemose2015_SRR5627150_AND_SRA_Altemose2015_SRR5627151_vs_SRA_Altemose2015_SRR5627142.p0.000001.sep250.ALL.bed",
   output:
-    expand("deeptools/beds/{{locations}}.bed0{quantile}", quantile=[0, 1, 2, 3])
+    bed = "motifs/{sample}_QCfiltered.bed",
   shell:
     """
-    split -d -n l/4 {input} {input}
+    # calculate 99.9% percentile of input
+    THRESHOLD=$(sort -k8 -n {input} |
+    awk '{{all[NR] = $0}} END{{print all[int(NR*0.999 - 0.5)]}}' |
+    cut -f8)
+
+    cut -f 1,4,5 {input.UTh3k4} | tail -n +2 |
+    bedtools slop -i stdin -g ../single-cell/sequencing/metadata/hg38_sizes.chrom -b 1000 |
+    bedtools intersect -v -a  {input.bed} \
+                          -b stdin |
+    awk ' $8 >= 5 ' |
+    awk -v var="$THRESHOLD" ' $8 < var ' |
+    sort -k9 -n -r > {output.bed}
+    """
+
+
+rule downloadFASTA:
+  output:
+    fa = "motifs/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa",
+    fai = "motifs/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fai"
+  shell:
+    """
+    # Download Fasta
+    wget ftp://ftp.ensembl.org/pub/release-95/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa.gz -O motifs/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa.gz
+    gunzip motifs/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa.gz
+    sed -i 's/>/>chr/g' {output.fa}
+    samtools faidx {output.fa}
+    """
+
+rule downloadMotifs:
+  output:
+    "motifs/Human_Motif_Results_Final_iter240.r"
+  shell:
+    """
+    wget https://github.com/altemose/PRDM9-map/raw/master/3_MotifFinding/Human_Motif_Results_Final_iter240.r -O {output}
+    """
+
+rule extractFASTA:
+  input:
+    bed = "motifs/{sample}_QCfiltered.bed",
+    fasta = "motifs/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa"
+  output:
+    fasta = "motifs/{sample}.fasta",
+  shell:
+    """
+    # | cut -f 1-3 # for names based on chr loc
+    bedtools slop -i {input.bed} -g ../single-cell/sequencing/metadata/hg38_sizes.chrom -b 150 |
+    bedtools getfasta -s -fi {input.fasta} -bed stdin -name > {output.fasta}
+    """
+
+rule findMotifs:
+  input:
+    fasta = "motifs/{sample}.fasta",
+    motifs = "motifs/Human_Motif_Results_Final_iter240.r",
+    bed = "motifs/{sample}_QCfiltered.bed",
+  output:
+    bed = "deeptools/beds/{sample}_MotifCenteredStranded.bed",
+    plots = "motifs/P9_motif_locations_{sample}.pdf"
+  shell:
+    """
+    Rscript center_by_motif.R {input.fasta} {input.motifs} {input.bed} {output.bed} {output.plots}
+    """
+
+# if not Human Prdm9 allele, skip motif finding and centering/stranding, use the QCfiltered.bed directly
+rule quantiseBeds:
+  input:
+    lambda wc: "deeptools/beds/{locations}.bed" if config["prdm9_allele"][wc.locations]=="Human" else "motifs/{locations}_QCfiltered.bed"
+  output:
+    expand("deeptools/beds/{{locations}}.bed0{quantile}", quantile=[0, 1, 2, 3])
+  params:
+    "deeptools/beds/{locations}.bed"
+  shell:
+    """
+    split -d -n l/4 {input} {params}
     """
 
 
@@ -50,23 +124,23 @@ rule gettopTSS:
       > {output.bed}
     """
 
-#wget -qO- http://ftp.ensembl.org/pub/release-94/gtf/homo_sapiens/Homo_sapiens.GRCh38.94.gtf.gz \
-#    | gunzip --stdout - \
-#    | awk '$3 == "gene"' - \
-#    | grep "protein_coding" - \
-#    | convert2bed -i gtf - \
-#    > deeptools/beds/genes_prot_coding_ens.bed
+  #wget -qO- http://ftp.ensembl.org/pub/release-94/gtf/homo_sapiens/Homo_sapiens.GRCh38.94.gtf.gz \
+  #    | gunzip --stdout - \
+  #    | awk '$3 == "gene"' - \
+  #    | grep "protein_coding" - \
+  #    | convert2bed -i gtf - \
+  #    > deeptools/beds/genes_prot_coding_ens.bed
 
-# alternatives
-#ftp://ftp.ebi.ac.uk/pub/databases/gencode/ensembl_ftp_files/ens_94_human/gtf/homo_sapiens/Homo_sapiens.GRCh38.94.gtf.gz
-#ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_29/gencode.v29.annotation.gtf.gz
-#ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_29/gencode.v29.annotation.gff3.gz
-# abandoned attempt at getting genes expressed in HEK293T
-# wget http://fantom.gsc.riken.jp/5/datafiles/reprocessed/hg38_latest/extra/CAGE_peaks/hg38_fair+new_CAGE_peaks_phase1and2.bed.gz
-# wget ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE99nnn/GSE99407/suppl/GSE99407%5FRNAseq%5FCuffDiff%2Egenes%2Ediff%2Egz
-#
-# cuffdiff <- fread("zcat < ~/Downloads/GSE99407_RNAseq_CuffDiff.genes.diff.gz")
-# head(unique(cuffdiff[sample_1=="Human"][order(-value_1)]$gene),250)
+  # alternatives
+  #ftp://ftp.ebi.ac.uk/pub/databases/gencode/ensembl_ftp_files/ens_94_human/gtf/homo_sapiens/Homo_sapiens.GRCh38.94.gtf.gz
+  #ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_29/gencode.v29.annotation.gtf.gz
+  #ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_29/gencode.v29.annotation.gff3.gz
+  # abandoned attempt at getting genes expressed in HEK293T
+  # wget http://fantom.gsc.riken.jp/5/datafiles/reprocessed/hg38_latest/extra/CAGE_peaks/hg38_fair+new_CAGE_peaks_phase1and2.bed.gz
+  # wget ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE99nnn/GSE99407/suppl/GSE99407%5FRNAseq%5FCuffDiff%2Egenes%2Ediff%2Egz
+  #
+  # cuffdiff <- fread("zcat < ~/Downloads/GSE99407_RNAseq_CuffDiff.genes.diff.gz")
+  # head(unique(cuffdiff[sample_1=="Human"][order(-value_1)]$gene),250)
 
 
 rule deeptoolsMatrix:
