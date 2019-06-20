@@ -1,0 +1,216 @@
+---
+title: "Sample Manifest"
+output: html_notebook
+---
+
+List of file ID's and names for each project
+
+# Project P180312 (62GB)
+
+Zcwpw1-HA & (h/c)Prdm9-V5 Co-transfections
+
+- WTCHG_538916_217108 Sample:Input_ZCWPW1-HA Count:61279859
+- WTCHG_538916_221156 Sample:ChIPHA_ZCWPW1-HA Count:65459828
+
+- WTCHG_538916_220144 Sample:Input_ZCWPW1-HA+hPRDM9-V5 Count:67107524
+- WTCHG_538916_223180 Sample:ChIPHA_ZCWPW1-HA+hPRDM9-V5 Count:66894286
+
+- WTCHG_538916_224192 Sample:ChIPHA_ZCWPW1-HA+cPRDM9-V5 Count:62310491
+
+
+```{bash}
+wget -r ftp://baquifta:pouma-motru-36@bsg-ftp.well.ox.ac.uk/180629_K00150_0342_AHVYHYBBXX
+
+md5sum -c P180312-md5sum.txt > P180312-md5sumCHECK.txt
+```
+
+
+# Project P180586 (57GB)
+
+InVivo Chip against Zcwpw1 in Hybrid Mice
+
+- WTCHG_594404_276139 Sample:Input_PWDB6F1 Count:75761495
+- WTCHG_594404_277151 Sample:ChIPZCWPW1_PWDB6F1 Count:55372208
+
+- WTCHG_594404_278163 Sample:Input_PWDB6humF1 Count:100880333
+- WTCHG_594404_279175 Sample:ChIPZCWPW1_PWDB6humF1 Count:49620935
+
+
+```{bash}
+wget -r ftp://aifojhoo:kavfi-hethu-03@bsg-ftp.well.ox.ac.uk/181018_K00198_0357_BHWV5YBBXX
+
+md5sum -c P180586-md5sum.txt > P180586-md5sumCHECK.txt
+```
+
+
+# Project P180717 (61GB)
+
+ZFonlyPrdm9 cotransfections
+
+Cotransfections with H3K4me3 (c/h)
+
+ZfonlyPrdm9 only
+
+- WTCHG_659233_233110 Sample:Input_ZCWPW1-HA+hPRDM9-ZFonly-V5 Count:24871157
+- WTCHG_659233_234122 Sample:ChIPHA_ZCWPW1-HA+hPRDM9-ZFonly-V5 Count:22347286
+- WTCHG_659233_235134 Sample:ChIPH3K4me3_ZCWPW1-HA+hPRDM9-ZFonly-V5 Count:25369086
+
+- WTCHG_659233_249112 Sample:Input_ZCWPW1-HA+hPRDM9-V5 Count:30499498
+- WTCHG_659233_250124 Sample:ChIPHA_ZCWPW1-HA+hPRDM9-V5 Count:27818259
+- WTCHG_659233_251136 Sample:ChIPH3K4me3_ZCWPW1-HA+hPRDM9-V5 Count:25895561
+
+- WTCHG_659233_252148 Sample:Input_ZCWPW1-HA+cPRDM9-V5 Count:29613874
+- WTCHG_659233_253160 Sample:ChIPHA_ZCWPW1-HA+cPRDM9-V5 Count:26200675
+- WTCHG_659233_254172 Sample:ChIPH3K4me3_ZCWPW1-HA+cPRDM9-V5 Count:25669210
+
+- WTCHG_659233_255184 Sample:Input_hPRDM9-ZFonly-V5 Count:27442139
+- WTCHG_659233_256196 Sample:ChIPV5_hPRDM9-ZFonly-V5 Count:29978613
+
+```{r}
+wget -r ftp://meigakuj:rygri-sekgo-36@bsg-ftp.well.ox.ac.uk/190301_K00181_0120_BH3NTJBBXY
+
+cd bsg-ftp.well.ox.ac.uk/190301_K00181_0120_BH3NTJBBXY/
+md5sum -c P180717-md5sum.txt > P180717-md5sumCHECK.txt
+```
+
+# Project P190297 (16GB)
+
+Dmc1 ChipSeq
+
+- WTCHG_688471 Sample:ZCW2.1ahomKO Count:35316203
+- WTCHG_688472 Sample:ZCW2.1bhetKO Count:55686978
+
+
+```{r}
+wget -r ftp://citnocja:oagew-ijodo-63@bsg-ftp.well.ox.ac.uk/190524_D00529_0716_AH2G53BCX3
+
+cd bsg-ftp.well.ox.ac.uk/190524_D00529_0716_AH2G53BCX3/
+md5sum -c P190297-md5sum.txt > P190297-md5sumCHECK.txt
+
+```
+
+# Altemose2015
+
+Remapping the data from Altemose et al 2015 (eLife) from hg37 to hg38
+
+```{r}
+
+#SRR5627143 ChIPseq.HumanPRDM9_HA.Input.ProtocolC
+#SRR5627146 ChIPseq.HumanPRDM9_HA.antiHA.ProtocolC
+#SRR5627144 ChIPseq.ChimpPRDM9_HA.antiHA.ProtocolC
+
+#SRR5627145 ChIPseq.ChimpPRDM9_V5.antiV5.ProtocolC
+#SRR5627147 ChIPseq.HumanPRDM9_V5.antiV5.ProtocolC
+
+
+#SRR5627149 ChIPseq.HumanPRDM9_HA.antiH3K36me3.ProtocolC
+#SRR5627152 ChIPseq.HumanPRDM9_HA.antiH3K4me3.ProtocolC.Rep1
+#SRR5627153 ChIPseq.HumanPRDM9_HA.antiH3K4me3.ProtocolC.Rep2
+
+#SRR5627142 ChIPseq.Untransfected.Input.ProtocolC
+#SRR5627150 ChIPseq.Untransfected.antiH3K4me3.Rep1.ProtocolC
+#SRR5627151 ChIPseq.Untransfected.antiH3K4me3.Rep2.ProtocolC
+#SRR5627148 ChIPseq.Untransfected.antiH3K36me3.ProtocolC
+
+
+#SRR5627140 ChIPseq.YFP_HumanPRDM9.Input.ProtocolN
+#SRR5627138 ChIPseq.YFP_HumanPRDM9.antiGFP.Rep1.ProtocolN;
+#SRR5627139 ChIPseq.YFP_HumanPRDM9.antiGFP.Rep2.ProtocolN
+
+
+
+# https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE99407
+
+cd /homes/wells/saxony/zcwpw1/raw_data/altemose
+
+# ChIPseq.ChimpPRDM9_V5.antiV5.ProtocolC
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/005/SRR5627145/SRR5627145_1.fastq.gz
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/005/SRR5627145/SRR5627145_2.fastq.gz
+
+# ChIPseq.HumanPRDM9_V5.antiV5.ProtocolC
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/007/SRR5627147/SRR5627147_1.fastq.gz
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/007/SRR5627147/SRR5627147_2.fastq.gz
+
+
+# ChIPseq.HumanPRDM9_HA.Input.ProtocolC
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/003/SRR5627143/SRR5627143_1.fastq.gz
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/003/SRR5627143/SRR5627143_2.fastq.gz
+
+
+# ChIPseq.HumanPRDM9_HA.antiHA.ProtocolC
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/006/SRR5627146/SRR5627146_1.fastq.gz
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/006/SRR5627146/SRR5627146_2.fastq.gz
+
+# ChIPseq.ChimpPRDM9_HA.antiHA.ProtocolC
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/004/SRR5627144/SRR5627144_1.fastq.gz
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/004/SRR5627144/SRR5627144_2.fastq.gz
+
+
+# ChIPseq.HumanPRDM9_HA.antiH3K36me3.ProtocolC
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/009/SRR5627149/SRR5627149_1.fastq.gz
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/009/SRR5627149/SRR5627149_2.fastq.gz
+
+# ChIPseq.HumanPRDM9_HA.antiH3K4me3.ProtocolC.Rep1
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/002/SRR5627152/SRR5627152_1.fastq.gz
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/002/SRR5627152/SRR5627152_2.fastq.gz
+
+# ChIPseq.HumanPRDM9_HA.antiH3K4me3.ProtocolC.Rep2
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/003/SRR5627153/SRR5627153_1.fastq.gz
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/003/SRR5627153/SRR5627153_2.fastq.gz
+
+
+
+# ChIPseq.Untransfected.Input.ProtocolC
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/002/SRR5627142/SRR5627142_1.fastq.gz
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/002/SRR5627142/SRR5627142_2.fastq.gz
+
+# ChIPseq.Untransfected.antiH3K4me3.Rep1.ProtocolC
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/000/SRR5627150/SRR5627150_1.fastq.gz
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/000/SRR5627150/SRR5627150_2.fastq.gz
+
+# ChIPseq.Untransfected.antiH3K4me3.Rep2.ProtocolC
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/001/SRR5627151/SRR5627151_1.fastq.gz
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/001/SRR5627151/SRR5627151_2.fastq.gz
+
+# ChIPseq.Untransfected.antiH3K36me3.ProtocolC
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/008/SRR5627148/SRR5627148_1.fastq.gz
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/008/SRR5627148/SRR5627148_2.fastq.gz
+
+
+
+#ChIPseq.YFP_HumanPRDM9.antiGFP.Rep1.ProtocolN
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/008/SRR5627138/SRR5627138_1.fastq.gz
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/008/SRR5627138/SRR5627138_2.fastq.gz
+
+#ChIPseq.YFP_HumanPRDM9.antiGFP.Rep2.ProtocolN
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/009/SRR5627139/SRR5627139_1.fastq.gz
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/009/SRR5627139/SRR5627139_2.fastq.gz
+
+#ChIPseq.YFP_HumanPRDM9.Input.ProtocolN
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/000/SRR5627140/SRR5627140_1.fastq.gz
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/000/SRR5627140/SRR5627140_2.fastq.gz
+
+#ChIPseq.YFP_HumanPRDM9.antiH3K4me3.ProtocolN
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/001/SRR5627141/SRR5627141_1.fastq.gz
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/001/SRR5627141/SRR5627141_2.fastq.gz
+
+#ChIPseq.Untransfected.Input.ProtocolN
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/007/SRR5627137/SRR5627137_1.fastq.gz
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/007/SRR5627137/SRR5627137_2.fastq.gz
+
+#ChIPseq.Untransfected.antiH3K4me3.Rep2.ProtocolN
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/006/SRR5627136/SRR5627136_1.fastq.gz
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/006/SRR5627136/SRR5627136_2.fastq.gz
+
+#ChIPseq.Untransfected.antiH3K4me3.Rep1.ProtocolN
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/005/SRR5627135/SRR5627135_1.fastq.gz
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR562/005/SRR5627135/SRR5627135_2.fastq.gz
+
+for FILENAME in SRR*; do mv $FILENAME SRA_Altemose2015_$FILENAME; done
+
+#cd /homes/wells/saxony/single-cell/sequencing/zcwpwp1/
+cd /homes/wells/saxony/zcwpw1/
+
+```
+
+
