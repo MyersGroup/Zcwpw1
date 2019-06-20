@@ -155,7 +155,7 @@ rule remove_duplicates:
   threads:
     15
   shell:
-    "java -jar {PICARD_PATH}/picard.jar MarkDuplicates \
+    "picard MarkDuplicates \
     INPUT={input} \
     OUTPUT={output.b} \
     METRICS_FILE={output.log} \
@@ -237,7 +237,7 @@ rule libcomplexity:
   threads:
     15
   shell:
-    "java -jar {PICARD_PATH}/picard.jar EstimateLibraryComplexity INPUT={input} OUTPUT={output}"
+    "picard EstimateLibraryComplexity INPUT={input} OUTPUT={output}"
 
 
 rule flagstat:
