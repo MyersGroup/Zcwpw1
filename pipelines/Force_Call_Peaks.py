@@ -1,7 +1,7 @@
 # snakemake --cores 15 --snakefile Snakefile_forcecall -npr
 
 from os.path import join
-METADATA_DIR = '../single-cell/sequencing/metadata'
+METADATA_DIR = config["metadata_dir"]
 GENOME = 'hg38'
 
 comparisons = [("WTCHG_538916_221156", "WTCHG_538916_217108"),  #Zcw only Chip vs Input

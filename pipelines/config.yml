@@ -1,3 +1,6 @@
+
+metadata_dir: '../single-cell/sequencing/metadata'
+
 ### Mapping Parameters
 
 fastq_dir:

@@ -8,10 +8,9 @@
 
 from os.path import join
 
-METADATA_DIR = '../single-cell/sequencing/metadata'
-PICARD_PATH = '/homes/wells/saxony/single-cell/sequencing/software'
-
 configfile: 'config.yml'
+
+METADATA_DIR = config["metadata_dir"]
 
 GROUP = config["GROUP"]
 

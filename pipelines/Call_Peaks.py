@@ -14,7 +14,7 @@
 
 
 from os.path import join
-METADATA_DIR = '../single-cell/sequencing/metadata'
+METADATA_DIR = config["metadata_dir"]
 GENOME = 'hg38'
 
 # chip, control
