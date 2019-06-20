@@ -16,7 +16,7 @@ Details of the original FASTQ files, and ID-to-description mappings are included
 
 Most of the analyses are arranged as snakemake pipelines for reproducibility.
 
-The directory containing fastq files for each group and the genome specification is contained in the file [config.yml](analysis/config.yml)
+The directory containing fastq files for each group and the genome specification is contained in the file [config.yml](pipelines/config.yml)
 
 ```{bash}
 # Map reads to genome etc.
@@ -27,13 +27,13 @@ snakemake --cores 15 -npr --config GROUP="Altemose2015"
 snakemake --cores 15 -npr --config GROUP="Dmc1_r1"
 
 # Call Peaks
-snakemake --cores 15 --snakefile Snakefile_peaks -npr
+snakemake --cores 15 --snakefile pipelines/Snakefile_peaks -npr
 
 # make enrichment profile plots (& center/strand by motif if possible)
-snakemake --cores 15 --snakefile snakemake_profileplot -npr
+snakemake --cores 15 --snakefile pipelines/snakemake_profileplot -npr
 
 # force-call
-snakemake --cores 15 --snakefile Snakefile_forcecall -npr
+snakemake --cores 15 --snakefile pipelines/Snakefile_forcecall -npr
 
 # plot profile over gene
 metagene_plot.sh
