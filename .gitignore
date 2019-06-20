@@ -1,7 +1,10 @@
 *.nb.html
+*.html
+*.DS_Store
 analysis/archive/*
 .Rproj.user/
 .Rhistory
 data/*
+phylodynamics/*
 results/*
 .Rproj.user
