@@ -14,17 +14,6 @@ output:
 ---
 
 
-
-# Force Calling
-
-```{bash}
-
-snakemake --cores 15 --snakefile Snakefile_forcecall -npr
-
-rsync --stats -avpn -e ssh stats2:/data/saxony/wells/zcwpw1/peaks/*Peaks* ~/Dropbox/DPhil/Zcwpw1/results/peaks
-
-```
-
 # Load Results
 
 ## C term
