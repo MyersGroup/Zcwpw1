@@ -17,99 +17,40 @@ output: html_notebook
 # head -1000 depth_bamCoverage.bedgraph  > sample_depth_bamCoverage.bedgraph
 
 
-####################################
-
-# Project P180312 (62GB)
-# WTCHG_538916_217108 Sample:Input_ZCWPW1-HA Count:61279859
-# WTCHG_538916_221156 Sample:ChIPHA_ZCWPW1-HA Count:65459828
-
-# WTCHG_538916_220144 Sample:Input_ZCWPW1-HA+hPRDM9-V5 Count:67107524
-# WTCHG_538916_223180 Sample:ChIPHA_ZCWPW1-HA+hPRDM9-V5 Count:66894286
-
-# WTCHG_538916_224192 Sample:ChIPHA_ZCWPW1-HA+cPRDM9-V5 Count:62310491
-
-wget -r ftp://baquifta:pouma-motru-36@bsg-ftp.well.ox.ac.uk/180629_K00150_0342_AHVYHYBBXX
-
-md5sum -c P180312-md5sum.txt > P180312-md5sumCHECK.txt
 
 
-####################################
+wget https://github.com/dariober/ASCIIGenome/releases/download/v1.15.0/ASCIIGenome-1.15.0.zip
+ASCIIGenome-1.15.0/ASCIIGenome filtered/WTCHG_659233_250124.bam
 
-# Project P180586 (57GB)
-# WTCHG_594404_276139 Sample:Input_PWDB6F1 Count:75761495
-# WTCHG_594404_277151 Sample:ChIPZCWPW1_PWDB6F1 Count:55372208
+rsync --stats -avpn -e ssh stats2:/data/saxony/wells/zcwpw1/sample_regions/* ~/Downloads/sample_regions/
 
-# WTCHG_594404_278163 Sample:Input_PWDB6humF1 Count:100880333
-# WTCHG_594404_279175 Sample:ChIPZCWPW1_PWDB6humF1 Count:49620935
+zcw_wP9_peaks_JOIN_h3k4me3_P9_enrichment <- foverlaps(zcw_wP9_peaks, h3k4me3_P9_peaks, mult="first")
+ 
+zcw_wP9_peaks_cin_JOIN_h3k4me3_P9_enrichment <- foverlaps(zcw_wP9_peaks_cin, h3k4me3_P9_peaks, mult="first")
 
-wget -r ftp://aifojhoo:kavfi-hethu-03@bsg-ftp.well.ox.ac.uk/181018_K00198_0357_BHWV5YBBXX
+zcw_wP9_peaks_cin_JOIN_h3k4me3_P9_enrichment[order(-i.enrichment)][i.cov_input>=5][1:10]
 
-md5sum -c P180586-md5sum.txt > P180586-md5sumCHECK.txt
+zcw_wP9_peaks_JOIN_h3k4me3_P9_enrichment[order(-i.enrichment)][i.cov_input>=5][1:10]
+zcw_wP9_peaks_JOIN_h3k4me3_P9_enrichment[order(-i.enrichment)][i.cov_input>=5][1:500][,.N,by=chr]
 
+fwrite(zcw_wP9_peaks_JOIN_h3k4me3_P9_enrichment[order(-i.enrichment)][i.cov_input>5][1:40][,.(chr, i.center_start-5000, i.center_stop+5000, enrichment)], "../data/zcw_wP9_peaks_peaks.bed", col.names = FALSE, sep = "\t")
 
-####################################
-
-
-# Project P180717 (61GB)
-# WTCHG_659233_233110 Sample:Input_ZCWPW1-HA+hPRDM9-ZFonly-V5 Count:24871157
-# WTCHG_659233_234122 Sample:ChIPHA_ZCWPW1-HA+hPRDM9-ZFonly-V5 Count:22347286
-# WTCHG_659233_235134 Sample:ChIPH3K4me3_ZCWPW1-HA+hPRDM9-ZFonly-V5 Count:25369086
-
-# WTCHG_659233_249112 Sample:Input_ZCWPW1-HA+hPRDM9-V5 Count:30499498
-# WTCHG_659233_250124 Sample:ChIPHA_ZCWPW1-HA+hPRDM9-V5 Count:27818259
-# WTCHG_659233_251136 Sample:ChIPH3K4me3_ZCWPW1-HA+hPRDM9-V5 Count:25895561
-
-# WTCHG_659233_252148 Sample:Input_ZCWPW1-HA+cPRDM9-V5 Count:29613874
-# WTCHG_659233_253160 Sample:ChIPHA_ZCWPW1-HA+cPRDM9-V5 Count:26200675
-# WTCHG_659233_254172 Sample:ChIPH3K4me3_ZCWPW1-HA+cPRDM9-V5 Count:25669210
-
-# WTCHG_659233_255184 Sample:Input_hPRDM9-ZFonly-V5 Count:27442139
-# WTCHG_659233_256196 Sample:ChIPV5_hPRDM9-ZFonly-V5 Count:29978613
+samtools idxstats filtered/WTCHG_659233_253160.bam | cut -f 1,3
 
 
-wget -r ftp://meigakuj:rygri-sekgo-36@bsg-ftp.well.ox.ac.uk/190301_K00181_0120_BH3NTJBBXY
-
-cd bsg-ftp.well.ox.ac.uk/190301_K00181_0120_BH3NTJBBXY/
-md5sum -c P180717-md5sum.txt > P180717-md5sumCHECK.txt
-
-####################################
+zcw_peaks_JOIN_zcw_wP9_peaks <- foverlaps(zcw_peaks, zcw_wP9_peaks, mult="first")
+zcw_peaks_JOIN_zcw_wP9_peaks[order(-i.enrichment)][i.cov_input>=5][1:10]
 
 
-#SRR5627143 ChIPseq.HumanPRDM9_HA.Input.ProtocolC
-#SRR5627146 ChIPseq.HumanPRDM9_HA.antiHA.ProtocolC
-#SRR5627144 ChIPseq.ChimpPRDM9_HA.antiHA.ProtocolC
-#SRR5627149 ChIPseq.HumanPRDM9_HA.antiH3K36me3.ProtocolC
-#SRR5627152 ChIPseq.HumanPRDM9_HA.antiH3K4me3.ProtocolC.Rep1
-#SRR5627153 ChIPseq.HumanPRDM9_HA.antiH3K4me3.ProtocolC.Rep2
-#SRR5627142 ChIPseq.Untransfected.Input.ProtocolC
-#SRR5627150 ChIPseq.Untransfected.antiH3K4me3.Rep1.ProtocolC
-#SRR5627151 ChIPseq.Untransfected.antiH3K4me3.Rep2.ProtocolC
-#SRR5627148 ChIPseq.Untransfected.antiH3K36me3.ProtocolC
-
-#ChIPseq.YFP_HumanPRDM9.antiGFP.Rep1.ProtocolN
-#ChIPseq.YFP_HumanPRDM9.antiGFP.Rep2.ProtocolN
-#ChIPseq.YFP_HumanPRDM9.Input.ProtocolN
+zcw_wcP9_peaks_cin[order(-enrichment)][cov_input>=5][1:20]
 
 
-# cd /homes/wells/data-on-saxony/single-cell/sequencing/software/
+# cd /homes/wells/saxony/single-cell/sequencing/software/
 # wget https://github.com/bedops/bedops/releases/download/v2.4.35/bedops_linux_x86_64-v2.4.35.tar.bz2
 # tar jxvf bedops_linux_x86_64-v2.4.35.tar.bz2
 
 
-####################################
 
-export PATH=/homes/wells/data-on-saxony/single-cell/sequencing/software/fastqc/FastQC/:$PATH
-export PATH=/homes/wells/data-on-saxony/single-cell/sequencing/software/bedtools/bedtools2/bin/:$PATH
-export PATH=/homes/wells/data-on-saxony/single-cell/sequencing/software/samtools/samtools-1.7/:$PATH
-export LD_LIBRARY_PATH=/homes/wells/data-on-saxony/single-cell/sequencing/software/htslib_1.9/lib/:$LD_LIBRARY_PATH
-export PATH=/homes/wells/data-on-saxony/single-cell/sequencing/software/:$PATH
-export PATH=/homes/wells/data-on-saxony/single-cell/sequencing/software/MAPeakCaller/:$PATH
-export PATH=/homes/wells/data-on-saxony/single-cell/sequencing/software/bwa-0.7.17/:$PATH
-export PATH=/homes/wells/data-on-saxony/single-cell/sequencing/software/bowtie/bowtie-1.2.2-linux-x86_64/:$PATH
-export PATH=/homes/wells/data-on-saxony/single-cell/sequencing/software/bin/:$PATH # bedops
-
-snakemake --cores 15 -npr
-snakemake --snakefile Snakefile_peaks -npr
 
 ####################################
 
@@ -132,43 +73,12 @@ snakemake --snakefile Snakefile_peaks -npr
 223 of 223 steps (100%) done
 Complete log: /data/saxony/wells/zcwpw1/.snakemake/log/2019-03-06T162340.527449.snakemake.log
 
+
+
+
 ```
 
 
-
-# Mark TSS
-
-```{r}
-load_tss <- function(file="../data/hg38.wgEncodeGencodeCompV28.bed", flank=400){
-encode_tss <- fread(file)
-names(encode_tss) <- gsub("hg38.wgEncodeGencodeCompV28.|hg38.wgEncodeGencodeAttrsV28.","",names(encode_tss))
-
-encode_tss[strand=='+', CI_start_ext := txStart - flank]
-encode_tss[strand=='+', CI_stop_ext := txStart + flank]
-encode_tss[strand=='-', CI_start_ext := txEnd - flank]
-encode_tss[strand=='-', CI_stop_ext := txEnd + flank]
-setnames(encode_tss,'chrom','chr')
-setnames(encode_tss,'#name','tss')
-
-encode_tss <- encode_tss[,.(chr, CI_start_ext, CI_stop_ext,tss)]
-setkey(encode_tss, chr, CI_start_ext, CI_stop_ext)
-return(encode_tss)
-}
-
-encode_tss <- load_tss(flank=500)
-
-HP9combo_peaks$tss <- foverlaps(HP9combo_peaks, encode_tss, mult = 'first')$tss
-HP9N_peaks$tss <- foverlaps(HP9N_peaks, encode_tss, mult = 'first')$tss
-
-CP9combo_peaks$tss <- foverlaps(CP9combo_peaks, encode_tss, mult = 'first')$tss
-
-
-
-zcw_wP9_vs_chip_Z$tss <- foverlaps(zcw_wP9_vs_chip_Z, encode_tss, mult = 'first')$tss
-zcw_wP9_peaks_cin$tss <- foverlaps(zcw_wP9_peaks_cin, encode_tss, mult = 'first')$tss
-zcw_peaks$tss <- foverlaps(zcw_peaks, encode_tss, mult = 'first')$tss
-
-```
 
 # Chip Overlap with TSS
 
@@ -186,27 +96,7 @@ fraction_overlapN2(zcw_wP9_vs_chip_Z[cov_input>5], encode_tss,  "Zcw CVC", "TSS"
 ```
 
 
-# Export beds
 
-```{r}
-fwrite(zcw_wP9_vs_chip_Z[cov_input>5][order(enrichment)][,.(chr, center_start, center_stop, enrichment)], "../data/zcw_wP9_vs_chip_Z.bed", col.names = FALSE, sep = "\t")
-
-
-fwrite(HP9combo_peaks[cov_input>5][!is.na(tss)][order(enrichment)][,.(chr, center_start, center_stop, enrichment)], "../data/HP9combo_peaks_Promoters.bed", col.names = FALSE, sep = "\t")
-fwrite(HP9combo_peaks[cov_input>5][is.na(tss)][order(enrichment)][,.(chr, center_start, center_stop, enrichment)], "../data/HP9combo_peaks_NonPromoters.bed", col.names = FALSE, sep = "\t")
-
-split -d -n l/4 deeptools/beds/HP9combo_peaks_Promoters.bed deeptools/beds/HP9combo_peaks_Promoters.bed
-split -d -n l/4 deeptools/beds/HP9combo_peaks_NonPromoters.bed deeptools/beds/HP9combo_peaks_NonPromoters.bed
-
-
-
-fwrite(CP9combo_peaks[cov_input>5][!is.na(tss)][order(enrichment)][,.(chr, center_start, center_stop, enrichment)], "../data/CP9combo_peaks_Promoters.bed", col.names = FALSE, sep = "\t")
-fwrite(CP9combo_peaks[cov_input>5][is.na(tss)][order(enrichment)][,.(chr, center_start, center_stop, enrichment)], "../data/CP9combo_peaks_NonPromoters.bed", col.names = FALSE, sep = "\t")
-
-split -d -n l/4 deeptools/beds/CP9combo_peaks_Promoters.bed deeptools/beds/CP9combo_peaks_Promoters.bed
-split -d -n l/4 deeptools/beds/CP9combo_peaks_NonPromoters.bed deeptools/beds/CP9combo_peaks_NonPromoters.bed
-
-```
 
 # ZcwCVC Non Overlaping with HP9combo
 
