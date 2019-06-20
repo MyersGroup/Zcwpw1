@@ -1,14 +1,22 @@
+### Mapping Parameters
+
 fastq_dir:
   594404: 'raw_data/bsg-ftp.well.ox.ac.uk/181018_K00198_0357_BHWV5YBBXX/'
   538916: 'raw_data/bsg-ftp.well.ox.ac.uk/180629_K00150_0342_AHVYHYBBXX/'
   Altemose2015: 'raw_data/altemose/'
   659233: 'raw_data/bsg-ftp.well.ox.ac.uk/190301_K00181_0120_BH3NTJBBXY/'
+  Dmc1_r1: 'raw_data/bsg-ftp.well.ox.ac.uk/190524_D00529_0716_AH2G53BCX3/'
 
 genome:
   594404: 'mm10'
   538916: 'hg38'
   Altemose2015: 'hg38'
   659233: 'hg38'
+  Dmc1_r1: 'mm10'
+
+
+
+### Profile Plot Parameters
 
 samples:
   - 'HP9combo_peaks_NonPromoters_MotifCenteredStranded'
