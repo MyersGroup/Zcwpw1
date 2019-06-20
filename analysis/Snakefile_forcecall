@@ -41,10 +41,14 @@ comparisons = [("WTCHG_538916_221156", "WTCHG_538916_217108"),  #Zcw only Chip v
               ("SRA_Altemose2015_SRR5627150", "SRA_Altemose2015_SRR5627142"), # untransfected H3K4 peaks
               ("SRA_Altemose2015_SRR5627148", "SRA_Altemose2015_SRR5627142")] # untransfected H3K36 peaks
 
+comparisons = [("SRA_Altemose2015_SRR5627138_AND_SRA_Altemose2015_SRR5627139", "SRA_Altemose2015_SRR5627140"),# YFP Nterm
+                ("SRA_Altemose2015_SRR5627141", "SRA_Altemose2015_SRR5627140")] # YFP Nterm H3K4me3
+
 forcecallAT = "SRA_Altemose2015_SRR5627138_AND_SRR5627139_vs_SRA_Altemose2015_SRR5627140"
 forcecallAT = "SRA_Altemose2015_SRR5627146_AND_SRA_Altemose2015_SRR5627147_vs_SRA_Altemose2015_SRR5627143"
 forcecallAT = "SRA_Altemose2015_SRR5627138_AND_SRA_Altemose2015_SRR5627139_vs_SRA_Altemose2015_SRR5627140.flank150"
 forcecallAT = "genome.windows.100wide.100slide.bed"
+forcecallAT = "qPCR_regions_for_validation.bed"
 
 rule all:
   input:

@@ -1,7 +1,7 @@
 # snakemake --cores 15 --snakefile Snakefile_peaks -npr
 
 
-# Combine Inputs
+# Combine Inputs, needs to be done manually atm
 
 # cat MAPeakCaller/Fragment_Position_WTCHG_538916_217108.sorted.bed \
 #     MAPeakCaller/Fragment_Position_WTCHG_538916_220144.sorted.bed | \
@@ -26,10 +26,15 @@ comparisons = [("WTCHG_538916_221156", "WTCHG_538916_217108"),  #Zcw only Chip v
               ("WTCHG_538916_223180", "WTCHG_538916_217108_AND_WTCHG_538916_220144"), #Cotransfected Chip vs Combined Input
 
               ("WTCHG_538916_223180", "WTCHG_538916_221156"),  #Chip with Prdm9 vs Chip
-              ("WTCHG_538916_224192", "WTCHG_538916_221156"), # chimpPrdm9 vs chip
+              ("WTCHG_538916_224192", "WTCHG_538916_221156"), # chimpPrdm9+Zcw vs chip
+              ("WTCHG_538916_224192", "WTCHG_538916_217108_AND_WTCHG_538916_220144"), # chimpPrdm9+Zcw vs Combined hInput
 
               # Human
-              ("SRA_Altemose2015_SRR5627138_AND_SRA_Altemose2015_SRR5627139", "SRA_Altemose2015_SRR5627140"), # hPrdm9-Nterm vs Input
+              ("SRA_Altemose2015_SRR5627138_AND_SRA_Altemose2015_SRR5627139", "SRA_Altemose2015_SRR5627140"), # hPrdm9-Nterm vs YFP_HumanPRDM9.Input
+
+              ("SRA_Altemose2015_SRR5627141", "SRA_Altemose2015_SRR5627140"), # YFP_HumanPRDM9.antiH3K4me3 vs YFP_HumanPRDM9.Input
+              #("SRA_Altemose2015_SRR5627141", "SRA_Altemose2015_SRR5627136_AND_SRA_Altemose2015_SRR5627135"), # YFP_HumanPRDM9.antiH3K4me3 vs Untransfected.antiH3K4me3
+
               ("SRA_Altemose2015_SRR5627146", "SRA_Altemose2015_SRR5627143"), # hPrdm9 HA vs Input
               ("SRA_Altemose2015_SRR5627147", "SRA_Altemose2015_SRR5627143"), # hPrdm9 V5 vs Input (HA)
               ("SRA_Altemose2015_SRR5627146_AND_SRA_Altemose2015_SRR5627147", "SRA_Altemose2015_SRR5627143"), # hPrdm9-Cterm HA & V5 vs Input (HA)
@@ -42,7 +47,7 @@ comparisons = [("WTCHG_538916_221156", "WTCHG_538916_217108"),  #Zcw only Chip v
               # Histone Mods
               ("SRA_Altemose2015_SRR5627152_AND_SRA_Altemose2015_SRR5627153", "SRA_Altemose2015_SRR5627143"), # H3K4 peaks wPrdm9
               ("SRA_Altemose2015_SRR5627149", "SRA_Altemose2015_SRR5627143"), # H3K36 peaks wPprdm9
-              ("SRA_Altemose2015_SRR5627150", "SRA_Altemose2015_SRR5627142"), # untransfected H3K4 peaks
+              ("SRA_Altemose2015_SRR5627150_AND_SRA_Altemose2015_SRR5627151", "SRA_Altemose2015_SRR5627142"), # untransfected H3K4 peaks
               ("SRA_Altemose2015_SRR5627148", "SRA_Altemose2015_SRR5627142"), # untransfected H3K36 peaks
 
 
