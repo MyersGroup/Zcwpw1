@@ -82,12 +82,10 @@ encode_tss[strand=='+',center_stop := txStart + 500]
 encode_tss[strand=='-', center_start := txEnd - 500]
 encode_tss[strand=='-',center_stop := txEnd + 500]
 
-prdm9_h <- fread(inputfile)
-
-names(prdm9_h) <- c('chrom','center_start','center_stop','pvalue','enrichment')
+names(prdm9_h) <- c('chr','center_start','center_stop','pvalue','enrichment')
 str(prdm9_h)
 
-setkey(encode_tss, chrom, center_start, center_stop)
+setkey(encode_tss, chr, center_start, center_stop)
 prdm9_h_tss <- foverlaps(prdm9_h, encode_tss, type="within")
 prdm9_h_P <- prdm9_h_tss[!is.na(center_start)]
 prdm9_h_notP <- prdm9_h_tss[is.na(center_start)]
