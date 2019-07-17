@@ -77,8 +77,8 @@ md5sum -c P180717-md5sum.txt > P180717-md5sumCHECK.txt
 
 Dmc1 ChipSeq
 
-- WTCHG_688471 Sample:ZCW2.1ahomKO Count:35316203
-- WTCHG_688472 Sample:ZCW2.1bhetKO Count:55686978
+- WTCHG_688471 Sample:ZCW2.1ahomKO Count:35316203 Index 27
+- WTCHG_688472 Sample:ZCW2.1bhetKO Count:55686978 Index 22
 
 
 ```{r}
@@ -88,6 +88,26 @@ cd bsg-ftp.well.ox.ac.uk/190524_D00529_0716_AH2G53BCX3/
 md5sum -c P190297-md5sum.txt > P190297-md5sumCHECK.txt
 
 ```
+
+# Project P190297 (38GB)
+
+Dmc1 ChipSeq pt2
+
+ - WTCHG_692839 Sample:ZCW2.1ahomKO_replacement Count:112,012,389 (AD022 = X (22,254,262), AD027 = HomKO (60,145,785))
+ - WTCHG_692840 Sample:ZCW2.1cWT Count:85,870,274 Index 09 (76,036,061)
+ 
+ 
+
+  
+
+```{r}
+cd saxony/zcwpw1/raw_data/
+wget -r ftp://citnocja:oagew-ijodo-63@bsg-ftp.well.ox.ac.uk/190621_D00529_0723_BH2WNHBCX3
+
+cd bsg-ftp.well.ox.ac.uk/190621_D00529_0723_BH2WNHBCX3/
+md5sum -c P190297-md5sum.txt > P190297-md5sumCHECK.txt
+```
+
 
 # Altemose2015
 
@@ -116,7 +136,7 @@ Remapping the data from Altemose et al 2015 (eLife) from hg37 to hg38
 #SRR5627140 ChIPseq.YFP_HumanPRDM9.Input.ProtocolN
 #SRR5627138 ChIPseq.YFP_HumanPRDM9.antiGFP.Rep1.ProtocolN;
 #SRR5627139 ChIPseq.YFP_HumanPRDM9.antiGFP.Rep2.ProtocolN
-
+#SRR5627141 ChIPseq.YFP_HumanPRDM9.antiH3K4me3.ProtocolN
 
 
 # https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE99407
