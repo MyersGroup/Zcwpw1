@@ -1,0 +1,48 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+
+wget https://gist.githubusercontent.com/finswimmer/abcd71d0c645fef5afcc2a179522fbeb/raw/a65ded745e32ba1e79dd567984cf1201291937bb/prefixes.txt
+
+awk -F "\t" -v OFS="\t" 'FNR==NR {species[$1]=$2; next} {match($0, />(.+)P/, id); if (id[1] in species) {print $0, species[id[1]]} else {print}}' prefixes.txt phylodynamics/Human_ZCWPW1_orthologues_raw.fa > phylodynamics/Human_ZCWPW1_orthologues_raw_named.fa
+
+
+library("msa")
+
+Zcwpw1_Orthologues <- readAAStringSet("phylodynamics/Human_ZCWPW1_orthologues_raw.fa")
+Zcwpw1_Orthologues
+
+Zcwpw1_Orthologues_Alignment <- msa(Zcwpw1_Orthologues, "ClustalW")
+
+Zcwpw1_Orthologues_Alignment
+
+msaConsensusSequence(Zcwpw1_Orthologues_Alignment)
+
+#showLogo="top"
+#logoColors="rasmol"
+#shadingMode="similar",
+#shadingMode="functional",shadingModeArg="charge"
+
+#furtherCode=c("\\defconsensus{.}{lower}{upper}","\\showruler{1}{top}")
+msaPrettyPrint(Zcwpw1_Orthologues_Alignment, output="pdf", askForOverwrite=FALSE, paperHeight = 16)
+#Sys.which("pdflatex")
+#Sys.getenv("PATH")
+#Sys.setenv(PATH=paste(Sys.getenv("PATH"),"/Library/TeX/texbin",sep=":"))
+
+hemoAln2 <- msaConvert(Zcwpw1_Orthologues_Alignment, type="seqinr::alignment")
+
+library(seqinr)
+d <- dist.alignment(hemoAln2, "identity")
+as.matrix(d)[2:5, "HBA1_Homo_sapiens", drop=FALSE]
+
+library(ape)
+hemoTree <- nj(d)
+plot(hemoTree, main="Phylogenetic Tree of Hemoglobin Alpha Sequences")
+
+
+```
+
