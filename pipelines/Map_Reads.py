@@ -8,7 +8,7 @@
 
 from os.path import join
 
-configfile: 'config.yml'
+configfile: 'pipelines/config.yml'
 
 METADATA_DIR = config["metadata_dir"]
 
