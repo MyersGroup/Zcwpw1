@@ -19,15 +19,22 @@ h3k4me3_UT_100bp$h3k4me3_hP9_enrichment <- h3k4me3_hP9_100bp$enrichment
 h3k4me3_UT_100bp$zcw_enrichment <- zcw_100bp$enrichment
 h3k4me3_UT_100bp$zcw_pvalue <- zcw_100bp$pvalue
 h3k4me3_UT_100bp$zcw_P9_enrichment <- zcw_hP9_100bp$enrichment
+h3k4me3_UT_100bp$zcw_P9_cov_input <- zcw_hP9_100bp$cov_input
 h3k4me3_UT_100bp$zcw_P9_pvalue <- zcw_hP9_100bp$pvalue
 h3k4me3_UT_100bp$h3k36me3_hP9_enrichment <- h3k36me3_hP9_100bp$enrichment
+
+# Zcw vs Zct + P9
 
 plot(h3k4me3_UT_100bp$zcw_enrichment,h3k4me3_UT_100bp$zcw_P9_enrichment, pch=".", col='#00000002')
 plot(h3k4me3_UT_100bp$zcw_enrichment,h3k4me3_UT_100bp$zcw_P9_enrichment, pch=".", log="xy")
 
+# K4 vs K36
+
 plot(h3k4me3_UT_100bp$h3k36me3_hP9_enrichment, h3k4me3_UT_100bp$h3k4me3_hP9_enrichment, pch=".", col='#00000010')
 points(h3k4me3_UT_100bp[zcw_P9_enrichment>1 & zcw_P9_pvalue<1e-6]$h3k36me3_hP9_enrichment,
        h3k4me3_UT_100bp[zcw_P9_enrichment>1 & zcw_P9_pvalue<1e-6]$h3k4me3_hP9_enrichment, pch=".", col='#FF000010')
+
+# K4UT vs P9
 
 qplot(h3k4me3_UT_100bp$enrichment, h3k4me3_UT_100bp$P9_enrichment, stroke=I(0), alpha=I(0.1), col=h3k4me3_UT_100bp$zcw_enrichment>1)
 
@@ -35,14 +42,27 @@ plot(h3k4me3_UT_100bp[zcw_P9_enrichment<1]$enrichment, h3k4me3_UT_100bp[zcw_P9_e
 points(h3k4me3_UT_100bp[zcw_P9_enrichment>1 & zcw_P9_pvalue<1e-6]$enrichment, h3k4me3_UT_100bp[zcw_P9_enrichment>1 & zcw_P9_pvalue<1e-6]$P9_enrichment, pch=".", col='#FF000005')
 
 
-plot(h3k4me3_UT_100bp[zcw_enrichment<1]$enrichment+0.01, h3k4me3_UT_100bp[zcw_enrichment<1]$P9_enrichment+0.01, pch=".", col='#00000010')
+# Zcw vs H3K4
 
+qplot(h3k4me3_UT_100bp[cov_input>10 & zcw_P9_cov_input>10]$enrichment, h3k4me3_UT_100bp[cov_input>10 & zcw_P9_cov_input>10]$zcw_P9_enrichment, stroke=I(0), alpha=I(0.1)) + geom_hex(bins = 300)
+
+ggplot(h3k4me3_UT_100bp[cov_input>10 & zcw_P9_cov_input>10], aes(enrichment, zcw_P9_enrichment)) + geom_hex(aes(fill = stat(log(count))), bins=200) +  scale_fill_viridis_c() + scale_x_log10() + scale_y_log10()
+
+ggplot(h3k4me3_UT_100bp[cov_input>10 & zcw_P9_cov_input>10], aes(enrichment, zcw_P9_enrichment)) + geom_hex(aes(fill = stat(log(count))), bins=200) +  scale_fill_viridis_c() + scale_x_log10()
+
+pdf()
+qplot(h3k4me3_UT_100bp$enrichment, h3k4me3_UT_100bp$zcw_enrichment, stroke=I(0), alpha=I(0.1)) + geom_hex(bins = 300)
+ggplot(h3k4me3_UT_100bp, aes(enrichment, zcw_enrichment)) + geom_hex(aes(fill = stat(log(count))), bins=200) +  scale_fill_viridis_c()
+
+ggplot(h3k4me3_UT_100bp, aes(rank(enrichment), rank(zcw_enrichment))) + geom_hex(aes(fill = stat(log(count))), bins=200) +  scale_fill_viridis_c()
+#scale_x_log10() + scale_y_log10() +
+dev.off()
+
+# K4UT vs P9 for Zcw_enrichment < vs > 1
 plot(h3k4me3_UT_100bp[zcw_enrichment<1]$enrichment+0.01, h3k4me3_UT_100bp[zcw_enrichment<1]$P9_enrichment+0.01, pch=".", col='#00000010')
 points(h3k4me3_UT_100bp[zcw_enrichment>1 & zcw_pvalue<1e-6]$enrichment+0.01, h3k4me3_UT_100bp[zcw_enrichment>1 & zcw_pvalue<1e-6]$P9_enrichment+0.01, pch=".", col='#FF000010')
 
-
-plot(h3k4me3_UT_100bp[zcw_enrichment<1]$enrichment+0.01, h3k4me3_UT_100bp[zcw_enrichment<1]$P9_enrichment+0.01, pch=".", col='#00000010', log="xy")
-
+# Log version
 plot(h3k4me3_UT_100bp[zcw_enrichment<1]$enrichment+0.01, h3k4me3_UT_100bp[zcw_enrichment<1]$P9_enrichment+0.01, pch=".", col='#00000010', log="xy")
 points(h3k4me3_UT_100bp[zcw_enrichment>1 & zcw_pvalue<1e-6]$enrichment+0.01, h3k4me3_UT_100bp[zcw_enrichment>1 & zcw_pvalue<1e-6]$P9_enrichment+0.01, pch=".", col='#FF000010')
 
