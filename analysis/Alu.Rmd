@@ -1,0 +1,446 @@
+---
+title: "Alu"
+output: html_notebook
+---
+
+
+```{r}
+
+# small bam file for sample
+#chr6:107,211,482-107,264,849
+echo "chr6  107211482  107264849" ch6_sample.bed
+samtools view filtered/WTCHG_538916_221156.bam -L ch6_sample.bed -b -o ch6_sample.bam
+samtools index ch6_sample.bam
+
+
+# Mappability track from genome browser (>7GB)
+https://epgg-test.wustl.edu/d/hg38/hg38.mappability.75.bigwig
+    
+# convert Hoffman lab mappability track to bed
+wget https://www.pmgenomics.ca/hoffmanlab/proj/bismap/trackhub/hg38/k24.Umap.MultiTrackMappability.bw
+./bigWigToBedGraph k24.Umap.MultiTrackMappability.bw k24.Umap.MultiTrackMappability.bedGraph
+awk '$4 > 0.75' k24.Umap.MultiTrackMappability.bedGraph | LC_ALL=C sort -k1,1 -k2,2n -S5G --parallel=5 | bedtools merge -i stdin > 24.Umap.MultiTrackMappability_Keep.bed
+
+bwtool extract bed ch6_sample.bed k24.Umap.MultiTrackMappability.bw k24.Umap.MultiTrackMappability_bwtool.bed
+
+bedtools merge -d 10 -i 24.Umap.MultiTrackMappability.bed > 24.Umap.MultiTrackMappability_d10.bed
+
+sed 's/ /\t/g' hg38.50mer.Excludable.bed |
+bedtools intersect -v -a  peaks/SingleBasePeaks.WTCHG_538916_223180_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144.p0.000001.sep250.ALL.bed \
+                          -b stdin > SingleBasePeaks.WTCHG_538916_223180_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144.p0.000001.sep250.ALL_QCMappability50.bed
+
+
+
+# Repeats
+
+curl 'http://genome.ucsc.edu/cgi-bin/hgTables?hgsid=738896965_zTgYMjAIHdEHcvRZcCteap7Zqbpt&boolshad.hgta_printCustomTrackHeaders=0&hgta_ctName=tb_rmsk&hgta_ctDesc=table+browser+query+on+rmsk&hgta_ctVis=pack&hgta_ctUrl=&fbQual=whole&fbUpBases=200&fbDownBases=200&hgta_doGetBed=get+BED' -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:67.0) Gecko/20100101 Firefox/67.0' -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' -H 'Accept-Language: en-GB,en;q=0.5' --compressed -H 'Connection: keep-alive' -H 'Referer: http://genome.ucsc.edu/cgi-bin/hgTables' -H 'Cookie: hguid.genome-euro=362527140_Mi0jIpneXLkgeplCtz5aa6JO13ha; hguid=673678055_VvqPPBb5iFgOJEF3WMG7M3t7iual' -H 'Upgrade-Insecure-Requests: 1' > Repeat_Masker.bed.gz
+gunzip -d Repeat_Masker.bed.gz
+
+grep -P 'chr[0-9XY]+\t' Repeat_Masker.bed | sort -k1,1 -k2,2n  > Repeat_MaskerSorted.bed
+
+# split into Alu and not
+grep 'Alu[a-zA-Z]' Repeat_MaskerSorted.bed > Repeat_MaskerSorted_Alu.bed
+grep -v 'Alu[a-zA-Z]' Repeat_MaskerSorted.bed > Repeat_MaskerSorted_NotAlu.bed
+
+# check Alu with no family name not present
+grep -P 'Alu\t' Repeat_MaskerSorted_Alu.bed | head
+
+awk '$3-$2 > 250 && $3-$2 < 350' Repeat_MaskerSorted_Alu.bed > Repeat_MaskerSorted_Alu_QC.bed
+```
+
+Over half of all ZcwST peaks overlap Alu, overrepresented in low enrichment peaks. L1 also shows a pattern of being depleted at high enrichment peaks. Other repeats don't overlap a large fraction of preaks.
+
+```{r}
+repeats <- fread("~/Dropbox/Downloads/Repeat_MaskerSorted.bed")
+
+setnames(repeats, c("chr","CI_start","CI_stop","Name","Score","Strand"))
+
+repeats$id <- seq_along(repeats$chr)
+
+repeats <- prejoin(repeats, ext = 0)
+
+# check order preserverd
+stopifnot(sum(diff(repeats$id)<0)==0)
+stopifnot(sum(diff(repeats$id)!=1))
+
+head(repeats[,.N,by=Name][order(-N)], 50)
+
+fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[Name!="Alu"][grep("Alu",Name)][CI_stop-CI_start>250 & CI_stop-CI_start<350], x1="Zcw UT", y1="Alu Repeats", shift=1e8) # yes up to 70%
+fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[grep("L1",Name)], x1="Zcw UT", y1="L1 Repeats", shift=1e8) # depeated
+fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[grep("LTR",Name)], x1="Zcw UT", y1="LTR Repeats", shift=1e8) # not
+
+fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[grep("MIR",Name)], x1="Zcw UT", y1="MIR Repeats", shift=1e8) # not but higher in high enriched 12%
+fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[grep("MIR",Name)], x1="Zcw UT", y1="MIR Repeats", shift=1e8) + scale_y_continuous()
+# fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[grep("L2",Name)], x1="Zcw UT", y1="Repeats", shift=1e8) # not, 12%
+# fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[grep("\\(",Name)], x1="Zcw UT", y1="Repeats", shift=1e8) # not 12%
+fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[grep("\\(",Name)], x1="Zcw UT", y1="Simple Repeats", shift=1e8) + scale_y_continuous()# 2% higher in low enriched
+# fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[grep("MER",Name)], x1="Zcw UT", y1="Repeats", shift=1e8) # not 10%
+# fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[grep("MLT",Name)], x1="Zcw UT", y1="Repeats", shift=1e8) # not 5%
+# fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[grep("FLAM",Name)], x1="Zcw UT", y1="Repeats", shift=1e8) # not <5%
+# fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[grep("THE",Name)], x1="Zcw UT", y1="Repeats", shift=1e8) # not <5%
+# fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[grep("L3",Name)], x1="Zcw UT", y1="Repeats", shift=1e8) # not <5%
+# fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[grep("rich",Name)], x1="Zcw UT", y1="Repeats", shift=1e8) # not
+# fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[grep("Charlie",Name)], x1="Zcw UT", y1="Repeats", shift=1e8) # not
+# fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[grep("Tigger",Name)], x1="Zcw UT", y1="Repeats", shift=1e8) # not
+# fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[grep("MST",Name)], x1="Zcw UT", y1="Repeats", shift=1e8) # not
+# fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[grep("Mam",Name)], x1="Zcw UT", y1="Repeats", shift=1e8) # not
+# fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[grep("HERV",Name)], x1="Zcw UT", y1="Repeats", shift=1e8) # not
+# fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[grep("ERVL",Name)], x1="Zcw UT", y1="Repeats", shift=1e8) # not
+# fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[Name=="THE1B"], x1="Zcw UT", y1="Repeats", shift=1e8) # not
+```
+
+Non Alu repeats are not enriched relative to expected based on randomised positions.
+
+```{r}
+
+# Summary of those not enriched
+fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[grep("\\(|MIR|L2|THE1B|MER|MLT|FLAM|THE|L3|rich|Charlie|Tigger|LTR|MST|Mam|HERV|ERVL",Name)], x1="Zcw UT", y1="Non Alu Repeats", shift=1e8)
+
+# Summary of what's left
+fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[!grep("\\(|Alu|MIR|L2|L1|THE1B|MER|MLT|FLAM|THE|L3|rich|Charlie|Tigger|LTR|MST|Mam|HERV|ERVL",Name)], x1="Zcw UT", y1="Repeats", shift=1e8) # not
+
+
+
+
+fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[grep("AluJ",Name)], x1="Zcw UT", y1="Repeats", shift=1e8) # yes up to 0.2
+fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[grep("AluS",Name)], x1="Zcw UT", y1="Repeats", shift=1e8) # yes up to 0.55
+fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[grep("AluY",Name)], x1="Zcw UT", y1="Repeats", shift=1e8) # a bit
+fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[Name=="Alu"], x1="Zcw UT", y1="Repeats", shift=1e8) # no
+
+fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[grep("AluSx",Name)], x1="Zcw UT", y1="Repeats", shift=1e8) # yes up to 0.25
+fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[grep("AluSz",Name)], x1="Zcw UT", y1="Repeats", shift=1e8) # yes up to 0.15
+fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[grep("AluSq",Name)], x1="Zcw UT", y1="Repeats", shift=1e8) # yes
+fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[grep("AluSp",Name)], x1="Zcw UT", y1="Repeats", shift=1e8) # yes
+fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[grep("AluSc",Name)], x1="Zcw UT", y1="Repeats", shift=1e8) # yes
+fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[grep("AluSg",Name)], x1="Zcw UT", y1="Repeats", shift=1e8) # yes
+
+fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[grep("AluSx",Name)], x1="Zcw UT", y1="Repeats", shift=1e8) + scale_y_continuous()
+fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[grep("AluSz",Name)], x1="Zcw UT", y1="Repeats", shift=1e8) + scale_y_continuous()
+fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[grep("AluSg",Name)], x1="Zcw UT", y1="Repeats", shift=1e8) + scale_y_continuous()
+```
+
+## Fraction of Alu
+
+75% of all Alu repeats have a ZcwST peak, higher for those with better match to consensus.
+
+```{r}
+
+fraction_overlapN2(repeats[Name!="Alu"][grep("Alu",Name)][CI_stop-CI_start>250 & CI_stop-CI_start<350], zcw_peaks_cin, x1="Alu Repeats by SmithWaterman Score (Not ", y1="Zcw UT", shift=1e8) # 
+
+# Only ~ 35% of ==Alu overlap Zcw
+# fraction_overlapN2(repeats[Name=="Alu"], zcw_peaks_cin, x1="Zcw UT", y1="Repeats", shift=1e8)
+```
+
+## Prdm9 Peaks
+
+As expected Prdm9 is enriched for THE1B - but only N term not C term. Neither set of Prdm9 peaks not enriched for Alu repeats.
+
+```{r}
+# P9 enriched in THE1B
+fraction_overlapN2(HP9N_peaks[cov_input>=5], repeats[Name=="THE1B"], x1="HP9N", y1="THE1B", shift=1e8) + scale_y_continuous()
+# not C term
+fraction_overlapN2(HP9combo_peaks[cov_input>=5], repeats[Name=="THE1B"], x1="HP9 Cterm", y1="THE1B", shift=1e8) + scale_y_continuous()
+# P9 Not enriched for Alu
+fraction_overlapN2(HP9N_peaks[cov_input>=5], repeats[grep("Alu",Name)], x1="HP9N", y1="Alu Repeats", shift=1e8)
+fraction_overlapN2(HP9combo_peaks[cov_input>=5], repeats[Name!="Alu"][grep("Alu",Name)], x1="HP9 Cterm HA + V5", y1="Alu Repeats", shift=1e8)
+fraction_overlapN2(zcw_wP9_vs_chip_Z[cov_input>=5], repeats[Name!="Alu"][grep("Alu",Name)], x1="Zcw CVC", y1="Alu Repeats", shift=1e8)
+
+# total = 5,607,738
+# left = 230,099
+# Alu = 1,209,364
+repeats[!grep("\\(|Alu|MIR|L2|L1|THE1B|MER|MLT|FLAM|THE|L3|rich|Charlie|Tigger|LTR|MST|Mam|HERV|ERVL",Name)][,.N,by=Name][order(-N)][1:50]
+
+repeats[grep("Alu",Name)][,.N,by=Name][order(-N)][1:50]
+
+```
+
+# CpG
+
+```{r}
+system("bedtools getfasta -s -fi motifs/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa -bed Repeat_MaskerSorted_Alu_QC.bed -name > AluRepeats.fa")
+
+AluRepeats <- seqinr::read.fasta("~/Downloads/AluRepeats.fa", forceDNAtolower = FALSE, as.string = TRUE)
+AluRepeats <- unlist(AluRepeats)
+
+repeatsAlu <- repeats[Name!="Alu"][grep("Alu",Name)][CI_stop-CI_start>250 & CI_stop-CI_start<350]
+# check names match for ordering
+all.equal(repeatsAlu[,paste0(Name,"(",Strand,")")], names(AluRepeats))
+repeatsAlu$length <- nchar(AluRepeats)
+
+CG_locations <- sapply(AluRepeats,function(x) stringr::str_locate_all(x,"cg")[[1]][,1])
+repeatsAlu$CG_count <- sapply(CG_locations, length)
+
+
+
+# location & frequency hist
+hist(unlist(CG_locations[repeatsAlu$length==299]), breaks=1000)
+hist(CG_count, breaks=50)
+
+# % of Alu
+repeatsAlu$enrichment <- repeatsAlu$CG_count
+fraction_overlapN2(repeatsAlu, zcw_peaks_cin, x1="Alu Repeats by CpG Count (Not ", y1="Zcw UT", shift=1e8, n=40) + scale_x_continuous()
+
+# % of Zcw
+fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeatsAlu[enrichment==0], x1="Zcw UT", y1="Alu Repeats CpG=0", shift=1e8) + scale_y_continuous()
+fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeatsAlu[enrichment==1], x1="Zcw UT", y1="Alu Repeats CpG=1", shift=1e8) + scale_y_continuous()
+fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeatsAlu[enrichment==5], x1="Zcw UT", y1="Alu Repeats CpG=5", shift=1e8) + scale_y_continuous()
+fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeatsAlu[enrichment==10], x1="Zcw UT", y1="Alu Repeats CpG=10", shift=1e8) + scale_y_continuous()
+fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeatsAlu[enrichment==20], x1="Zcw UT", y1="Alu Repeats CpG=20", shift=1e8) + scale_y_continuous()
+```
+
+```{r}
+repeatsAlu$id <- seq_along(repeatsAlu$chr)
+
+overlapingAluIDS <- foverlaps(zcw_peaks_cin, repeatsAlu, mult="first")$id
+overlapingAluIDS2 <- overlapingAluIDS[!is.na(overlapingAluIDS)]
+
+repeatsAlu$overlap <- FALSE
+repeatsAlu[id %in% overlapingAluIDS2, overlap := TRUE]
+
+# compare count of CpG
+repeatsAlu$enrichment <- repeatsAlu$CG_count
+ggplot(repeatsAlu, aes(enrichment, fill=overlap)) + geom_histogram(aes(y=..density..), position = "identity", alpha=0.7, bins=70) + scale_fill_brewer(palette = "Set1")
+ggplot(repeatsAlu, aes(length, colour=overlap)) + geom_density()
+
+# compare location of CpG
+hist(unlist(CG_locations[repeatsAlu[overlap==TRUE]$id]), breaks=1000)
+hist(unlist(CG_locations[repeatsAlu[overlap==FALSE]$id]), breaks=1000)
+
+# compare proportion of Alu families
+AluOverapProp <- merge(repeatsAlu[overlap==TRUE][,.(Overlap=.N/nrow(repeatsAlu[overlap==TRUE]), Number=.N),by=Name],
+                       repeatsAlu[overlap==FALSE][,.(NonOverlap=.N/nrow(repeatsAlu[overlap==FALSE]), Number=.N),by=Name], by="Name")
+AluOverapProp[, ratioOfProportions := (Overlap+0.01)/(NonOverlap+0.01)]
+AluOverapProp[, Occurrences := Number.y + Number.x]
+
+ggplot(AluOverapProp, aes(Name, ratioOfProportions, size=Occurrences)) +
+  geom_hline(yintercept = 1, col="darkgrey") +
+  geom_point() +
+  coord_flip() +
+  scale_size() +
+  scale_y_log10()
+
+
+# compare proportion of GC Counts
+AluOverapProp <- merge(repeatsAlu[overlap==TRUE][,.(Overlap=.N/nrow(repeatsAlu[overlap==TRUE]), Number=.N),by=CG_count],
+                       repeatsAlu[overlap==FALSE][,.(NonOverlap=.N/nrow(repeatsAlu[overlap==FALSE]), Number=.N),by=CG_count], by="CG_count")
+AluOverapProp[, ratioOfProportions := (Overlap)/(NonOverlap)]
+AluOverapProp[, Occurrences := Number.y + Number.x]
+
+ggplot(AluOverapProp, aes(CG_count, ratioOfProportions, size=Occurrences)) +
+  geom_hline(yintercept = 1, col="darkgrey") +
+  geom_point() +
+  scale_size() +
+  scale_y_log10()
+
+# AluOverapProp$Type <- reorder(AluOverapProp$Name, AluOverapProp$ratioOfProportions)
+# ggplot(AluOverapProp, aes(Type, ratioOfProportions, size=count)) + geom_hline(yintercept = 1, col="darkgrey") + geom_point() + coord_flip() + scale_size() + scale_y_log10()
+
+
+# p <- ggplot(AluOverapProp, aes(Overlap, NonOverlap, label=Name, colour=log(ratioOfProportions))) + 
+#   #stat_smooth(method="lm", formula = y ~ 0 + x, se = F, col="grey", size=1) +
+#   geom_abline() +
+#   geom_point() + 
+#   scale_x_log10() + scale_y_log10()
+# 
+# p
+# p + scale_x_continuous() + scale_y_continuous() + geom_label_repel(data=AluOverapProp[ratioOfProportions<0.9 | ratioOfProportions>1.5])
+# ggplot(AluOverapProp, aes(V1.x*V1.y, V1.x/V1.y, label=Name, colour=ratioOfProportions)) + geom_point() + geom_label_repel(data=AluOverapProp[ratioOfProportions<0.7 | ratioOfProportions>1.5]) + scale_x_log10() + scale_y_log10()
+```
+
+Cross check results
+```{r}
+repeatsAlu$enrichment <- repeatsAlu$Score
+fraction_overlapN2(repeatsAlu[grep("AluJ",Name)], zcw_peaks_cin, x1="AluJ Repeats by SmithWaterman Score (Not ", y1="Zcw UT", shift=1e8) + scale_x_continuous()
+fraction_overlapN2(repeatsAlu[grep("AluSz",Name)], zcw_peaks_cin, x1="AluSz Repeats by SmithWaterman Score (Not ", y1="Zcw UT", shift=1e8) + scale_x_continuous() 
+fraction_overlapN2(repeatsAlu[grep("AluS[cqpgx]",Name)], zcw_peaks_cin, x1="AluS[cqpgx] Repeats by SmithWaterman Score (Not ", y1="Zcw UT", shift=1e8) + scale_x_continuous()
+fraction_overlapN2(repeatsAlu[grep("AluY",Name)], zcw_peaks_cin, x1="AluY Repeats by SmithWaterman Score (Not ", y1="Zcw UT", shift=1e8) + scale_x_continuous()
+```
+
+```{r}
+repeatsAlu[grep("AluJ",Name), class := "AluJ"]
+repeatsAlu[grep("AluSz",Name), class := "AluSz"]
+repeatsAlu[grep("AluS[qpgx]",Name), class := "AluS[qpgx]"]
+repeatsAlu[grep("AluSc",Name), class := "AluSc"]
+repeatsAlu[grep("AluY",Name), class := "AluY"]
+
+ggplot(repeatsAlu, aes(Score, color=class)) + geom_density()
+
+ggplot(repeatsAlu, aes(CG_count)) + geom_histogram(binwidth = 1) + facet_wrap(~class, scales='free_y')
+```
+
+# Aligned Alu CpG
+
+multi-align AluJo sequences with each other (as variable poly A in center messes things up otherwise - see histogram above). The compare aligned positions for diff in frequency of CpG
+
+```{r}
+
+overlap_idx <- which(repeatsAlu$Name=="AluJo" & repeatsAlu$overlap==T)[1:1000]
+nonoverlap_idx <- which(repeatsAlu$Name=="AluJo" & repeatsAlu$overlap==F)[1:1000]
+tmp <- AluRepeats[c(overlap_idx, nonoverlap_idx)]
+names(tmp) <- paste0(seq_along(tmp),"_", names(tmp))
+export_FASTA(tmp, "AluJo.fasta")
+
+AluAligned <- seqinr::read.fasta("../data/kalign-I20190715-002019-0175-34958881-p2m.fasta", forceDNAtolower = FALSE, as.string = TRUE)
+AluAligned <- unlist(AluAligned)
+
+AluAlignedM <- matrix(ncol=nchar(AluAligned[1]), unlist(strsplit(AluAligned,"")), byrow=T)
+
+nongaps <- apply(AluAlignedM, 2, function(x) sum(x=="-"))<200
+AluAlignedM <- AluAlignedM[,nongaps]
+
+# c_o <- apply(AluAlignedM[1:1000,], 2, function(x) mean(x=="c"))
+# c_no <- apply(AluAlignedM[1001:2000,], 2, function(x) mean(x=="c"))
+# 
+# plot(log(c_o/c_no))
+
+CG_locations_aligned <- sapply(AluAligned,function(x) stringr::str_locate_all(x,"c(-+)?g")[[1]][,1])
+
+hist(unlist(CG_locations_aligned[1:1000]), breaks=5000, xlim=c(0,max(unlist(CG_locations_aligned))), ylim=c(0,175))
+hist(unlist(CG_locations_aligned[1001:2000]), breaks=5000, xlim=c(0,max(unlist(CG_locations_aligned))), ylim=c(0,175))
+
+o_v_no <- rbind(data.table(table(unlist(CG_locations_aligned[1:1000])), type="overlaping"),
+                data.table(table(unlist(CG_locations_aligned[1001:2000])), type="nonOverlaping"))
+
+o_v_no_cast <- dcast(o_v_no, V1 ~ type, value.var = "N", fill = 0)
+o_v_no_cast[, OvsNOratio := (overlaping+30) / (nonOverlaping+30)]
+
+ggplot(o_v_no_cast, aes(as.numeric(V1), OvsNOratio)) + geom_point() + labs(x="Aligned Position in Alu repeat", y="Ratio of CpG counts in Zcw overlaping Alus vs non-overlaping")
+
+o_v_no_cast[order(-OvsNOratio)][1:20]
+o_v_no_cast[order(OvsNOratio)][1:20]
+```
+
+
+```{r}
+# format for IGV
+tail -n +2 SingleBasePeaks.WTCHG_538916_223180_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144.p0.000001.sep250.ALL.bed | cut -f 1-3 > SingleBasePeaks.WTCHG_538916_223180_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144.p0.000001.sep250.ALL_headless.bed
+
+tail -n +2 ../results/peaks/SingleBasePeaks.SRA_Altemose2015_SRR5627146_AND_SRA_Altemose2015_SRR5627147_vs_SRA_Altemose2015_SRR5627143.p0.000001.sep250.ALL.bed | cut -f 1-3 > ../results/peaks/SingleBasePeaks.SRA_Altemose2015_SRR5627146_AND_SRA_Altemose2015_SRR5627147_vs_SRA_Altemose2015_SRR5627143.p0.000001.sep250.ALL_headless.bed
+
+tail -n +2 ../results/peaks/SingleBasePeaks.SRA_Altemose2015_SRR5627148_vs_SRA_Altemose2015_SRR5627142.p0.000001.sep250.ALL.bed | cut -f 1-3 > ../results/peaks/SingleBasePeaks.SRA_Altemose2015_SRR5627148_vs_SRA_Altemose2015_SRR5627142.p0.000001.sep250.ALL_headless.bed
+
+tail -n +2 ../results/peaks/SingleBasePeaks.SRA_Altemose2015_SRR5627152_AND_SRR5627153_vs_SRA_Altemose2015_SRR5627143.p0.000001.sep250.ALL.bed | cut -f 1-3 > ../results/peaks/SingleBasePeaks.SRA_Altemose2015_SRR5627152_AND_SRR5627153_vs_SRA_Altemose2015_SRR5627143.p0.000001.sep250.ALL_headless.bed
+
+#http://genome.ucsc.edu/cgi-bin/hgTables?db=hg38&hgta_group=hub_213889&hgta_track=hub_213889_Umap_24_quantitative&hgta_table=hub_213889_Umap.24.quantitative&hgta_doSchema=describe+table+schema
+
+
+plot(density(repeats[Name!="Alu"][grep("Alu",Name)][,CI_stop-CI_start]))
+abline(v=250, col="red")
+abline(v=350, col="red")
+
+
+
+awk '$3-$2 == 299' Repeat_MaskerSorted_Alu.bed  > Repeat_MaskerSorted_Alu_299.bed
+
+bwtool aggregate 300:300:300 Repeat_Masker_Alu_299.bed bedgraphs/depth_WTCHG_538916_221156.bigWig Alu_meta299.txt -fill=0 
+bwtool aggregate 300:300:300 Repeat_Masker_Alu_299.bed bedgraphs/depth_WTCHG_538916_217108.bigWig Alu_meta_In299.txt -fill=0 
+
+
+tmp <- fread("grep -v '#' Alu_meta299.txt")
+tmpIn <- fread("grep -v '#' Alu_meta_In299.txt")
+
+a <- fread("MAPeakCaller/Fragment_Position_WTCHG_538916_221156.total")
+b <- fread("MAPeakCaller/Fragment_Position_WTCHG_538916_217108.total")
+
+plot(tmp$V2 / (a$V1/1e6), type="l")
+lines(tmpIn$V2 / (b$V1/1e6), col="blue")
+abline(v=300, col="red")
+abline(v=300+150, col="red", lty=2)
+abline(v=600, col="red")
+dev.off()
+
+plot((tmp$V2 / tmpIn$V2) * (b$V1/a$V1), type="l")
+abline(v=300, col="red")
+abline(v=300+150, col="red", lty=2)
+abline(v=600, col="red")
+dev.off()
+
+
+```
+
+
+
+
+# Remove more alignments from BWA MEM tags
+```{r}
+sambamba view -t 12 -h -f bam -F "mapping_quality >= 1 and not (unmapped or secondary_alignment) and not ([XA] != null or [SA] != null)" filtered/WTCHG_538916_221156.bam -o WTCHG_538916_221156_SBBF.bam
+
+samtools flagstat -@ 5 WTCHG_538916_221156_SBBF.bam
+# 80705408 + 0 in total (QC-passed reads + QC-failed reads)
+# 0 + 0 secondary
+# 0 + 0 supplementary
+# 0 + 0 duplicates
+# 80705408 + 0 mapped (100.00% : N/A)
+# 80705408 + 0 paired in sequencing
+# 40448867 + 0 read1
+# 40256541 + 0 read2
+# 80705408 + 0 properly paired (100.00% : N/A)
+# 80705408 + 0 with itself and mate mapped
+# 0 + 0 singletons (0.00% : N/A)
+# 0 + 0 with mate mapped to a different chr
+# 0 + 0 with mate mapped to a different chr (mapQ>=5)
+
+
+samtools flagstat -@ 5 filtered/WTCHG_538916_221156.bam
+# 88007214 + 0 in total (QC-passed reads + QC-failed reads)
+# 0 + 0 secondary
+# 0 + 0 supplementary
+# 0 + 0 duplicates
+# 88007214 + 0 mapped (100.00% : N/A)
+# 88007214 + 0 paired in sequencing
+# 44003607 + 0 read1
+# 44003607 + 0 read2
+# 88007214 + 0 properly paired (100.00% : N/A)
+# 88007214 + 0 with itself and mate mapped
+# 0 + 0 singletons (0.00% : N/A)
+# 0 + 0 with mate mapped to a different chr
+# 0 + 0 with mate mapped to a different chr (mapQ>=5)
+```
+
+# Create mappability track with GEM
+
+(only exists publicly on hg19)
+
+```{r}
+# example - not sure it's correct due to large streaches
+wget https://github.com/xuefzhao/Reference.Mappability/raw/master/hg38.50mer/hg38.50mer.Excludable.bed
+
+
+wget https://downloads.sourceforge.net/project/gemlibrary/gem-library/Binary%20pre-release%203/GEM-binaries-Linux-x86_64-core_i3-20130406-045632.tbz2
+
+tar -jxvf GEM-binaries-Linux-x86_64-core_i3-20130406-045632.tbz2
+
+export PATH=/homes/wells/saxony/zcwpw1/GEM-binaries-Linux-x86_64-core_i3-20130406-045632/bin/:$PATH
+
+wget https://github.com/xuefzhao/Reference.Mappability/raw/master/Scripts/bedGraphTobed
+chmod 777 bedGraphTobed
+bedGraphTobed
+
+# must change from py2 to py3 add paren to print statements, and file arg instead of >>
+
+
+# unzip fasta reference
+zcat /homes/wells/saxony/single-cell/sequencing/metadata/GCA_000001405.15_GRCh38_no_alt_plus_hs38d1_analysis_set.fna.gz > /homes/wells/saxony/single-cell/sequencing/metadata/GCA_000001405.15_GRCh38_no_alt_plus_hs38d1_analysis_set.fna
+
+# create index
+gem-indexer -i /homes/wells/saxony/single-cell/sequencing/metadata/GCA_000001405.15_GRCh38_no_alt_plus_hs38d1_analysis_set.fna  -o /homes/wells/saxony/single-cell/sequencing/metadata/GCA_000001405.15_GRCh38_no_alt_plus_hs38d1_analysis_setGEM
+
+# generate mappability scores
+gem-mappability -I /homes/wells/saxony/single-cell/sequencing/metadata/GCA_000001405.15_GRCh38_no_alt_plus_hs38d1_analysis_setGEM.gem -l 75 -o hg38.75mer -T 12
+gem-2-wig -I /homes/wells/saxony/single-cell/sequencing/metadata/GCA_000001405.15_GRCh38_no_alt_plus_hs38d1_analysis_setGEM.gem -i hg38.75mer.mappability -o hg38.75mer
+
+# remove erreneous names in chromosome names
+sed "s/ AC//" hg38.75mer.wig > hg38.75mer2.wig
+
+# convert to bed
+./wigToBigWig hg38.75mer2.wig /homes/wells/saxony/single-cell/sequencing/metadata/hg38_sizes.chrom hg38.75mer.bw
+./bigWigToBedGraph hg38.75mer.bw hg38.75mer.bedGraph
+./bedGraphTobed hg38.75mer.bedGraph hg38.75mer.Excludable.bed 0.33
+
+# subset smaller files
+grep -P 'chr6 ' hg38.75mer.Excludable.bed > hg38.75mer.Excludable.chr6.bed
+
+rg 'chr6\t' hg38.75mer.bedGraph > hg38.75mer.chr6.bedGraph
+
+
+```
