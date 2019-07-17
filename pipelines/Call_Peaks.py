@@ -1,15 +1,6 @@
 # snakemake --cores 15 --snakefile Snakefile_peaks -npr
 
 
-# Combine Inputs, needs to be done manually atm
-
-# cat MAPeakCaller/Fragment_Position_WTCHG_538916_217108.sorted.bed \
-#     MAPeakCaller/Fragment_Position_WTCHG_538916_220144.sorted.bed | \
-#     LC_ALL=C sort -k1,1V -k2,2n -S5G --parallel=5 \
-#     > MAPeakCaller/Fragment_Position_WTCHG_538916_217108_AND_WTCHG_538916_220144.sorted.bed
-
-# LC_ALL=C sort -k1,1V -k2,2n -S5G --parallel=5 \
-# > Fragment_Position_${sample}.sorted.bed
 
 
 configfile: "pipelines/config.yml"
@@ -69,6 +60,21 @@ def split_chip_bam(wildcards):
 #  else: # no real replicates
 #    return(list([f'filtered/{wildcards.chip}.bam']))
 
+rule mergeFragPos:
+  """
+  Merge to fragment position bed files e.g. for replicates
+  """
+  input:
+    a="MAPeakCaller/Fragment_Position_{sampleA}.sorted.bed",
+    b="MAPeakCaller/Fragment_Position_{sampleB}.sorted.bed"
+  output:
+    sample = "MAPeakCaller/Fragment_Position_{sampleA}_AND_{sampleB}.sorted.bed",
+  threads:
+    5
+  shell:
+    """
+    cat {input.a} {input.b} | LC_ALL=C sort -k1,1V -k2,2n -S5G --parallel=5 > {output}
+    """
 
 rule estconst:
   input:
