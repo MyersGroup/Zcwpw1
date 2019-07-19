@@ -281,6 +281,8 @@ plot_moitf(zcw_ST_unexplained_M8, "zcw_ST_unexplained_M8")
 
 ## Enriched in Zcw?
 
+Motif7
+
 ```{r}
 head -1 ../single-cell/sequencing/metadata/hg38_sizes.bed |
 bedtools getfasta -fi motifs/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa -bed stdin |
@@ -292,31 +294,32 @@ M4_locs <- fread("~/Downloads/motif_locs_M7.bed")
 names(M4_locs)[1:3] <- c("chr","CI_start","CI_stop")
 M4_locs <- prejoin(M4_locs)
 
-fraction_overlapN2(zcw_peaks[cov_input>=5 & chr=="chr1"], M4_locs, x1="Zcw UT", y1="M7_locs", shift=1e8)
-fraction_overlapN2(HP9combo_peaks[cov_input>=5 & chr=="chr1"], M4_locs, x1="HP9combo", y1="M7_locs", shift=1e8)
-fraction_overlapN2(HP9N_peaks[cov_input>=5 & chr=="chr1"], M4_locs, x1="HP9N", y1="M7_locs", shift=1e8)
-fraction_overlapN2(CP9combo_peaks[cov_input>=5 & chr=="chr1"], M4_locs, x1="CP9combo", y1="M7_locs", shift=1e8)
+fraction_overlapN2(zcw_peaks[cov_input>=5 & chr=="chr1"], M4_locs, x1="Zcw UT", y1="M7", shift=1e8)
+fraction_overlapN2(HP9combo_peaks[cov_input>=5 & chr=="chr1"], M4_locs, x1="HP9combo", y1="M7", shift=1e8)
+fraction_overlapN2(HP9N_peaks[cov_input>=5 & chr=="chr1"], M4_locs, x1="HP9N", y1="M7", shift=1e8)
+fraction_overlapN2(CP9combo_peaks[cov_input>=5 & chr=="chr1"], M4_locs, x1="CP9combo", y1="M7", shift=1e8)
 
 
 
 tmp <- zcw_peaks_cin[cov_input>5][chr!="chrX"][order(-enrichment)][set_matrix_zcw_peaks3[,which(Zcw_Alone==T & hP9_Cterm==F & H3K4me3_UT==F & Alu==F)]][chr=="chr1"]
-fraction_overlapN2(tmp, M4_locs, x1="Unexplained Zcw UT", y1="M7_locs", shift=1e8)
+fraction_overlapN2(tmp, M4_locs, x1="Unexplained Zcw UT", y1="M7", shift=1e8)
 ```
+
+Motif (CNN)7
 
 ```{r}
 M4_locs <- fread("~/Downloads/motif_locs_CNN7.bed")
 names(M4_locs)[1:3] <- c("chr","CI_start","CI_stop")
 M4_locs <- prejoin(M4_locs)
 
-fraction_overlapN2(zcw_peaks[cov_input>=5 & chr=="chr1"], M4_locs, x1="Zcw UT", y1="CNN7_locs", shift=1e8)
-fraction_overlapN2(HP9combo_peaks[cov_input>=5 & chr=="chr1"], M4_locs, x1="HP9combo", y1="CNN7_locs", shift=1e8)
-fraction_overlapN2(HP9N_peaks[cov_input>=5 & chr=="chr1"], M4_locs, x1="HP9N", y1="CNN7_locs", shift=1e8)
-fraction_overlapN2(CP9combo_peaks[cov_input>=5 & chr=="chr1"], M4_locs, x1="CP9combo", y1="CNN7_locs", shift=1e8)
+fraction_overlapN2(zcw_peaks[cov_input>=5 & chr=="chr1"], M4_locs, x1="Zcw UT", y1="CNN7", shift=1e8)
+fraction_overlapN2(HP9combo_peaks[cov_input>=5 & chr=="chr1"], M4_locs, x1="HP9combo", y1="CNN7", shift=1e8)
+fraction_overlapN2(HP9N_peaks[cov_input>=5 & chr=="chr1"], M4_locs, x1="HP9N", y1="CNN7", shift=1e8)
+fraction_overlapN2(CP9combo_peaks[cov_input>=5 & chr=="chr1"], M4_locs, x1="CP9combo", y1="CNN7", shift=1e8)
 
-
-
+# check at unexplained peaks
 tmp <- zcw_peaks_cin[cov_input>5][chr!="chrX"][order(-enrichment)][set_matrix_zcw_peaks3[,which(Zcw_Alone==T & hP9_Cterm==F & H3K4me3_UT==F & Alu==F)]][chr=="chr1"]
-fraction_overlapN2(tmp, M4_locs, x1="Unexplained Zcw UT", y1="CNN7_locs", shift=1e8)
+fraction_overlapN2(tmp, M4_locs, x1="Unexplained Zcw UT", y1="CNN7", shift=1e8)
 ```
 
 
