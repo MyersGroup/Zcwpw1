@@ -301,7 +301,7 @@ fraction_overlapN2(CP9combo_peaks[cov_input>=5 & chr=="chr1"], M4_locs, x1="CP9c
 
 
 
-tmp <- zcw_peaks_cin[cov_input>5][chr!="chrX"][order(-enrichment)][set_matrix_zcw_peaks3[,which(Zcw_Alone==T & hP9_Cterm==F & H3K4me3_UT==F & Alu==F)]][chr=="chr1"]
+tmp <- zcw_peaks_cin[cov_input>5][chr!="chrX"][order(-enrichment)][set_matrix_zcw_peaks3[,which(Zcw_Alone==T & hP9_Cterm==F & H3K4me3_UT==F & Alu==F & H3K36me3_P9==F)]][chr=="chr1"]
 fraction_overlapN2(tmp, M4_locs, x1="Unexplained Zcw UT", y1="M7", shift=1e8)
 ```
 
@@ -318,7 +318,7 @@ fraction_overlapN2(HP9N_peaks[cov_input>=5 & chr=="chr1"], M4_locs, x1="HP9N", y
 fraction_overlapN2(CP9combo_peaks[cov_input>=5 & chr=="chr1"], M4_locs, x1="CP9combo", y1="CNN7", shift=1e8)
 
 # check at unexplained peaks
-tmp <- zcw_peaks_cin[cov_input>5][chr!="chrX"][order(-enrichment)][set_matrix_zcw_peaks3[,which(Zcw_Alone==T & hP9_Cterm==F & H3K4me3_UT==F & Alu==F)]][chr=="chr1"]
+tmp <- zcw_peaks_cin[cov_input>5][chr!="chrX"][order(-enrichment)][set_matrix_zcw_peaks3[,which(Zcw_Alone==T & hP9_Cterm==F & H3K4me3_UT==F & Alu==F & H3K36me3_P9==F)]][chr=="chr1"]
 fraction_overlapN2(tmp, M4_locs, x1="Unexplained Zcw UT", y1="CNN7", shift=1e8)
 ```
 
