@@ -6,15 +6,17 @@
 
 sample_pairings = [("WTCHG_538916_221156", "WTCHG_538916_217108","P1 ChipHA_ZHA vs In_ZHA"),
               ("WTCHG_538916_223180", "WTCHG_538916_220144","P1 ChipHA_ZHA_hP9V5 vs In_ZHA_hP9V5"),
+              ("WTCHG_538916_224192", "WTCHG_538916_220144","P1 ChipHA_ZHA_cP9V5 vs In_ZHA_hP9V5"),
+              
+              # combined inputs
+              ("WTCHG_538916_221156", "WTCHG_538916_217108_AND_WTCHG_538916_220144","P1 ChipHA_ZHA vs In_ZHA+In_ZHA_hP9V5"),
+              ("WTCHG_538916_223180", "WTCHG_538916_217108_AND_WTCHG_538916_220144","P1 ChipHA_ZHA_hP9V5 vs In_ZHA+In_ZHA_hP9V5"),
+              ("WTCHG_538916_224192", "WTCHG_538916_217108_AND_WTCHG_538916_220144","P1 ChipHA_ZHA_cP9V5 vs In_ZHA+In_ZHA_hP9V5"),
               
               # chip vs chip
               ("WTCHG_538916_223180", "WTCHG_538916_221156","P1 ChipHA_ZHA_hP9V5 vs ChipHA_ZHA"),
               ("WTCHG_538916_224192", "WTCHG_538916_221156","P1 ChipHA_ZHA_cP9V5 vs ChipHA_ZHA"),
-              
-              # combined inputs
-              ("WTCHG_538916_223180", "WTCHG_538916_217108_AND_WTCHG_538916_220144","P1 ChipHA_ZHA_hP9V5 vs In_ZHA+In_ZHA_hP9V5"),
-              ("WTCHG_538916_224192", "WTCHG_538916_217108_AND_WTCHG_538916_220144","P1 ChipHA_ZHA_cP9V5 vs In_ZHA+In_ZHA_hP9V5"),
-              ("WTCHG_538916_221156", "WTCHG_538916_217108_AND_WTCHG_538916_220144","P1 ChipHA_ZHA vs In_ZHA+In_ZHA_hP9V5"),
+
 
               # Human
               ("SRA_Altemose2015_SRR5627138_AND_SRA_Altemose2015_SRR5627139", "SRA_Altemose2015_SRR5627140","NA ChipGFP_YFPhP9_rep1+2 vs In_YFPhP9"),
