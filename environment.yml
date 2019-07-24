@@ -1,7 +1,7 @@
 name: zcwpw1
 channels:
   - bioconda
-  - defaults
+  - conda-forge
 dependencies:
   - python
   - numpy
@@ -14,10 +14,10 @@ dependencies:
   - bowtie
   - bedops
   - deeptools
-  - snakemake
+  - snakemake=5.5.4
   - picard
   - goleft
   - mosdepth
-  - ucsc-bedgraphtobigwig
+#  - ucsc-bedgraphtobigwig
   #  - r-essentials
   #  - r-base
