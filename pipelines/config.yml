@@ -18,6 +18,13 @@ genome:
   Dmc1_r1: 'mm10'
 
 
+#forcecallAT = "SRA_Altemose2015_SRR5627138_AND_SRR5627139_vs_SRA_Altemose2015_SRR5627140"
+#forcecallAT = "SRA_Altemose2015_SRR5627146_AND_SRA_Altemose2015_SRR5627147_vs_SRA_Altemose2015_SRR5627143"
+#forcecallAT = "SRA_Altemose2015_SRR5627138_AND_SRA_Altemose2015_SRR5627139_vs_SRA_Altemose2015_SRR5627140.flank150"
+#forcecallAT = "genome.windows.100wide.100slide.bed"
+#forcecallAT = "qPCR_regions_for_validation.bed"
+
+forcecallAT: 'genome.windows.100wide.100slide.bed'
 
 ### Profile Plot Parameters
 
