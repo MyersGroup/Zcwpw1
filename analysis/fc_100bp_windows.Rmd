@@ -65,7 +65,116 @@ forcecalled$h3k36me3_hP9_enrichment <- h3k36me3_hP9_100bp$enrichment
 ```
 
 
+# Dependence of transfected Zcw on UT
 
+```{r}
+# plot(forcecalled$zcw_enrichment,forcecalled$zcw_hP9_enrichment, pch=".", log="xy")
+# plot(forcecalled$zcw_enrichment,forcecalled$zcw_hP9_enrichment, pch=".")
+
+# nb intercept doesn't move
+fclm <- lm(zcw_hP9_enrichment ~ 1 + zcw_enrichment + hP9combo_enrichment, forcecalled[zcw_cov_input>5])
+summary(fclm)
+
+fclm <- lm(zcw_hP9_enrichment ~ 0 + zcw_enrichment + zcw_enrichment:hP9combo_enrichment, forcecalled[zcw_cov_input>5])
+summary(fclm)
+
+plot(fclm)
+
+fclm2 <- lm(log(zcw_hP9_enrichment+0.1) ~ log(zcw_enrichment+0.1), forcecalled[zcw_cov_input>5])
+plot(fclm2)
+
+####
+# Counts
+####
+
+# count hP9
+cHP9 <- ggplot(forcecalled[zcw_cov_input>5], (aes(zcw_enrichment, zcw_hP9_enrichment))) +
+  geom_hex(aes(fill = stat(log(count+0.1))), bins=200) +
+  scale_fill_viridis_c(direction = -1) +
+  theme(legend.position = "bottom")
+
+  
+# count cP9
+cCP9 <- ggplot(forcecalled[zcw_cov_input>5], (aes(zcw_enrichment, zcw_cP9_enrichment))) +
+  geom_hex(aes(fill = stat(log(count+0.1))), bins=200) +
+  scale_fill_viridis_c(direction = -1) +
+  theme(legend.position = "bottom")
+
+####
+# Color by P9 enrichment
+####
+
+# hP9 colour
+p1 <- ggplot(forcecalled[zcw_cov_input>5], (aes(zcw_enrichment, zcw_hP9_enrichment, z=log(hP9combo_enrichment+0.1)))) +
+  stat_summary_hex(bins=200) +
+  scale_fill_viridis_c(name = "log(hP9+0.1)", direction = -1) +
+  theme(legend.position = "bottom")
+
+# cP9 colour
+p2 <- ggplot(forcecalled[zcw_cov_input>5], (aes(zcw_enrichment, zcw_hP9_enrichment, z=log(cP9combo_enrichment+0.1)))) +
+  stat_summary_hex(bins=200) +
+  scale_fill_viridis_c(name = "log(cP9+0.1)", direction = -1) +
+  theme(legend.position = "bottom")
+
+# hP9 colour
+p3 <- ggplot(forcecalled[zcw_cov_input>5], (aes(zcw_enrichment, zcw_cP9_enrichment, z=log(hP9combo_enrichment+0.1)))) +
+  stat_summary_hex(bins=200) +
+  scale_fill_viridis_c(name = "log(hP9+0.1)", direction = -1) +
+  theme(legend.position = "bottom")
+
+# cP9 colour
+p4 <- ggplot(forcecalled[zcw_cov_input>5], (aes(zcw_enrichment, zcw_cP9_enrichment, z=log(cP9combo_enrichment+0.1)))) +
+  stat_summary_hex(bins=200) +
+  scale_fill_viridis_c(name = "log(cP9+0.1)", direction = -1) +
+  theme(legend.position = "bottom")
+
+
+####
+# Color by CVC enrichment
+####
+
+p1CVC <- ggplot(forcecalled[zcw_cov_input>5], (aes(zcw_enrichment, zcw_hP9_enrichment, z=log(zcw_hCVC_enrichment+0.1)))) +
+  stat_summary_hex(bins=200) +
+  scale_fill_viridis_c(name = "log(hCVC+0.1)", direction = -1) +
+  theme(legend.position = "bottom")
+
+# cP9 colour
+p2CVC <- ggplot(forcecalled[zcw_cov_input>5], (aes(zcw_enrichment, zcw_hP9_enrichment, z=log(zcw_cCVC_enrichment+0.1)))) +
+  stat_summary_hex(bins=200) +
+  scale_fill_viridis_c(name = "log(cCVC+0.1)", direction = -1) +
+  theme(legend.position = "bottom")
+
+# hP9 colour
+p3CVC <- ggplot(forcecalled[zcw_cov_input>5], (aes(zcw_enrichment, zcw_cP9_enrichment, z=log(zcw_hCVC_enrichment+0.1)))) +
+  stat_summary_hex(bins=200) +
+  scale_fill_viridis_c(name = "log(hCVC+0.1)", direction = -1) +
+  theme(legend.position = "bottom")
+
+# cP9 colour
+p4CVC <- ggplot(forcecalled[zcw_cov_input>5], (aes(zcw_enrichment, zcw_cP9_enrichment, z=log(zcw_cCVC_enrichment+0.1)))) +
+  stat_summary_hex(bins=200) +
+  scale_fill_viridis_c(name = "log(cCVC+0.1)", direction = -1) +
+  theme(legend.position = "bottom")
+
+
+
+# Arrange & Save plots
+
+pdf(width = 14, height = 14, file = "Zcw_vs_CoTransfection.pdf")
+plot_grid(cHP9 + ylim(0,8),
+          cHP9 + scale_x_log10(limits=c(0.1,NA)) + scale_y_log10(limits=c(0.1,NA)),
+          cCP9 + ylim(0,8),
+          cCP9 + scale_x_log10(limits=c(0.1,NA)) + scale_y_log10(limits=c(0.1,NA))
+          )
+
+plot_grid(p1 + ylim(0,8), p2 + ylim(0,8), p3 + ylim(0,8), p4 + ylim(0,8))
+
+plot_grid(p1 + scale_x_log10(limits=c(0.1,NA)) + scale_y_log10(limits=c(0.1,NA)),
+          p2 + scale_x_log10(limits=c(0.1,NA)) + scale_y_log10(limits=c(0.1,NA)),
+          p3 + scale_x_log10(limits=c(0.1,NA)) + scale_y_log10(limits=c(0.1,NA)),
+          p4 + scale_x_log10(limits=c(0.1,NA)) + scale_y_log10(limits=c(0.1,NA)))
+
+plot_grid(p1CVC + ylim(0,8), p2CVC + ylim(0,8), p3CVC + ylim(0,8), p4CVC + ylim(0,8))
 dev.off()
 
 ```
