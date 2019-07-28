@@ -30,7 +30,7 @@ print(SAMPLES)
 FASTQC_REPORTS  =     expand("qc/fastqc/{sample}_{pair}_fastqc.html", pair=[1,2], sample=SAMPLES)
 LIBCOMPLEX      =     expand("qc/LibComplex/{sample}_LibComplex.txt", sample=SAMPLES)
 BIGWIG          =     expand("bedgraphs/depth_{sample}.bigWig", sample=SAMPLES)
-FRAGPOS         =     expand("MAPeakCaller/Fragment_Position_{sample}.sorted.bed.PR{replicate}", replicate=[1,2], sample=SAMPLES)
+FRAGPOS         =     expand("FragPos/Fragment_Position_{sample}.sorted.bed.PR{replicate}", replicate=[1,2], sample=SAMPLES)
 FLAGSTAT        =     expand("qc/FlagStat/{sample}_FlagStat.txt", sample=SAMPLES)
 FLAGSTAT2       =     expand("qc/FlagStat/{sample}_preQC_FlagStat.txt", sample=SAMPLES)
 BLACKLISTS      =     expand("blacklists/{sample}_blacklist.bed", sample=SAMPLES)
@@ -380,11 +380,11 @@ rule bamtobed2:
   input:
     "filtered/{sample}.bam"
   output:
-    "MAPeakCaller/Fragment_Position_{sample}.sorted.bed_DEPRECATED"
+    "FragPos/Fragment_Position_{sample}.sorted.bed_DEPRECATED"
   threads:
     2
   shell:
-    "samtools view {input} | perl MAPeakCaller/GetFragmentPositions.pl {output} {READ_LENGTH}"
+    "samtools view {input} | perl FragPos/GetFragmentPositions.pl {output} {READ_LENGTH}"
 
 
 rule bamtobed:
@@ -394,7 +394,7 @@ rule bamtobed:
   input:
     "filtered/{sample}_namesorted.bam"
   output:
-    "MAPeakCaller/Fragment_Position_{sample}.sorted.bed"
+    "FragPos/Fragment_Position_{sample}.sorted.bed"
   threads:
     5
   shell:
@@ -407,7 +407,7 @@ rule bedtograph:
   # Create converage for IGV visualisation
   #
   input:
-    bed="MAPeakCaller/Fragment_Position_{sample}.sorted.bed",
+    bed="FragPos/Fragment_Position_{sample}.sorted.bed",
     sizes=join(METADATA_DIR, "{GENOME}_sizes.chrom".format(GENOME=GENOME))
   output:
     "bedgraphs/depth_{sample}.bedgraph"
@@ -481,9 +481,9 @@ rule pseudoreplicate:
   # Create psuedoreplicate as required for peak caller if two real replicates not avaliable
   #
   input:
-    "MAPeakCaller/Fragment_Position_{sample}.sorted.bed"
+    "FragPos/Fragment_Position_{sample}.sorted.bed"
   output:
-    expand("MAPeakCaller/Fragment_Position_{{sample}}.sorted.bed.PR{replicate}", replicate=[1,2])
+    expand("FragPos/Fragment_Position_{{sample}}.sorted.bed.PR{replicate}", replicate=[1,2])
   shell:
     """
     awk '{{print > (rand()<0.5 ? (FILENAME".PR1") : (FILENAME".PR2"))}}' {input}

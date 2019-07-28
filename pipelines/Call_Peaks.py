@@ -31,11 +31,11 @@ def get_chips(wildcards):
   """
   if "_AND_" in wildcards.chip:
     two_samples = wildcards.chip.split("_AND_")
-    return(list([f'MAPeakCaller/Fragment_Position_{two_samples[0]}.sorted.bed',
-                f'MAPeakCaller/Fragment_Position_{two_samples[1]}.sorted.bed']))
+    return(list([f'FragPos/Fragment_Position_{two_samples[0]}.sorted.bed',
+                f'FragPos/Fragment_Position_{two_samples[1]}.sorted.bed']))
   else:
-    return(list([f'MAPeakCaller/Fragment_Position_{wildcards.chip}.sorted.bed.PR1',
-                f'MAPeakCaller/Fragment_Position_{wildcards.chip}.sorted.bed.PR2']))
+    return(list([f'FragPos/Fragment_Position_{wildcards.chip}.sorted.bed.PR1',
+                f'FragPos/Fragment_Position_{wildcards.chip}.sorted.bed.PR2']))
 
 def split_chip_bam(wildcards):
   """
@@ -65,10 +65,10 @@ rule mergeFragPos:
   Merge to fragment position bed files e.g. for replicates
   """
   input:
-    a="MAPeakCaller/Fragment_Position_{sampleA}.sorted.bed",
-    b="MAPeakCaller/Fragment_Position_{sampleB}.sorted.bed"
+    a="FragPos/Fragment_Position_{sampleA}.sorted.bed",
+    b="FragPos/Fragment_Position_{sampleB}.sorted.bed"
   output:
-    sample = "MAPeakCaller/Fragment_Position_{sampleA}_AND_{sampleB}.sorted.bed",
+    sample = "FragPos/Fragment_Position_{sampleA}_AND_{sampleB}.sorted.bed",
   threads:
     5
   shell:
@@ -79,7 +79,7 @@ rule mergeFragPos:
 rule estconst:
   input:
     chips = get_chips ,
-    control="MAPeakCaller/Fragment_Position_{control}.sorted.bed",
+    control="FragPos/Fragment_Position_{control}.sorted.bed",
     chrsizes=join(METADATA_DIR, "hg38_sizes.chrom"),
   output:
     c="peaks/Constants.{chip}_vs_{control}.tsv",
@@ -101,7 +101,7 @@ rule estconst:
 #rule call_peaks:
 #  input:
 #    chips = get_chips ,
-#    control="MAPeakCaller/Fragment_Position_{control}.sorted.bed",
+#    control="FragPos/Fragment_Position_{control}.sorted.bed",
 #    chrsizes=join(METADATA_DIR, "hg38_sizes.chrom")
 #  output:
 #    c="peaks/Constants.{chip}_vs_{control}.tsv",
@@ -110,7 +110,7 @@ rule estconst:
 #    15
 #  shell:
 #    """
-#    sh MAPeakCaller.sh \
+#    sh FragPos.sh \
 #	    --intermediates peaks/ \
 #	    --chrsizes {input.chrsizes} \
 #	    --outconstfile {output.c} \
@@ -127,7 +127,7 @@ rule estconst:
 rule call_peaks:
   input:
     chips = get_chips ,
-    control="MAPeakCaller/Fragment_Position_{control}.sorted.bed",
+    control="FragPos/Fragment_Position_{control}.sorted.bed",
     chrsizes=join(METADATA_DIR, "hg38_sizes.chrom"),
     consts="peaks/Constants.{chip}_vs_{control}.tsv"
   output:

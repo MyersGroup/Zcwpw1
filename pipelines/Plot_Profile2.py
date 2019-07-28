@@ -8,7 +8,7 @@
 
 # requires:
 # ../single-cell/sequencing/metadata/hg38_sizes.chrom
-# MAPeakCaller/Fragment_Position_{sample}.sorted.bed
+# FragPos/Fragment_Position_{sample}.sorted.bed
 
 configfile: 'pipelines/config.yml'
 include: "sample_pairings.py"
@@ -148,10 +148,10 @@ rule mergeFragPos:
   Merge to fragment position bed files e.g. for replicates
   """
   input:
-    a="MAPeakCaller/Fragment_Position_{sampleA}.sorted.bed",
-    b="MAPeakCaller/Fragment_Position_{sampleB}.sorted.bed"
+    a="FragPos/Fragment_Position_{sampleA}.sorted.bed",
+    b="FragPos/Fragment_Position_{sampleB}.sorted.bed"
   output:
-    sample = "MAPeakCaller/Fragment_Position_{sampleA}_AND_{sampleB}.sorted.bed",
+    sample = "FragPos/Fragment_Position_{sampleA}_AND_{sampleB}.sorted.bed",
   threads:
     5
   shell:
@@ -164,9 +164,9 @@ rule totalBases:
   Calculate total number of bases the fragments cover - for normalisation purposes
   """
   input:
-    "MAPeakCaller/Fragment_Position_{sample}.sorted.bed"
+    "FragPos/Fragment_Position_{sample}.sorted.bed"
   output:
-    "MAPeakCaller/Fragment_Position_{sample}.total"
+    "FragPos/Fragment_Position_{sample}.total"
   shell:
     "grep -P 'chr[0-9X]+\t' {input} | awk 'BEGIN{{size=0;}}{{size = size + $3 - $2;}}END{{print size;}}' > {output}"
 
@@ -176,7 +176,7 @@ rule bedtograph:
   To create bedgraph after merging samples (single sample bedgraph created in Map_Reads.py snakefile)
   """
   input:
-    bed="MAPeakCaller/Fragment_Position_{sample}.sorted.bed",
+    bed="FragPos/Fragment_Position_{sample}.sorted.bed",
     sizes=join(METADATA_DIR, "{GENOME}_sizes.chrom".format(GENOME=GENOME))
   output:
     "bedgraphs/depth_{sample}.bedgraph"
@@ -268,9 +268,9 @@ rule NormaliseProfile:
   """
   input:
     sample =  "bwprofiles/{sample}_AT_{locations}.profile",
-    sample_t =  "MAPeakCaller/Fragment_Position_{sample}.total",
+    sample_t =  "FragPos/Fragment_Position_{sample}.total",
     control = "bwprofiles/{control}_AT_{locations}.profile",
-    control_t = "MAPeakCaller/Fragment_Position_{control}.total"
+    control_t = "FragPos/Fragment_Position_{control}.total"
   output:
     "bwprofilesNorm/{sample}_VS_{control}_AT_{locations}.profile"
   shell:
@@ -291,9 +291,9 @@ rule PlotProfile:
   """
   input:
     sample =  "bwprofiles/{sample}_AT_{locations}.profile",
-    sample_t =  "MAPeakCaller/Fragment_Position_{sample}.total",
+    sample_t =  "FragPos/Fragment_Position_{sample}.total",
     control = "bwprofiles/{control}_AT_{locations}.profile",
-    control_t = "MAPeakCaller/Fragment_Position_{control}.total"
+    control_t = "FragPos/Fragment_Position_{control}.total"
   output:
     "bwplots/{sample}_VS_{control}_AT_{locations}.pdf"
   threads:
