@@ -6,7 +6,7 @@ metadata_dir: '../single-cell/sequencing/metadata'
 fastq_dir:
   594404: 'raw_data/bsg-ftp.well.ox.ac.uk/181018_K00198_0357_BHWV5YBBXX/'
   538916: 'raw_data/bsg-ftp.well.ox.ac.uk/180629_K00150_0342_AHVYHYBBXX/'
-  Altemose2015: 'raw_data/altemose/'
+  NA15: 'raw_data/altemose/'
   659233: 'raw_data/bsg-ftp.well.ox.ac.uk/190301_K00181_0120_BH3NTJBBXY/'
   Dmc1_r1: 'raw_data/bsg-ftp.well.ox.ac.uk/190524_D00529_0716_AH2G53BCX3/'
 
@@ -18,9 +18,9 @@ genome:
   Dmc1_r1: 'mm10'
 
 
-#forcecallAT = "SRA_Altemose2015_SRR5627138_AND_SRR5627139_vs_SRA_Altemose2015_SRR5627140"
-#forcecallAT = "SRA_Altemose2015_SRR5627146_AND_SRA_Altemose2015_SRR5627147_vs_SRA_Altemose2015_SRR5627143"
-#forcecallAT = "SRA_Altemose2015_SRR5627138_AND_SRA_Altemose2015_SRR5627139_vs_SRA_Altemose2015_SRR5627140.flank150"
+#forcecallAT = "NA15-SRR5627138_AND_SRR5627139_vs_NA15-SRR5627140"
+#forcecallAT = "NA15-SRR5627146_AND_NA15-SRR5627147_vs_NA15-SRR5627143"
+#forcecallAT = "NA15-SRR5627138_AND_NA15-SRR5627139_vs_NA15-SRR5627140.flank150"
 #forcecallAT = "genome.windows.100wide.100slide.bed"
 #forcecallAT = "qPCR_regions_for_validation.bed"
 
@@ -29,10 +29,10 @@ forcecallAT: 'genome.windows.100wide.100slide.bed'
 ### Profile Plot Parameters
 
 regionNames:
-  SingleBasePeaks.SRA_Altemose2015_SRR5627138_AND_SRA_Altemose2015_SRR5627139_vs_SRA_Altemose2015_SRR5627140.p0.000001.sep250.ALL_MotifCenteredStranded: "YFP_HumanPrdm9 vs Input YFPhP9 (MotifCenteredStranded)"
-  SingleBasePeaks.SRA_Altemose2015_SRR5627146_AND_SRA_Altemose2015_SRR5627147_vs_SRA_Altemose2015_SRR5627143.p0.000001.sep250.ALL_MotifCenteredStranded: "HumanPrdm9_V5+HA vs Input hP9HA (MotifCenteredStranded)"
-  SingleBasePeaks.SRA_Altemose2015_SRR5627146_AND_SRA_Altemose2015_SRR5627147_vs_SRA_Altemose2015_SRR5627143.p0.000001.sep250.ALL: "HumanPrdm9_V5+HA vs Input hP9HA"
-  SingleBasePeaks.SRA_Altemose2015_SRR5627145_AND_SRA_Altemose2015_SRR5627144_vs_SRA_Altemose2015_SRR5627143.p0.000001.sep250.ALL: "ChimpPrdm9_V5+HA vs Input hP9HA"
+  SingleBasePeaks.NA15-SRR5627138_AND_NA15-SRR5627139_vs_NA15-SRR5627140.p0.000001.sep250.ALL_MotifCenteredStranded: "YFP_HumanPrdm9 vs Input YFPhP9 (MotifCenteredStranded)"
+  SingleBasePeaks.NA15-SRR5627146_AND_NA15-SRR5627147_vs_NA15-SRR5627143.p0.000001.sep250.ALL_MotifCenteredStranded: "HumanPrdm9_V5+HA vs Input hP9HA (MotifCenteredStranded)"
+  SingleBasePeaks.NA15-SRR5627146_AND_NA15-SRR5627147_vs_NA15-SRR5627143.p0.000001.sep250.ALL: "HumanPrdm9_V5+HA vs Input hP9HA"
+  SingleBasePeaks.NA15-SRR5627145_AND_NA15-SRR5627144_vs_NA15-SRR5627143.p0.000001.sep250.ALL: "ChimpPrdm9_V5+HA vs Input hP9HA"
   SingleBasePeaks.WTCHG_538916_223180_vs_WTCHG_538916_221156.p0.000001.sep250.ALL: "ChipHA_ZHA_humanP9V5 vs ChipHA_ZHA"
 
 
@@ -43,16 +43,16 @@ samples:
   - 'HP9N_peaks_NonPromoters_MotifCenteredStranded_highreg'
   - 'CP9V5_peaks_NonPromoters'
   - 'top_transcripts_ens'
-  - 'SingleBasePeaks.SRA_Altemose2015_SRR5627138_AND_SRA_Altemose2015_SRR5627139_vs_SRA_Altemose2015_SRR5627140.p0.000001.sep250.ALL_MotifCenteredStranded' # HP9N
-  - 'SingleBasePeaks.SRA_Altemose2015_SRR5627146_AND_SRA_Altemose2015_SRR5627147_vs_SRA_Altemose2015_SRR5627143.p0.000001.sep250.ALL_MotifCenteredStranded' # HP9C
-  - 'SingleBasePeaks.SRA_Altemose2015_SRR5627145_AND_SRA_Altemose2015_SRR5627144_vs_SRA_Altemose2015_SRR5627143.p0.000001.sep250.ALL' # CP9C
+  - 'SingleBasePeaks.NA15-SRR5627138_AND_NA15-SRR5627139_vs_NA15-SRR5627140.p0.000001.sep250.ALL_MotifCenteredStranded' # HP9N
+  - 'SingleBasePeaks.NA15-SRR5627146_AND_NA15-SRR5627147_vs_NA15-SRR5627143.p0.000001.sep250.ALL_MotifCenteredStranded' # HP9C
+  - 'SingleBasePeaks.NA15-SRR5627145_AND_NA15-SRR5627144_vs_NA15-SRR5627143.p0.000001.sep250.ALL' # CP9C
   - 'SingleBasePeaks.WTCHG_538916_223180_vs_WTCHG_538916_221156.p0.000001.sep250.ALL' # ZcwCVC
 
 prdm9_allele:
-  SingleBasePeaks.SRA_Altemose2015_SRR5627138_AND_SRA_Altemose2015_SRR5627139_vs_SRA_Altemose2015_SRR5627140.p0.000001.sep250.ALL_MotifCenteredStranded: 'Human'
-  SingleBasePeaks.SRA_Altemose2015_SRR5627146_AND_SRA_Altemose2015_SRR5627147_vs_SRA_Altemose2015_SRR5627143.p0.000001.sep250.ALL_MotifCenteredStranded: 'Human'
-  SingleBasePeaks.SRA_Altemose2015_SRR5627146_AND_SRA_Altemose2015_SRR5627147_vs_SRA_Altemose2015_SRR5627143.p0.000001.sep250.ALL: 'Human'
-  SingleBasePeaks.SRA_Altemose2015_SRR5627145_AND_SRA_Altemose2015_SRR5627144_vs_SRA_Altemose2015_SRR5627143.p0.000001.sep250.ALL: 'Chimp'
+  SingleBasePeaks.NA15-SRR5627138_AND_NA15-SRR5627139_vs_NA15-SRR5627140.p0.000001.sep250.ALL_MotifCenteredStranded: 'Human'
+  SingleBasePeaks.NA15-SRR5627146_AND_NA15-SRR5627147_vs_NA15-SRR5627143.p0.000001.sep250.ALL_MotifCenteredStranded: 'Human'
+  SingleBasePeaks.NA15-SRR5627146_AND_NA15-SRR5627147_vs_NA15-SRR5627143.p0.000001.sep250.ALL: 'Human'
+  SingleBasePeaks.NA15-SRR5627145_AND_NA15-SRR5627144_vs_NA15-SRR5627143.p0.000001.sep250.ALL: 'Chimp'
   SingleBasePeaks.WTCHG_538916_223180_vs_WTCHG_538916_221156.p0.000001.sep250.ALL: "None"
   HP9combo_peaks_NonPromoters_MotifCenteredStranded: "None"
   zcw_wP9_vs_chip_Z: "None"
@@ -69,9 +69,9 @@ ymax:
   HP9N_peaks_NonPromoters_MotifCenteredStranded_highreg: "0.2 0.3 0.3 0.2 0.1 0.5 0.6 0.1 0.3 0.2 0.1 0.05 0.25 0.1 0.1 0.1 0.25 0.1 0.25 0.1 0.1"
   CP9V5_peaks_NonPromoters: "0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.6 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2"
   top_transcripts_ens: "0.3 0.4 0.4 0.1 0.1 0.2 0.2 0.2 1.5 1 0.1 0.1 2.5 0.1 0.1 0.1 1.5 0.1 1.5 0.1 0.3"
-  SingleBasePeaks.SRA_Altemose2015_SRR5627138_AND_SRA_Altemose2015_SRR5627139_vs_SRA_Altemose2015_SRR5627140.p0.000001.sep250.ALL_MotifCenteredStranded:  "0.2 0.3 0.3 0.2 0.1 0.6 0.5 0.1 0.4 0.3 0.1 0.05 0.35 0.1 0.1 0.1 0.35 0.1 0.35 0.1 0.1"
-  SingleBasePeaks.SRA_Altemose2015_SRR5627146_AND_SRA_Altemose2015_SRR5627147_vs_SRA_Altemose2015_SRR5627143.p0.000001.sep250.ALL_MotifCenteredStranded:  "0.3 0.6 0.6 0.4 0.1 0.4 0.9 0.1 0.5 0.3 0.1 0.05 0.1 0.1 0.1 0.1 0.25 0.1 0.5 0.1 0.1"
-  SingleBasePeaks.SRA_Altemose2015_SRR5627145_AND_SRA_Altemose2015_SRR5627144_vs_SRA_Altemose2015_SRR5627143.p0.000001.sep250.ALL: "0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.6 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2"
+  SingleBasePeaks.NA15-SRR5627138_AND_NA15-SRR5627139_vs_NA15-SRR5627140.p0.000001.sep250.ALL_MotifCenteredStranded:  "0.2 0.3 0.3 0.2 0.1 0.6 0.5 0.1 0.4 0.3 0.1 0.05 0.35 0.1 0.1 0.1 0.35 0.1 0.35 0.1 0.1"
+  SingleBasePeaks.NA15-SRR5627146_AND_NA15-SRR5627147_vs_NA15-SRR5627143.p0.000001.sep250.ALL_MotifCenteredStranded:  "0.3 0.6 0.6 0.4 0.1 0.4 0.9 0.1 0.5 0.3 0.1 0.05 0.1 0.1 0.1 0.1 0.25 0.1 0.5 0.1 0.1"
+  SingleBasePeaks.NA15-SRR5627145_AND_NA15-SRR5627144_vs_NA15-SRR5627143.p0.000001.sep250.ALL: "0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.6 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2"
 
 center_label:
   HP9combo_peaks_NonPromoters_MotifCenteredStranded: "Motif Center"
@@ -81,6 +81,6 @@ center_label:
   HP9N_peaks_NonPromoters_MotifCenteredStranded_highreg: "Motif Center"
   CP9V5_peaks_NonPromoters: "Peak Center"
   top_transcripts_ens: "TSS"
-  SingleBasePeaks.SRA_Altemose2015_SRR5627138_AND_SRA_Altemose2015_SRR5627139_vs_SRA_Altemose2015_SRR5627140.p0.000001.sep250.ALL_MotifCenteredStranded: "Motif Center"
-  SingleBasePeaks.SRA_Altemose2015_SRR5627146_AND_SRA_Altemose2015_SRR5627147_vs_SRA_Altemose2015_SRR5627143.p0.000001.sep250.ALL_MotifCenteredStranded: "Motif Center"
-  SingleBasePeaks.SRA_Altemose2015_SRR5627145_AND_SRA_Altemose2015_SRR5627144_vs_SRA_Altemose2015_SRR5627143.p0.000001.sep250.ALL: "Peak Center"
+  SingleBasePeaks.NA15-SRR5627138_AND_NA15-SRR5627139_vs_NA15-SRR5627140.p0.000001.sep250.ALL_MotifCenteredStranded: "Motif Center"
+  SingleBasePeaks.NA15-SRR5627146_AND_NA15-SRR5627147_vs_NA15-SRR5627143.p0.000001.sep250.ALL_MotifCenteredStranded: "Motif Center"
+  SingleBasePeaks.NA15-SRR5627145_AND_NA15-SRR5627144_vs_NA15-SRR5627143.p0.000001.sep250.ALL: "Peak Center"

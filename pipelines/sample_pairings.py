@@ -19,30 +19,30 @@ sample_pairings = [("WTCHG_538916_221156", "WTCHG_538916_217108","P1 ChipHA_ZHA 
 
 
               # Human
-              ("SRA_Altemose2015_SRR5627138_AND_SRA_Altemose2015_SRR5627139", "SRA_Altemose2015_SRR5627140","NA ChipGFP_YFPhP9_rep1+2 vs In_YFPhP9"),
+              ("NA15-SRR5627138_AND_NA15-SRR5627139", "NA15-SRR5627140","NA ChipGFP_YFPhP9_rep1+2 vs In_YFPhP9"),
 
-              ("SRA_Altemose2015_SRR5627141", "SRA_Altemose2015_SRR5627140","NA ChipH3K4_YFPhP9 vs In_YFPhP9"),
-              #("SRA_Altemose2015_SRR5627141", "SRA_Altemose2015_SRR5627136_AND_SRA_Altemose2015_SRR5627135","NA ChipH3K4_YFPhP9 vs ChipH3K4_UT"),
+              ("NA15-SRR5627141", "NA15-SRR5627140","NA ChipH3K4_YFPhP9 vs In_YFPhP9"),
+              #("NA15-SRR5627141", "NA15-SRR5627136_AND_NA15-SRR5627135","NA ChipH3K4_YFPhP9 vs ChipH3K4_UT"),
 
-              ("SRA_Altemose2015_SRR5627146", "SRA_Altemose2015_SRR5627143","NA ChipHA_hP9HA vs In_hP9HA"),
-              ("SRA_Altemose2015_SRR5627147", "SRA_Altemose2015_SRR5627143","NA ChipHA_hP9V5 vs In_hP9HA"),
-              ("SRA_Altemose2015_SRR5627146_AND_SRA_Altemose2015_SRR5627147", "SRA_Altemose2015_SRR5627143","NA ChipHA_hP9HA+V5 vs In_hP9HA"),
+              ("NA15-SRR5627146", "NA15-SRR5627143","NA ChipHA_hP9HA vs In_hP9HA"),
+              ("NA15-SRR5627147", "NA15-SRR5627143","NA ChipHA_hP9V5 vs In_hP9HA"),
+              ("NA15-SRR5627146_AND_NA15-SRR5627147", "NA15-SRR5627143","NA ChipHA_hP9HA+V5 vs In_hP9HA"),
 
               # Chimp
-              ("SRA_Altemose2015_SRR5627144", "SRA_Altemose2015_SRR5627143","NA ChipHA_cP9HA vs In_hP9HA"),
-              ("SRA_Altemose2015_SRR5627145", "SRA_Altemose2015_SRR5627143","NA ChipHA_cP9V5 vs In_hP9HA"),
-              ("SRA_Altemose2015_SRR5627145_AND_SRA_Altemose2015_SRR5627144", "SRA_Altemose2015_SRR5627143","NA ChipHA_cP9HA+V5 vs In_hP9HA"),
+              ("NA15-SRR5627144", "NA15-SRR5627143","NA ChipHA_cP9HA vs In_hP9HA"),
+              ("NA15-SRR5627145", "NA15-SRR5627143","NA ChipHA_cP9V5 vs In_hP9HA"),
+              ("NA15-SRR5627145_AND_NA15-SRR5627144", "NA15-SRR5627143","NA ChipHA_cP9HA+V5 vs In_hP9HA"),
 
               # Histone Mods
               ## H3K4
-              ("SRA_Altemose2015_SRR5627152_AND_SRA_Altemose2015_SRR5627153", "SRA_Altemose2015_SRR5627143","NA ChipH3K4_hP9HA_rep1+2 vs In_hP9HA"),
-              ("SRA_Altemose2015_SRR5627150_AND_SRA_Altemose2015_SRR5627151", "SRA_Altemose2015_SRR5627142","NA ChipH3K4_UT_rep1+2 vs In_UT"),
-              ("SRA_Altemose2015_SRR5627152_AND_SRA_Altemose2015_SRR5627153", "SRA_Altemose2015_SRR5627150_AND_SRA_Altemose2015_SRR5627151","NA ChipH3K4_hP9HA_rep1+2 vs ChipH3K4_UT_rep1+2"),
+              ("NA15-SRR5627152_AND_NA15-SRR5627153", "NA15-SRR5627143","NA ChipH3K4_hP9HA_rep1+2 vs In_hP9HA"),
+              ("NA15-SRR5627150_AND_NA15-SRR5627151", "NA15-SRR5627142","NA ChipH3K4_UT_rep1+2 vs In_UT"),
+              ("NA15-SRR5627152_AND_NA15-SRR5627153", "NA15-SRR5627150_AND_NA15-SRR5627151","NA ChipH3K4_hP9HA_rep1+2 vs ChipH3K4_UT_rep1+2"),
               
               ## H3K36
-              ("SRA_Altemose2015_SRR5627149", "SRA_Altemose2015_SRR5627143","NA ChipH3K36_hP9HA vs In_hP9HA"),
-              ("SRA_Altemose2015_SRR5627148", "SRA_Altemose2015_SRR5627142","NA ChipH3K36_UT vs In_UT"),
-              ("SRA_Altemose2015_SRR5627149", "SRA_Altemose2015_SRR5627148","NA ChipH3K36_hP9HA vs ChipH3K36_UT"),
+              ("NA15-SRR5627149", "NA15-SRR5627143","NA ChipH3K36_hP9HA vs In_hP9HA"),
+              ("NA15-SRR5627148", "NA15-SRR5627142","NA ChipH3K36_UT vs In_UT"),
+              ("NA15-SRR5627149", "NA15-SRR5627148","NA ChipH3K36_hP9HA vs ChipH3K36_UT"),
 
 
               # Project2 Chip H3K4 & ZF only

@@ -18,10 +18,10 @@ from os.path import join
 METADATA_DIR = config["metadata_dir"]
 GENOME = 'hg38'
 
-locations = ["SingleBasePeaks.SRA_Altemose2015_SRR5627138_AND_SRA_Altemose2015_SRR5627139_vs_SRA_Altemose2015_SRR5627140.p0.000001.sep250.ALL_MotifCenteredStranded",
-              "SingleBasePeaks.SRA_Altemose2015_SRR5627146_AND_SRA_Altemose2015_SRR5627147_vs_SRA_Altemose2015_SRR5627143.p0.000001.sep250.ALL_MotifCenteredStranded",
-              "SingleBasePeaks.SRA_Altemose2015_SRR5627146_AND_SRA_Altemose2015_SRR5627147_vs_SRA_Altemose2015_SRR5627143.p0.000001.sep250.ALL",
-              "SingleBasePeaks.SRA_Altemose2015_SRR5627145_AND_SRA_Altemose2015_SRR5627144_vs_SRA_Altemose2015_SRR5627143.p0.000001.sep250.ALL",
+locations = ["SingleBasePeaks.NA15-SRR5627138_AND_NA15-SRR5627139_vs_NA15-SRR5627140.p0.000001.sep250.ALL_MotifCenteredStranded",
+              "SingleBasePeaks.NA15-SRR5627146_AND_NA15-SRR5627147_vs_NA15-SRR5627143.p0.000001.sep250.ALL_MotifCenteredStranded",
+              "SingleBasePeaks.NA15-SRR5627146_AND_NA15-SRR5627147_vs_NA15-SRR5627143.p0.000001.sep250.ALL",
+              "SingleBasePeaks.NA15-SRR5627145_AND_NA15-SRR5627144_vs_NA15-SRR5627143.p0.000001.sep250.ALL",
               "SingleBasePeaks.WTCHG_538916_223180_vs_WTCHG_538916_221156.p0.000001.sep250.ALL"]
 
 
@@ -43,7 +43,7 @@ rule removeUTH3K4:
   """
   input:
     bed = "peaks/{sample}.bed",
-    UTh3k4 = "peaks/SingleBasePeaks.SRA_Altemose2015_SRR5627150_AND_SRA_Altemose2015_SRR5627151_vs_SRA_Altemose2015_SRR5627142.p0.000001.sep250.ALL.bed",
+    UTh3k4 = "peaks/SingleBasePeaks.NA15-SRR5627150_AND_NA15-SRR5627151_vs_NA15-SRR5627142.p0.000001.sep250.ALL.bed",
   output:
     bed = "motifs/{sample}_QCfiltered.bed",
   shell:
