@@ -69,7 +69,7 @@ rule downloadFASTA:
   """
   output:
     fa = "motifs/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa",
-    fai = "motifs/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fai"
+    fai = "motifs/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa.fai"
   shell:
     """
     # Download Fasta
