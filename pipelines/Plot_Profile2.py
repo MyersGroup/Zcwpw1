@@ -45,7 +45,7 @@ rule removeUTH3K4:
     bed = "peaks/{sample}.bed",
     UTh3k4 = "peaks/SingleBasePeaks.NA15-SRR5627150_AND_NA15-SRR5627151_vs_NA15-SRR5627142.p0.000001.sep250.ALL.bed",
   output:
-    bed = "motifs/{sample}_QCfiltered.bed",
+    bed = "QCpeaks/{sample}_QCfiltered.bed",
   shell:
     """
     # calculate 99.9% percentile of input
@@ -85,7 +85,7 @@ rule extractFASTA:
   For finding Prdm9 motifs in
   """
   input:
-    bed = "motifs/{sample}_QCfiltered.bed",
+    bed = "QCpeaks/{sample}_QCfiltered.bed",
     fasta = "motifs/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa"
   output:
     fasta = "motifs/{sample}.fasta",
@@ -116,9 +116,9 @@ rule findMotifs:
   input:
     fasta = "motifs/{sample}.fasta",
     motifs = "motifs/Human_Motif_Results_Final_iter240.r",
-    bed = "motifs/{sample}_QCfiltered.bed",
+    bed = "QCpeaks/{sample}_QCfiltered.bed",
   output:
-    bed = "deeptools/beds/{sample}_MotifCenteredStranded.bed",
+    bed = "QCpeaks/{sample}_MotifCenteredStranded.bed",
     plots = "motifs/P9_motif_locations_{sample}.pdf"
   shell:
     """
@@ -132,14 +132,14 @@ rule quantiseBeds:
   if not Human Prdm9 allele, skip motif finding and centering/stranding, use the QCfiltered.bed directly
   """
   input:
-    lambda wc: "deeptools/beds/{locations}.bed" if config["prdm9_allele"][wc.locations]=="Human" else "motifs/{locations}_QCfiltered.bed"
+    lambda wc: "QCpeaks/{locations}.bed" if "MotifCenteredStranded" in wc.locations else "QCpeaks/{locations}_QCfiltered.bed" #config["prdm9_allele"][]=="Human"
   output:
-    expand("deeptools/beds/{{locations}}.bed0{quantile}", quantile=[0, 1, 2, 3])
+    expand("QCpeaks/{{locations}}_Q0{quantile}.bed", quantile=[0, 1, 2, 3])
   params:
-    "deeptools/beds/{locations}.bed"
+    "QCpeaks/{locations}_Q"
   shell:
     """
-    split -d -n l/4 {input} {params}
+    split -d -n l/4 --additional-suffix=".bed" {input} {params}
     """
 
 
@@ -207,7 +207,7 @@ rule makeBED6:
   Also remove regions if there's another within Xkbp so they're not double counted / pollute the surrounding regions
   """
   input:
-    "deeptools/beds/{locations}"
+    "QCpeaks/{locations}"
   output:
     "bed6/{locations}"
   params:
@@ -245,7 +245,7 @@ rule bigwigProfile:
   calculate mean coverage ("profile") over regions
   """
   input:
-    locations=lambda wc: "bed6/{locations}.bed" if(wc.locations=="top_transcripts_ens") else expand("bed6/{{locations}}.bed0{quantile}", quantile=[0, 1, 2, 3]),
+    locations=lambda wc: "bed6/{locations}.bed" if(wc.locations=="top_transcripts_ens") else expand("bed6/{{locations}}_Q0{quantile}.bed", quantile=[0, 1, 2, 3]),
     random = "random_deoverlap.bed",
     sample = "bedgraphs/depth_{sample}.bigWig",
   output:
