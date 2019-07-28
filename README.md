@@ -67,3 +67,27 @@ snakemake --cores 15 --snakefile pipelines/Force_Call_Peaks.py -npr
 metagene_plot.sh
 ```
 
+
+Create Allele Specificify Plot
+```{bash}
+Rscript pipelines/MultiProfilePlot.R bwplots/AlleleSpecificity.pdf 'AlleleSpecificity' \
+bwprofilesNorm/WTCHG_538916_223180_VS_WTCHG_538916_221156_AT_SingleBasePeaks.NA15-SRR5627146_AND_NA15-SRR5627147_vs_NA15-SRR5627143.p0.000001.sep250.ALL.profile \
+bwprofilesNorm/WTCHG_538916_223180_VS_WTCHG_538916_221156_AT_SingleBasePeaks.NA15-SRR5627145_AND_NA15-SRR5627144_vs_NA15-SRR5627143.p0.000001.sep250.ALL.profile \
+bwprofilesNorm/WTCHG_538916_224192_VS_WTCHG_538916_221156_AT_SingleBasePeaks.NA15-SRR5627146_AND_NA15-SRR5627147_vs_NA15-SRR5627143.p0.000001.sep250.ALL.profile \
+bwprofilesNorm/WTCHG_538916_224192_VS_WTCHG_538916_221156_AT_SingleBasePeaks.NA15-SRR5627145_AND_NA15-SRR5627144_vs_NA15-SRR5627143.p0.000001.sep250.ALL.profile \
+'1 ChipHA_ZHA_hP9V5 vs ChipHA_ZHA at NA ChipHA_hP9HA+V5 vs In_hP9HA' \
+'2 ChipHA_ZHA_hP9V5 vs ChipHA_ZHA at NA ChipHA_cP9HA+V5 vs In_hP9HA' \
+'3 ChipHA_ZHA_cP9V5 vs ChipHA_ZHA at NA ChipHA_hP9HA+V5 vs In_hP9HA' \
+'4 ChipHA_ZHA_cP9V5 vs ChipHA_ZHA at NA ChipHA_cP9HA+V5 vs In_hP9HA'
+
+# Use Motif Centered and Stranded for Human allele
+Rscript pipelines/MultiProfilePlot.R bwplots/AlleleSpecificityMCT.pdf 'AlleleSpecificityMCT' \
+bwprofilesNorm/WTCHG_538916_223180_VS_WTCHG_538916_221156_AT_SingleBasePeaks.NA15-SRR5627146_AND_NA15-SRR5627147_vs_NA15-SRR5627143.p0.000001.sep250.ALL_MotifCenteredStranded.profile \
+bwprofilesNorm/WTCHG_538916_223180_VS_WTCHG_538916_221156_AT_SingleBasePeaks.NA15-SRR5627145_AND_NA15-SRR5627144_vs_NA15-SRR5627143.p0.000001.sep250.ALL.profile \
+bwprofilesNorm/WTCHG_538916_224192_VS_WTCHG_538916_221156_AT_SingleBasePeaks.NA15-SRR5627146_AND_NA15-SRR5627147_vs_NA15-SRR5627143.p0.000001.sep250.ALL_MotifCenteredStranded.profile \
+bwprofilesNorm/WTCHG_538916_224192_VS_WTCHG_538916_221156_AT_SingleBasePeaks.NA15-SRR5627145_AND_NA15-SRR5627144_vs_NA15-SRR5627143.p0.000001.sep250.ALL.profile \
+'1 ChipHA_ZHA_hP9V5 vs ChipHA_ZHA at NA ChipHA_hP9HA+V5 vs In_hP9HA MTC' \
+'2 ChipHA_ZHA_hP9V5 vs ChipHA_ZHA at NA ChipHA_cP9HA+V5 vs In_hP9HA' \
+'3 ChipHA_ZHA_cP9V5 vs ChipHA_ZHA at NA ChipHA_hP9HA+V5 vs In_hP9HA MTC' \
+'4 ChipHA_ZHA_cP9V5 vs ChipHA_ZHA at NA ChipHA_cP9HA+V5 vs In_hP9HA'
+```
