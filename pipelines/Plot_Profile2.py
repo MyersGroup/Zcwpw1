@@ -38,6 +38,7 @@ rule removeUTH3K4:
   """
   Remove peak if it's center overlaps with region (CI peak) of H3K4me3 peak
   Filter cov_input >5
+  remove top 5 by likelihood (only really nececcary for chimp due to lack of propper input contol)
   Sort by enrichment descending
   Remove peaks with greater than 99.9% input  
   """
@@ -59,6 +60,8 @@ rule removeUTH3K4:
                           -b stdin |
     awk ' $8 >= 5 ' |
     awk -v var="$THRESHOLD" ' $8 < var ' |
+    sort -k10 -n -r |
+    tail -n +6 |
     sort -k9 -n -r > {output.bed}
     """
 
