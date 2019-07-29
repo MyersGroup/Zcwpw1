@@ -2,7 +2,7 @@
 
 # To test if enrichment is due to specific lengths of fragments
 
-#snakemake --cores 12 --snakefile pipelines/Plot_Profile2.py -npr
+#snakemake --cores 15 --snakefile pipelines/Plot_Profile2.py -npr
 
 #snakemake --snakefile pipelines/Plot_Profile2.py --dag | dot -Tsvg > pipelines/Plot_Profile2_dag.svg
 
@@ -18,11 +18,14 @@ from os.path import join
 METADATA_DIR = config["metadata_dir"]
 GENOME = 'hg38'
 
+# NB remember to add to regionNames: in config.yml if you add to this list
 locations = ["SingleBasePeaks.NA15-SRR5627138_AND_NA15-SRR5627139_vs_NA15-SRR5627140.p0.000001.sep250.ALL_MotifCenteredStranded",
               "SingleBasePeaks.NA15-SRR5627146_AND_NA15-SRR5627147_vs_NA15-SRR5627143.p0.000001.sep250.ALL_MotifCenteredStranded",
               "SingleBasePeaks.NA15-SRR5627146_AND_NA15-SRR5627147_vs_NA15-SRR5627143.p0.000001.sep250.ALL",
               "SingleBasePeaks.NA15-SRR5627145_AND_NA15-SRR5627144_vs_NA15-SRR5627143.p0.000001.sep250.ALL",
-              "SingleBasePeaks.WTCHG_538916_223180_vs_WTCHG_538916_221156.p0.000001.sep250.ALL"]
+              "SingleBasePeaks.WTCHG_538916_223180_vs_WTCHG_538916_221156.p0.000001.sep250.ALL",
+              "SingleBasePeaks.WTCHG_538916_221156_vs_WTCHG_538916_217108.p0.000001.sep250.ALL"]
+
 
 
 rule all:
