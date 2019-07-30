@@ -10,6 +10,7 @@ just using Chromosome 1, as many data points
 ```{r}
 library(data.table)
 library(ggplot2)
+library(cowplot)
 
 h3k4me3_UT_100bp <- fread("grep -P 'chr1\\t|chr\\t' peaks/ForceCalledPeaks_NA15-SRR5627150_vs_NA15-SRR5627142_AT_genome.windows.100wide.100slide.bed.bed")
 h3k4me3_hP9_100bp <- fread("grep -P 'chr1\\t|chr\\t' peaks/ForceCalledPeaks_NA15-SRR5627152_AND_NA15-SRR5627153_vs_NA15-SRR5627143_AT_genome.windows.100wide.100slide.bed.bed")
@@ -34,6 +35,7 @@ cP9combo <- fread("grep -P 'chr1\\t|chr\\t' peaks/ForceCalledPeaks_NA15-SRR56271
 
 forcecalled <- h3k4me3_UT_100bp
 forcecalled$h3k4me3_UT <- forcecalled$enrichment
+forcecalled$h3k4me3_UT_cov_input <- forcecalled$cov_input
 
 forcecalled$h3k4me3_hP9_enrichment <- h3k4me3_hP9_100bp$enrichment
 
@@ -175,6 +177,29 @@ plot_grid(p1 + scale_x_log10(limits=c(0.1,NA)) + scale_y_log10(limits=c(0.1,NA))
           p4 + scale_x_log10(limits=c(0.1,NA)) + scale_y_log10(limits=c(0.1,NA)))
 
 plot_grid(p1CVC + ylim(0,8), p2CVC + ylim(0,8), p3CVC + ylim(0,8), p4CVC + ylim(0,8))
+dev.off()
+
+
+# Split into definately bound and definately not, for visual clarity
+
+pdf("Zcw_vs_CoTransfection2.pdf")
+p1 + ylim(0,8) + gghighlight(hP9combo_pvalue<1e-9, unhighlighted_colour="darkgrey")
+p1 + ylim(0,8) + gghighlight(hP9combo_pvalue==1, unhighlighted_colour="darkgrey")
+
+cHP9 + ylim(0,8) + gghighlight(hP9combo_pvalue<1e-9, unhighlighted_colour="darkgrey")
+cHP9 + ylim(0,8) + gghighlight(hP9combo_pvalue==1, unhighlighted_colour="darkgrey")
+
+forcecalled[,hP9Combo.bound := NA]
+forcecalled[hP9combo_pvalue==1,hP9Combo.bound := FALSE]
+forcecalled[hP9combo_pvalue<1e-9,hP9Combo.bound := TRUE]
+
+ggplot(forcecalled[zcw_cov_input>5 & hP9combo_cov_input>5], (aes(zcw_enrichment, zcw_hP9_enrichment, z=hP9Combo.bound))) +
+  stat_summary_hex(bins=200, alpha=0.5, fun= function(x) as.character(mean(x))) + # na.rm=T
+  #scale_fill_brewer(palette="Set1") +
+  scale_fill_manual(labels = c("p = 1", "p < 10^(-9)"), values = c("#E41A1C", "#377EB8")) +
+  labs(fill="Evidence of hPrdm9cterm binding") +
+  theme(legend.position = "bottom") +
+  ylim(0,8)
 dev.off()
 
 ```
