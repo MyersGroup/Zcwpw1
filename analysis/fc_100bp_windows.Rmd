@@ -11,10 +11,10 @@ just using Chromosome 1, as many data points
 library(data.table)
 library(ggplot2)
 
-h3k4me3_UT_100bp <- fread("grep -P 'chr1\\t|chr\\t' peaks/ForceCalledPeaks_SRA_Altemose2015_SRR5627150_vs_SRA_Altemose2015_SRR5627142_AT_genome.windows.100wide.100slide.bed.bed")
-h3k4me3_hP9_100bp <- fread("grep -P 'chr1\\t|chr\\t' peaks/ForceCalledPeaks_SRA_Altemose2015_SRR5627152_AND_SRA_Altemose2015_SRR5627153_vs_SRA_Altemose2015_SRR5627143_AT_genome.windows.100wide.100slide.bed.bed")
+h3k4me3_UT_100bp <- fread("grep -P 'chr1\\t|chr\\t' peaks/ForceCalledPeaks_NA15-SRR5627150_vs_NA15-SRR5627142_AT_genome.windows.100wide.100slide.bed.bed")
+h3k4me3_hP9_100bp <- fread("grep -P 'chr1\\t|chr\\t' peaks/ForceCalledPeaks_NA15-SRR5627152_AND_NA15-SRR5627153_vs_NA15-SRR5627143_AT_genome.windows.100wide.100slide.bed.bed")
 
-h3k36me3_hP9_100bp <- fread("grep -P 'chr1\\t|chr\\t' peaks/ForceCalledPeaks_SRA_Altemose2015_SRR5627149_vs_SRA_Altemose2015_SRR5627143_AT_genome.windows.100wide.100slide.bed.bed")
+h3k36me3_hP9_100bp <- fread("grep -P 'chr1\\t|chr\\t' peaks/ForceCalledPeaks_NA15-SRR5627149_vs_NA15-SRR5627143_AT_genome.windows.100wide.100slide.bed.bed")
 
 
 zcw_100bp <- fread("grep -P 'chr1\\t|chr\\t' peaks/ForceCalledPeaks_WTCHG_538916_221156_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144_AT_genome.windows.100wide.100slide.bed.bed")
@@ -28,9 +28,9 @@ zcw_hCVC <- fread("grep -P 'chr1\\t|chr\\t' peaks/ForceCalledPeaks_WTCHG_538916_
 zcw_cCVC <- fread("grep -P 'chr1\\t|chr\\t' peaks/ForceCalledPeaks_WTCHG_538916_224192_vs_WTCHG_538916_221156_AT_genome.windows.100wide.100slide.bed.bed")
 
 
-hP9combo <- fread("grep -P 'chr1\\t|chr\\t' peaks/ForceCalledPeaks_SRA_Altemose2015_SRR5627146_AND_SRA_Altemose2015_SRR5627147_vs_SRA_Altemose2015_SRR5627143_AT_genome.windows.100wide.100slide.bed.bed")
+hP9combo <- fread("grep -P 'chr1\\t|chr\\t' peaks/ForceCalledPeaks_NA15-SRR5627146_AND_NA15-SRR5627147_vs_NA15-SRR5627143_AT_genome.windows.100wide.100slide.bed.bed")
 
-cP9combo <- fread("grep -P 'chr1\\t|chr\\t' peaks/ForceCalledPeaks_SRA_Altemose2015_SRR5627145_AND_SRA_Altemose2015_SRR5627144_vs_SRA_Altemose2015_SRR5627143_AT_genome.windows.100wide.100slide.bed.bed")
+cP9combo <- fread("grep -P 'chr1\\t|chr\\t' peaks/ForceCalledPeaks_NA15-SRR5627145_AND_NA15-SRR5627144_vs_NA15-SRR5627143_AT_genome.windows.100wide.100slide.bed.bed")
 
 forcecalled <- h3k4me3_UT_100bp
 forcecalled$h3k4me3_UT <- forcecalled$enrichment
