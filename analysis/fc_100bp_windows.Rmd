@@ -35,15 +35,21 @@ cP9combo <- fread("grep -P 'chr1\\t|chr\\t' peaks/ForceCalledPeaks_NA15-SRR56271
 
 forcecalled <- h3k4me3_UT_100bp
 forcecalled$h3k4me3_UT <- forcecalled$enrichment
+forcecalled$h3k4me3_UT_enrichment <- forcecalled$h3k4me3_UT
+forcecalled$h3k4me3_UT_reads <- forcecalled[,cov_r1 + cov_r2]
 forcecalled$h3k4me3_UT_cov_input <- forcecalled$cov_input
+forcecalled$h3k4me3_UT_pvalue <- forcecalled$pvalue
 
 forcecalled$h3k4me3_hP9_enrichment <- h3k4me3_hP9_100bp$enrichment
+forcecalled$h3k4me3_hP9_reads <- h3k4me3_hP9_100bp[,cov_r1 + cov_r2]
+forcecalled$h3k4me3_hP9_cov_input <- h3k4me3_hP9_100bp$cov_input
 
 forcecalled$zcw_enrichment <- zcw_100bp$enrichment
 forcecalled$zcw_pvalue <- zcw_100bp$pvalue
 forcecalled$zcw_cov_input <- zcw_100bp$cov_input
 
 forcecalled$zcw_hP9_enrichment <- zcw_hP9_100bp$enrichment
+forcecalled$zcw_hP9_reads <- zcw_hP9_100bp[,cov_r1 + cov_r2]
 forcecalled$zcw_hP9_pvalue <- zcw_hP9_100bp$pvalue
 #forcecalled$zcw_P9_cov_input <- zcw_hP9_100bp$cov_input # identical to zcw
 
