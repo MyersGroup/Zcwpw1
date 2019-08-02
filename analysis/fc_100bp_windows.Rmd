@@ -242,41 +242,174 @@ dev.off()
 
 ```{r}
 
-# # K36 vs K4wP9
-# 
-# plot(forcecalled$h3k36me3_hP9_enrichment, forcecalled$h3k4me3_hP9_enrichment, pch=".", col='#00000010')
-# points(forcecalled[zcw_hP9_enrichment>1 & zcw_P9_pvalue<1e-6]$h3k36me3_hP9_enrichment,
-#        forcecalled[zcw_hP9_enrichment>1 & zcw_P9_pvalue<1e-6]$h3k4me3_hP9_enrichment, pch=".", col='#FF000010')
-
-# # K4UT vs P9
-# 
-# qplot(forcecalled$h3k4me3_UT, forcecalled$P9_enrichment, stroke=I(0), alpha=I(0.1), col=forcecalled$zcw_enrichment>1)
-# 
-# plot(forcecalled[zcw_hP9_enrichment<1]$h3k4me3_UT, forcecalled[zcw_hP9_enrichment<1]$P9_enrichment, pch=".", col='#00000005')
-# points(forcecalled[zcw_hP9_enrichment>1 & zcw_P9_pvalue<1e-6]$h3k4me3_UT, forcecalled[zcw_hP9_enrichment>1 & zcw_P9_pvalue<1e-6]$P9_enrichment, pch=".", col='#FF000005')
-# 
-# # K4UT vs P9 for Zcw_enrichment < vs > 1
-# plot(forcecalled[zcw_enrichment<1]$h3k4me3_UT+0.01, forcecalled[zcw_enrichment<1]$P9_enrichment+0.01, pch=".", col='#00000010')
-# points(forcecalled[zcw_enrichment>1 & zcw_pvalue<1e-6]$h3k4me3_UT+0.01, forcecalled[zcw_enrichment>1 & zcw_pvalue<1e-6]$P9_enrichment+0.01, pch=".", col='#FF000010')
-# 
-# # Log version
-# plot(forcecalled[zcw_enrichment<1]$h3k4me3_UT+0.01, forcecalled[zcw_enrichment<1]$P9_enrichment+0.01, pch=".", col='#00000010', log="xy")
-# points(forcecalled[zcw_enrichment>1 & zcw_pvalue<1e-6]$h3k4me3_UT+0.01, forcecalled[zcw_enrichment>1 & zcw_pvalue<1e-6]$P9_enrichment+0.01, pch=".", col='#FF000010')
-
-
 pdf("H3K4strength.pdf")
 
 # K4UT vs K4wP9
 
-p <- ggplot(forcecalled[h3k4me3_UT>5], aes(h3k4me3_UT, h3k4me3_hP9_enrichment)) +
+p <- ggplot(forcecalled[h3k4me3_UT_cov_input>5 & h3k4me3_hP9_cov_input>5], aes(h3k4me3_UT, h3k4me3_hP9_enrichment)) +
   geom_hex(aes(fill = stat(log(count))), bins=200) +
-  scale_fill_viridis_c() + xlim(0,100) + ylim(0,50)
+  scale_fill_viridis_c()
 
-p + facet_wrap(~ zcw_P9_pvalue<1e-6 ) + ggtitle("Split by zcw_P9_pvalue<1e-6")
+# All & Zoom
+p
+p + xlim(0,30) + ylim(0,30)
+
+# Colour by Zcw
+ggplot(forcecalled[h3k4me3_UT_cov_input>5 & h3k4me3_hP9_cov_input>5], aes(h3k4me3_UT, h3k4me3_hP9_enrichment, z=log(zcw_hP9_enrichment+0.1))) +
+  stat_summary_hex(bins=200) + theme(legend.position = "bottom") +
+  scale_fill_viridis_c(name = "log(Zcw_w/hP9+0.1)", direction = -1) + xlim(0,30) + ylim(0,30)
+
+# Log scale count
+ggplot(forcecalled[h3k4me3_UT_cov_input>5 & h3k4me3_hP9_cov_input>5], aes(log(h3k4me3_UT+0.1), log(h3k4me3_hP9_enrichment+0.1))) +
+  geom_hex(aes(fill = stat(log(count))), bins=200) +
+  scale_fill_viridis_c() + geom_abline(intercept = 0, slope = 1, col='red')
+
+# Log scale colour by Zcw
+ggplot(forcecalled[h3k4me3_UT_cov_input>5 & h3k4me3_hP9_cov_input>5], aes(log(h3k4me3_UT+0.1), log(h3k4me3_hP9_enrichment+0.1), z=log(zcw_hP9_enrichment+0.1))) +
+  #stat_summary_hex(bins=200) +
+  stat_summary_hex(bins=200, fun= function(x)if(length(x)>=3){mean(x)}else{NA}) +
+  theme(legend.position = "bottom") +
+  scale_fill_viridis_c(name = "log(Zcw_w/hP9+0.1)", direction = -1)
+
+
+# Zcw colour, as P9 increases, for a given H3K4
+ggplot(forcecalled[zcw_cov_input>5 & hP9combo_cov_input>5 & h3k4me3_hP9_cov_input>5], aes(hP9combo_enrichment, h3k4me3_hP9_enrichment, z=log(zcw_hP9_enrichment+0.1))) +
+  stat_summary_hex(bins=200) + theme(legend.position = "bottom") +
+  scale_fill_viridis_c(name = "log(Zcw_w/hP9+0.1)", direction = -1) + xlim(0,20) + ylim(0,50) +
+  ggtitle("zcw cov input")
+
+# min 3
+ggplot(forcecalled[zcw_cov_input>5 & hP9combo_cov_input>5 & h3k4me3_hP9_cov_input>5], aes(log(hP9combo_enrichment+0.1), log(h3k4me3_hP9_enrichment+0.1), z=log(zcw_hP9_enrichment+0.1))) +
+  stat_summary_hex(bins=200, fun= function(x)if(length(x)>=3){mean(x)}else{NA}) +
+  theme(legend.position = "bottom") +
+  scale_fill_viridis_c(name = "log(Zcw_w/hP9+0.1)", direction = -1)
+
+dev.off()
+```
+
+
+# K4 vs Zcw (CT) split by hP9 status
+
+For a given amount of H3K4, Zcw is higher enriched when P9 bound at non promoters than promoters
+
+
+```{r}
+
+forcecalled[,UTP9 := NULL]
+forcecalled[hP9combo_cov_input>5 & hP9combo_pvalue==1, UTP9 := "0"]
+forcecalled[hP9combo_cov_input>5 & hP9combo_pvalue<1e-7, UTP9 := "1"] #& h3k4me3_UT_pvalue==1
+forcecalled[hP9combo_cov_input>5 & hP9combo_pvalue<1e-7 & h3k4me3_UT_pvalue<1e-5, UTP9 := "2"]
+#forcecalled[hP9combo_pvalue>0.1 & h3k4me3_UT_pvalue<1e-5, UTP9 := "3"]
+
+#forcecalled[,mean(zcw_hP9_enrichment),by=UTP9]
+#      UTP9        V1
+# 1:    0 0.1162629
+# 2: <NA> 0.3742038
+# 3:    1 2.1501786
+# 4:    2 1.8304093
+
+
+mingroup <- min(forcecalled[,.N,by=UTP9]$N)
+stopifnot(mingroup>5e3)
+#forcecalled[,.SD[sample(.N, min(1e4,.N))], by = UTP9][,.N,by=UTP9]
+
+p1 <- ggplot(forcecalled[zcw_cov_input>5 & h3k4me3_hP9_cov_input>5][,.SD[sample(.N, min(mingroup,.N))], by = UTP9], (aes(log(h3k4me3_hP9_enrichment+0.1), log(zcw_hP9_enrichment+0.1), group=UTP9, z=as.numeric(UTP9))))
+
+p2 <- ggplot(forcecalled[zcw_cov_input>5 & h3k4me3_UT_cov_input>5][,.SD[sample(.N, min(mingroup,.N))], by = UTP9], (aes(log(h3k4me3_UT_enrichment+0.1), log(zcw_enrichment+0.1), group=UTP9, z=as.numeric(UTP9))))
+
+p3 <- ggplot(forcecalled[zcw_cov_input>5 & h3k4me3_hP9_cov_input>5][,.SD[sample(.N, min(mingroup,.N))], by = UTP9], (aes(log(h3k4me3_hP9_enrichment+0.1), log(zcw_enrichment+0.1), group=UTP9, z=as.numeric(UTP9))))
+
+p4 <- ggplot(forcecalled[zcw_cov_input>5 & h3k4me3_UT_cov_input>5][,.SD[sample(.N, min(mingroup,.N))], by = UTP9], (aes(log(h3k4me3_UT_enrichment+0.1), log(zcw_hP9_enrichment+0.1), group=UTP9, z=as.numeric(UTP9)))) #+
+
+commongrobs <- list(
+  stat_summary_hex(bins=150, alpha=0.5, fun= function(x) if(length(x)>=1){as.character(mean(x))}else{NA}),
+  theme(legend.position = "bottom"),
+  scale_fill_manual(labels = c("No hP9 (p=1)", "hP9 (p<1e-7) & No UT_H3K4 (p>1e-5)","hP9 (p<1e-7) & UT_H3K4 (p<1e-5)"), values = RColorBrewer::brewer.pal(3, "Set1")),
+  xlim(NA,4),
+  ylim(NA,2.5)
+)
+
+# Count density
+# 
+# commongrobsCount <- list(
+#   #stat_summary_hex(aes(group=1), bins=200, fun= function(x) if(length(x)>=1){log(length(x))}else{NA}),
+#   geom_hex(aes(fill = stat(log(count))), bins=200),
+#   scale_fill_viridis_c(direction = -1),
+#   theme(legend.position = "bottom"),
+#   xlim(NA,4),
+#   ylim(NA,2.5)
+# )
+# 
+# p1 + commongrobsCount
+# dev.off()
+
+pmain <- plot_grid(p1 + commongrobs + theme(legend.position = "none"),
+          p3 + commongrobs + theme(legend.position = "none"),
+          p4 + commongrobs + theme(legend.position = "none"),
+          p2 + commongrobs + theme(legend.position = "none"))
+
+pdf(width = 14, height = 14)
+plot_grid(pmain, get_legend(p1 + commongrobs), ncol=1, rel_heights = c(1, 0.05))
+dev.off()
+
+```
+
+
+## Mean by bin
+
+```{r}
+
+fraction_overlapN <- function(dt,x,y, n=25, filters=c("All"), returndf=F){
+  setorder(dt, enrichment)
+  dt$enrichment_bin <- cut(1:nrow(dt), n)
+  
+  All=TRUE
+  
+  tmp <- dt[eval(parse(text=filters[1])),.(mean_enrichment = mean(enrichment),
+                                      num = .N,
+                                      Mean = mean(get(y)),
+                                      Subset = filters[1],
+                                      sem = sd(get(y))/sqrt(length(get(y))),
+                                      max = max(get(y)),
+                                      min = min(get(y)),
+                                      uq = quantile(get(y), 0.75),
+                                      lq = quantile(get(y), 0.25)
+                                      #sep=sqrt((mean(get(y)) * (1- mean(get(y))))/length(get(y)))
+                                      ),by=enrichment_bin]
+
+    return(tmp)
+
+}
+
+forcecalled$enrichment <- forcecalled$h3k4me3_hP9_enrichment
+
+tmp <- rbind(
+  fraction_overlapN(forcecalled[h3k4me3_hP9_cov_input>5 & zcw_cov_input>5][UTP9==1], 
+                    "h3k4me3_hP9_enrichment","zcw_hP9_enrichment", n=25, returndf = T, filter="UTP9==1"),
+  fraction_overlapN(forcecalled[h3k4me3_hP9_cov_input>5 & zcw_cov_input>5][UTP9==2], 
+                    "h3k4me3_hP9_enrichment","zcw_hP9_enrichment", n=25, returndf = T, filter="UTP9==2")
+)
+
+ggplot(tmp, aes(mean_enrichment, Mean, colour=Subset)) +
+  geom_point() +
+  scale_x_log10() +
+  xlab("Mean h3k4me3_hP9_enrichment") +
+  ylab("Mean zcw_hP9_enrichment") +
+  geom_pointrange(aes(ymax = uq, ymin = lq)) +
+  geom_errorbar(aes(ymax = Mean + 2*sem, ymin = Mean - 2*sem), width = 0.05) +
+  scale_colour_manual(labels = c("hP9 (p<1e-7) & No UT_H3K4 (p>1e-5)",
+                               "hP9 (p<1e-7) & UT_H3K4 (p<1e-5)"),
+                    values = RColorBrewer::brewer.pal(3, "Set1")) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+```
+
 
 
 # K36wP9 vs K4wP9
 
+```{r}
 p <- ggplot(forcecalled[h3k36me3_hP9_enrichment>5], aes(h3k36me3_hP9_enrichment, h3k4me3_hP9_enrichment)) +
   geom_hex(aes(fill = stat(log(count))), bins=200) +
   scale_fill_viridis_c()
