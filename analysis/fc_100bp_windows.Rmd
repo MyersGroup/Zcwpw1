@@ -70,6 +70,7 @@ forcecalled$cP9combo_pvalue <- cP9combo$pvalue
 
 
 forcecalled$h3k36me3_hP9_enrichment <- h3k36me3_hP9_100bp$enrichment
+forcecalled$h3k36me3_hP9_cov_input <- h3k36me3_hP9_100bp$cov_input
 ```
 
 
@@ -377,11 +378,27 @@ fraction_overlapN <- function(dt,x,y, n=25, filters=c("All"), returndf=F){
                                       #sep=sqrt((mean(get(y)) * (1- mean(get(y))))/length(get(y)))
                                       ),by=enrichment_bin]
 
+    if(returndf){
     return(tmp)
+  }else{
+  return(
+    ggplot(tmp, aes(mean_enrichment, Mean, colour=Subset, group=Subset)) +
+      #geom_point(size=2) +
+      geom_hline(yintercept = dt[,mean(get(y))], colour="blue", linetype="dashed") +
+      geom_pointrange(aes(ymax = uq, ymin = lq)) +
+      theme_minimal() +
+      scale_color_brewer(palette = 'Set1') +
+      xlab(paste("Mean",x,"Enrichment")) +
+      ylab(paste("Mean",y))
+  )}
 
 }
 
 forcecalled$enrichment <- forcecalled$h3k4me3_hP9_enrichment
+
+fraction_overlapN(forcecalled[h3k4me3_hP9_cov_input>5 & zcw_cov_input>5], 
+                    "h3k4me3_hP9_enrichment","zcw_hP9_enrichment", n=25) + scale_x_log10()
+
 
 tmp <- rbind(
   fraction_overlapN(forcecalled[h3k4me3_hP9_cov_input>5 & zcw_cov_input>5][UTP9==1], 
@@ -411,6 +428,10 @@ ggplot(tmp, aes(mean_enrichment, Mean, colour=Subset)) +
 ```{r}
 forcecalled$enrichment <- forcecalled$zcw_enrichment
 
+fraction_overlapN(forcecalled[zcw_cov_input>5], 
+                    "zcw_enrichment","zcw_hP9_enrichment", n=25)
+
+
 tmp <- rbind(
   fraction_overlapN(forcecalled[hP9combo_cov_input>5 & zcw_cov_input>5][hP9combo_pvalue==1], 
                     "zcw_enrichment","zcw_hP9_enrichment", n=25, returndf = T, filter="hP9combo_pvalue==1"),
@@ -431,6 +452,15 @@ ggplot(tmp, aes(mean_enrichment, Mean, colour=Subset)) +
   theme(legend.position = "bottom")
 ```
 
+# H3K36
+
+```{r}
+forcecalled$enrichment <- forcecalled$h3k36me3_hP9_enrichment
+
+fraction_overlapN(forcecalled[hP9combo_cov_input>5 & zcw_cov_input>5], 
+                    "h3k36me3_hP9_enrichment","zcw_hP9_enrichment", n=25)
+
+```
 
 # K36wP9 vs K4wP9
 
