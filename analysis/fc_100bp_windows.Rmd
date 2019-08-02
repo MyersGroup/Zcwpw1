@@ -196,17 +196,44 @@ cHP9 + ylim(0,8) + gghighlight(hP9combo_pvalue<1e-9, unhighlighted_colour="darkg
 cHP9 + ylim(0,8) + gghighlight(hP9combo_pvalue==1, unhighlighted_colour="darkgrey")
 
 forcecalled[,hP9Combo.bound := NA]
-forcecalled[hP9combo_pvalue==1,hP9Combo.bound := FALSE]
-forcecalled[hP9combo_pvalue<1e-9,hP9Combo.bound := TRUE]
+forcecalled[hP9combo_pvalue==1, hP9Combo.bound := FALSE]
+forcecalled[hP9combo_pvalue<1e-9, hP9Combo.bound := TRUE]
 
 ggplot(forcecalled[zcw_cov_input>5 & hP9combo_cov_input>5], (aes(zcw_enrichment, zcw_hP9_enrichment, z=hP9Combo.bound))) +
-  stat_summary_hex(bins=200, alpha=0.5, fun= function(x) as.character(mean(x))) + # na.rm=T
+  stat_summary_hex(bins=200, alpha=0.5, fun= function(x)if(length(x)>=3){as.character(mean(x))}else{NA}) + # na.rm=T
   #scale_fill_brewer(palette="Set1") +
   scale_fill_manual(labels = c("p = 1", "p < 10^(-9)"), values = c("#E41A1C", "#377EB8")) +
   labs(fill="Evidence of hPrdm9cterm binding") +
   theme(legend.position = "bottom") +
+  ylim(0,8) + xlim(0,8)
+
+# log scale
+ggplot(forcecalled[zcw_cov_input>5 & hP9combo_cov_input>5], (aes(log(zcw_enrichment+0.1), log(zcw_hP9_enrichment+0.1), z=hP9Combo.bound))) +
+  stat_summary_hex(bins=200, alpha=0.5, fun= function(x) as.character(mean(x))) + # na.rm=T
+  #scale_fill_brewer(palette="Set1") +
+  scale_fill_manual(labels = c("p = 1", "p < 10^(-9)"), values = c("#E41A1C", "#377EB8")) +
+  labs(fill="Evidence of hPrdm9cterm binding") +
+  theme(legend.position = "bottom") + 
+  xlim(-0.5,NA) + ylim(-0.5, NA)
+
+
+# CHIMP
+
+#1e-4
+forcecalled[,cP9Combo.bound := NA]
+forcecalled[cP9combo_pvalue==1, cP9Combo.bound := FALSE]
+forcecalled[cP9combo_pvalue<1e-4, cP9Combo.bound := TRUE]
+
+ggplot(forcecalled[zcw_cov_input>5 & cP9combo_cov_input>5], (aes(zcw_enrichment, zcw_cP9_enrichment, z=cP9Combo.bound))) +
+  stat_summary_hex(bins=200, alpha=0.5, fun= function(x) as.character(mean(x))) + # na.rm=T
+  #scale_fill_brewer(palette="Set1") +
+  scale_fill_manual(labels = c("p = 1", "p < 10^(-4)"), values = c("#E41A1C", "#377EB8")) +
+  labs(fill="Evidence of cPrdm9cterm binding") +
+  theme(legend.position = "bottom") +
   ylim(0,8)
+
 dev.off()
+
 
 ```
 
