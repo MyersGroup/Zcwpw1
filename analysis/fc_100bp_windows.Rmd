@@ -406,6 +406,31 @@ ggplot(tmp, aes(mean_enrichment, Mean, colour=Subset)) +
 ```
 
 
+# Zcw ST vs CT binned
+
+```{r}
+forcecalled$enrichment <- forcecalled$zcw_enrichment
+
+tmp <- rbind(
+  fraction_overlapN(forcecalled[hP9combo_cov_input>5 & zcw_cov_input>5][hP9combo_pvalue==1], 
+                    "zcw_enrichment","zcw_hP9_enrichment", n=25, returndf = T, filter="hP9combo_pvalue==1"),
+  fraction_overlapN(forcecalled[hP9combo_cov_input>5 & zcw_cov_input>5][hP9combo_pvalue<1e-9], 
+                    "zcw_enrichment","zcw_hP9_enrichment", n=25, returndf = T, filter="hP9combo_pvalue<1e-9")
+)
+
+ggplot(tmp, aes(mean_enrichment, Mean, colour=Subset)) +
+  geom_point() +
+  xlab("Mean zcw_enrichment") +
+  ylab("Mean zcw_hP9_enrichment") +
+  geom_pointrange(aes(ymax = uq, ymin = lq)) +
+  geom_errorbar(aes(ymax = Mean + 2*sem, ymin = Mean - 2*sem), width = 0.05) +
+  scale_colour_manual(labels = c("hP9combo_pvalue==1",
+                               "hP9combo_pvalue<1e-9"),
+                    values = RColorBrewer::brewer.pal(3, "Set1")) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+```
+
 
 # K36wP9 vs K4wP9
 
