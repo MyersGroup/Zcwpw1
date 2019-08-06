@@ -3,6 +3,13 @@ title: "FC 100bp Windows"
 output: html_notebook
 ---
 
+Count CpG per 100bp window
+
+```{r}
+bedtools intersect -a forcepeaks/genome.windows.100wide.100slide.bed -b CpG_hg38_cut.bed -c > CpG_hg38_100bpwindows.bed
+```
+
+
 # Load data
 
 just using Chromosome 1, as many data points
@@ -11,6 +18,9 @@ just using Chromosome 1, as many data points
 library(data.table)
 library(ggplot2)
 library(cowplot)
+
+
+CpG_100bp <- fread("grep -P 'chr1\\t|chr\\t' CpG_hg38_100bpwindows.bed")
 
 h3k4me3_UT_100bp <- fread("grep -P 'chr1\\t|chr\\t' peaks/ForceCalledPeaks_NA15-SRR5627150_vs_NA15-SRR5627142_AT_genome.windows.100wide.100slide.bed.bed")
 h3k4me3_hP9_100bp <- fread("grep -P 'chr1\\t|chr\\t' peaks/ForceCalledPeaks_NA15-SRR5627152_AND_NA15-SRR5627153_vs_NA15-SRR5627143_AT_genome.windows.100wide.100slide.bed.bed")
@@ -33,12 +43,19 @@ hP9combo <- fread("grep -P 'chr1\\t|chr\\t' peaks/ForceCalledPeaks_NA15-SRR56271
 
 cP9combo <- fread("grep -P 'chr1\\t|chr\\t' peaks/ForceCalledPeaks_NA15-SRR5627145_AND_NA15-SRR5627144_vs_NA15-SRR5627143_AT_genome.windows.100wide.100slide.bed.bed")
 
+# CAREFULL WITH ORDERING WHEN ADDING NEW COLUMNS!
+
+stopifnot(sum(diff(forcecalled$center_start)<100)==0)
+
 forcecalled <- h3k4me3_UT_100bp
+
 forcecalled$h3k4me3_UT <- forcecalled$enrichment
 forcecalled$h3k4me3_UT_enrichment <- forcecalled$h3k4me3_UT
 forcecalled$h3k4me3_UT_reads <- forcecalled[,cov_r1 + cov_r2]
 forcecalled$h3k4me3_UT_cov_input <- forcecalled$cov_input
 forcecalled$h3k4me3_UT_pvalue <- forcecalled$pvalue
+
+forcecalled$CpG <- CpG_100bp$V4
 
 forcecalled$h3k4me3_hP9_enrichment <- h3k4me3_hP9_100bp$enrichment
 forcecalled$h3k4me3_hP9_reads <- h3k4me3_hP9_100bp[,cov_r1 + cov_r2]
@@ -71,6 +88,13 @@ forcecalled$cP9combo_pvalue <- cP9combo$pvalue
 
 forcecalled$h3k36me3_hP9_enrichment <- h3k36me3_hP9_100bp$enrichment
 forcecalled$h3k36me3_hP9_cov_input <- h3k36me3_hP9_100bp$cov_input
+forcecalled$h3k36me3_hP9_pvalue <- h3k36me3_hP9_100bp$pvalue
+
+sum(forcecalled$center_start!=h3k36me3_hP9_100bp$center_start)
+stopifnot(sum(diff(forcecalled$center_start)<100)==0)
+
+
+
 ```
 
 
