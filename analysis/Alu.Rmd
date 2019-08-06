@@ -13,23 +13,6 @@ samtools view filtered/WTCHG_538916_221156.bam -L ch6_sample.bed -b -o ch6_sampl
 samtools index ch6_sample.bam
 
 
-# Mappability track from genome browser (>7GB)
-https://epgg-test.wustl.edu/d/hg38/hg38.mappability.75.bigwig
-    
-# convert Hoffman lab mappability track to bed
-wget https://www.pmgenomics.ca/hoffmanlab/proj/bismap/trackhub/hg38/k24.Umap.MultiTrackMappability.bw
-./bigWigToBedGraph k24.Umap.MultiTrackMappability.bw k24.Umap.MultiTrackMappability.bedGraph
-awk '$4 > 0.75' k24.Umap.MultiTrackMappability.bedGraph | LC_ALL=C sort -k1,1 -k2,2n -S5G --parallel=5 | bedtools merge -i stdin > 24.Umap.MultiTrackMappability_Keep.bed
-
-bwtool extract bed ch6_sample.bed k24.Umap.MultiTrackMappability.bw k24.Umap.MultiTrackMappability_bwtool.bed
-
-bedtools merge -d 10 -i 24.Umap.MultiTrackMappability.bed > 24.Umap.MultiTrackMappability_d10.bed
-
-sed 's/ /\t/g' hg38.50mer.Excludable.bed |
-bedtools intersect -v -a  peaks/SingleBasePeaks.WTCHG_538916_223180_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144.p0.000001.sep250.ALL.bed \
-                          -b stdin > SingleBasePeaks.WTCHG_538916_223180_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144.p0.000001.sep250.ALL_QCMappability50.bed
-
-
 
 # Repeats
 
@@ -503,9 +486,29 @@ samtools flagstat -@ 5 filtered/WTCHG_538916_221156.bam
 (only exists publicly on hg19)
 
 ```{r}
+# Mappability track from genome browser (>7GB)
+https://epgg-test.wustl.edu/d/hg38/hg38.mappability.75.bigwig
+    
+# convert Hoffman lab mappability track to bed
+wget https://www.pmgenomics.ca/hoffmanlab/proj/bismap/trackhub/hg38/k24.Umap.MultiTrackMappability.bw
+./bigWigToBedGraph k24.Umap.MultiTrackMappability.bw k24.Umap.MultiTrackMappability.bedGraph
+awk '$4 > 0.75' k24.Umap.MultiTrackMappability.bedGraph | LC_ALL=C sort -k1,1 -k2,2n -S5G --parallel=5 | bedtools merge -i stdin > 24.Umap.MultiTrackMappability_Keep.bed
+
+bwtool extract bed ch6_sample.bed k24.Umap.MultiTrackMappability.bw k24.Umap.MultiTrackMappability_bwtool.bed
+
+bedtools merge -d 10 -i 24.Umap.MultiTrackMappability.bed > 24.Umap.MultiTrackMappability_d10.bed
+
+
 # example - not sure it's correct due to large streaches
 wget https://github.com/xuefzhao/Reference.Mappability/raw/master/hg38.50mer/hg38.50mer.Excludable.bed
 
+
+sed 's/ /\t/g' hg38.50mer.Excludable.bed |
+bedtools intersect -v -a  peaks/SingleBasePeaks.WTCHG_538916_223180_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144.p0.000001.sep250.ALL.bed \
+                          -b stdin > SingleBasePeaks.WTCHG_538916_223180_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144.p0.000001.sep250.ALL_QCMappability50.bed
+
+
+# Use GEM
 
 wget https://downloads.sourceforge.net/project/gemlibrary/gem-library/Binary%20pre-release%203/GEM-binaries-Linux-x86_64-core_i3-20130406-045632.tbz2
 
@@ -536,12 +539,28 @@ sed "s/ AC//" hg38.75mer.wig > hg38.75mer2.wig
 # convert to bed
 ./wigToBigWig hg38.75mer2.wig /homes/wells/saxony/single-cell/sequencing/metadata/hg38_sizes.chrom hg38.75mer.bw
 ./bigWigToBedGraph hg38.75mer.bw hg38.75mer.bedGraph
-./bedGraphTobed hg38.75mer.bedGraph hg38.75mer.Excludable.bed 0.33
+./bedGraphTobed hg38.75mer.bedGraph hg38.75mer.Includable.bed 0.33
+../bedGraphTobed hg38.75mer.bedGraph hg38.75mer.Includable.t0.5.bed 0.5
+
+##### NOT EXCLUDABLE BUT INCLUDABLE ######
+#find -type f -name '*' -execdir rename -v 's:Excludable:Includable:g' {} \;
 
 # subset smaller files
-grep -P 'chr6 ' hg38.75mer.Excludable.bed > hg38.75mer.Excludable.chr6.bed
+grep -P 'chr6 ' hg38.75mer.Includable.bed | sed -e 's/ /\t/g' > hg38.75mer.Includable.chr6.bed
+grep -P 'chr1 ' hg38.75mer.Includable.bed | sed -e 's/ /\t/g' > hg38.75mer.Includable.chr1.bed
+grep -P 'chr1 ' hg38.75mer.Includable.t0.5.bed | sed -e 's/ /\t/g' > hg38.75mer.Includable.t0.5.chr1.bed
+
+head -1 ../single-cell/sequencing/metadata/hg38_sizes.chrom > hg38_chr1.chrom
+
+bedtools complement -i hg38.75mer.Includable.chr1.bed -g ../hg38_chr1.chrom > hg38.75mer.Excludable.chr1.bed
+bedtools complement -i hg38.75mer.Includable.t0.5.chr1.bed -g ../hg38_chr1.chrom > hg38.75mer.Excludable.t0.5.chr1.bed
+
+bedtools merge -i hg38.75mer.Includable.chr1.bed -d 100 > hg38.75mer.Includable.chr1.merge100.bed
+bedtools merge -i hg38.75mer.Excludable.chr1.bed -d 500 > hg38.75mer.Excludable.chr1.merge500.bed
+bedtools merge -i hg38.75mer.Excludable.t0.5.chr1.bed -d 500 > hg38.75mer.Excludable.t0.5.chr1.merge500.bed
 
 rg 'chr6\t' hg38.75mer.bedGraph > hg38.75mer.chr6.bedGraph
+rg 'chr1\t' hg38.75mer.bedGraph > hg38.75mer.chr1.bedGraph
 
 
 ```
