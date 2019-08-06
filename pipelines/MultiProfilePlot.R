@@ -6,7 +6,10 @@ args = commandArgs(TRUE)
 outfile <- args[1]
 regionsName <- args[2]
 
-args <- args[3:length(args)]
+plotwidth <- as.numeric(args[3])
+plotheight <- as.numeric(args[4])
+
+args <- args[5:length(args)]
 
 # test values
 # args <- c("bwprofilesNorm/SRA_Altemose2015_SRR5627149_VS_SRA_Altemose2015_SRR5627143_AT_SingleBasePeaks.SRA_Altemose2015_SRR5627146_AND_SRA_Altemose2015_SRR5627147_vs_SRA_Altemose2015_SRR5627143.p0.000001.sep250.ALL_MotifCenteredStranded.profile",
@@ -35,7 +38,7 @@ for(i in seq_along(files)){
 
 enrichment[, samplePair := gsub(" vs","\n vs",samplePair)]
 
-pdf(outfile, width = 17, height=14)
+pdf(outfile, width = plotwidth, height = plotheight)
 ggplot(melt(enrichment, id.vars=c("Position","samplePair"), variable.name="Region", value.name="Enrichment"), aes(Position, Enrichment, colour=Region)) +
   geom_hline(yintercept = 1) +
   geom_line() +

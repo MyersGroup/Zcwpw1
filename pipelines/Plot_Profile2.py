@@ -323,8 +323,10 @@ rule MultiProfilePlot:
   params:
     sampleName = " ".join([f"'{name}'" for s,c,name in sample_pairings]),
     regionsName =  lambda wc: config["regionNames"][wc.locations]
+    width = 17,
+    height = 15,
   shell:
     """
-    Rscript pipelines/MultiProfilePlot.R {output} '{params.regionsName}' {input.samplePair} {params.sampleName}
+    Rscript pipelines/MultiProfilePlot.R {output} '{params.regionsName}' {params.width} {params.height} {input.samplePair} {params.sampleName}
     """
 
