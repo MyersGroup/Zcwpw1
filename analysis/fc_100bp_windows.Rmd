@@ -60,6 +60,7 @@ forcecalled$CpG <- CpG_100bp$V4
 forcecalled$h3k4me3_hP9_enrichment <- h3k4me3_hP9_100bp$enrichment
 forcecalled$h3k4me3_hP9_reads <- h3k4me3_hP9_100bp[,cov_r1 + cov_r2]
 forcecalled$h3k4me3_hP9_cov_input <- h3k4me3_hP9_100bp$cov_input
+forcecalled$h3k4me3_hP9_pvalue <- h3k4me3_hP9_100bp$pvalue
 
 forcecalled$zcw_enrichment <- zcw_100bp$enrichment
 forcecalled$zcw_pvalue <- zcw_100bp$pvalue
@@ -224,16 +225,17 @@ forcecalled[,hP9Combo.bound := NA]
 forcecalled[hP9combo_pvalue==1, hP9Combo.bound := FALSE]
 forcecalled[hP9combo_pvalue<1e-9, hP9Combo.bound := TRUE]
 
-ggplot(forcecalled[zcw_cov_input>5 & hP9combo_cov_input>5], (aes(zcw_enrichment, zcw_hP9_enrichment, z=hP9Combo.bound))) +
-  stat_summary_hex(bins=200, alpha=0.5, fun= function(x)if(length(x)>=3){as.character(mean(x))}else{NA}) + # na.rm=T
-  #scale_fill_brewer(palette="Set1") +
+p1 <- ggplot(forcecalled[zcw_cov_input>5 & hP9combo_cov_input>5], (aes(zcw_enrichment, zcw_hP9_enrichment, z=hP9Combo.bound))) +
+  stat_summary_hex(bins=200, alpha=0.5, fun= function(x) as.character(mean(x))) + # na.rm=T
+  #stat_summary_hex(bins=200, alpha=0.5, fun= function(x)if(length(x)>=3){as.character(mean(x))}else{NA}) + # na.rm=T
+  labs(x="Enrichment of Zcwpw1", y="Enrichment of Zcwpw1 when cotransfected with human Prdm9") +
   scale_fill_manual(labels = c("p = 1", "p < 10^(-9)"), values = c("#E41A1C", "#377EB8")) +
-  labs(fill="Evidence of hPrdm9cterm binding") +
+  labs(fill="Evidence of human Prdm9 binding") +
   theme(legend.position = "bottom") +
   ylim(0,8) + xlim(0,8)
 
 # log scale
-ggplot(forcecalled[zcw_cov_input>5 & hP9combo_cov_input>5], (aes(log(zcw_enrichment+0.1), log(zcw_hP9_enrichment+0.1), z=hP9Combo.bound))) +
+p1l <- ggplot(forcecalled[zcw_cov_input>5 & hP9combo_cov_input>5], (aes(log(zcw_enrichment+0.1), log(zcw_hP9_enrichment+0.1), z=hP9Combo.bound))) +
   stat_summary_hex(bins=200, alpha=0.5, fun= function(x) as.character(mean(x))) + # na.rm=T
   #scale_fill_brewer(palette="Set1") +
   scale_fill_manual(labels = c("p = 1", "p < 10^(-9)"), values = c("#E41A1C", "#377EB8")) +
@@ -249,14 +251,18 @@ forcecalled[,cP9Combo.bound := NA]
 forcecalled[cP9combo_pvalue==1, cP9Combo.bound := FALSE]
 forcecalled[cP9combo_pvalue<1e-4, cP9Combo.bound := TRUE]
 
-ggplot(forcecalled[zcw_cov_input>5 & cP9combo_cov_input>5], (aes(zcw_enrichment, zcw_cP9_enrichment, z=cP9Combo.bound))) +
+p2 <- ggplot(forcecalled[zcw_cov_input>5 & cP9combo_cov_input>5], (aes(zcw_enrichment, zcw_cP9_enrichment, z=cP9Combo.bound))) +
   stat_summary_hex(bins=200, alpha=0.5, fun= function(x) as.character(mean(x))) + # na.rm=T
-  #scale_fill_brewer(palette="Set1") +
+  #stat_summary_hex(bins=200, alpha=0.5, fun= function(x)if(length(x)>=1){as.character(mean(x))}else{NA}) + # na.rm=T
+  labs(x="Enrichment of Zcwpw1", y="Enrichment of Zcwpw1 when cotransfected with chimp Prdm9") +
   scale_fill_manual(labels = c("p = 1", "p < 10^(-4)"), values = c("#E41A1C", "#377EB8")) +
-  labs(fill="Evidence of cPrdm9cterm binding") +
+  labs(fill="Evidence of chimp Prdm9 binding") +
   theme(legend.position = "bottom") +
   ylim(0,8)
 
+
+pdf("Zcw_vs_CoTransfection_summary_plot.pdf", width=12)
+plot_grid(p1, p2)
 dev.off()
 
 
@@ -322,9 +328,8 @@ For a given amount of H3K4, Zcw is higher enriched when P9 bound at non promoter
 
 forcecalled[,UTP9 := NULL]
 forcecalled[hP9combo_cov_input>5 & hP9combo_pvalue==1, UTP9 := "0"]
-forcecalled[hP9combo_cov_input>5 & hP9combo_pvalue<1e-7, UTP9 := "1"] #& h3k4me3_UT_pvalue==1
-forcecalled[hP9combo_cov_input>5 & hP9combo_pvalue<1e-7 & h3k4me3_UT_pvalue<1e-5, UTP9 := "2"]
-#forcecalled[hP9combo_pvalue>0.1 & h3k4me3_UT_pvalue<1e-5, UTP9 := "3"]
+forcecalled[hP9combo_cov_input>5 & hP9combo_pvalue<1e-7, UTP9 := "1"]
+forcecalled[h3k4me3_UT_cov_input>5 & h3k4me3_UT_pvalue<1e-5, UTP9 := "2"] # this means the above also has condition h3k4me3_UT_pvalue>1e-5
 
 #forcecalled[,mean(zcw_hP9_enrichment),by=UTP9]
 #      UTP9        V1
@@ -347,9 +352,13 @@ p3 <- ggplot(forcecalled[zcw_cov_input>5 & h3k4me3_hP9_cov_input>5][,.SD[sample(
 p4 <- ggplot(forcecalled[zcw_cov_input>5 & h3k4me3_UT_cov_input>5][,.SD[sample(.N, min(mingroup,.N))], by = UTP9], (aes(log(h3k4me3_UT_enrichment+0.1), log(zcw_hP9_enrichment+0.1), group=UTP9, z=as.numeric(UTP9)))) #+
 
 commongrobs <- list(
-  stat_summary_hex(bins=150, alpha=0.5, fun= function(x) if(length(x)>=1){as.character(mean(x))}else{NA}),
+  stat_summary_hex(bins=150, alpha=0.5, fun= function(x) if(length(x)>=3){as.character(mean(x))}else{NA}), # duplicate this line for multi-alpha density shading?
   theme(legend.position = "bottom"),
-  scale_fill_manual(labels = c("No hP9 (p=1)", "hP9 (p<1e-7) & No UT_H3K4 (p>1e-5)","hP9 (p<1e-7) & UT_H3K4 (p<1e-5)"), values = RColorBrewer::brewer.pal(3, "Set1")),
+  scale_fill_manual(labels = c("Not humanPRDM9 bound (p=1)",
+                               "humanPRDM9 bound (p<1e-7) & No Untransfected H3K4me3 (p>1e-5)",
+                               "Untransfected H3K4me3 (p<1e-5)"),
+                    values = RColorBrewer::brewer.pal(3, "Set1"), 
+                    name = "Subset"),
   xlim(NA,4),
   ylim(NA,2.5)
 )
@@ -368,12 +377,20 @@ commongrobs <- list(
 # p1 + commongrobsCount
 # dev.off()
 
-pmain <- plot_grid(p1 + commongrobs + theme(legend.position = "none"),
-          p3 + commongrobs + theme(legend.position = "none"),
-          p4 + commongrobs + theme(legend.position = "none"),
-          p2 + commongrobs + theme(legend.position = "none"))
+pmain <- plot_grid(p1 + commongrobs + theme(legend.position = "none") + labs(title="Transfected vs Cotransfected",
+                                                                             x="ln(0.1 + Enrichment of H3K4me3 in humanPRDM9 transfection)", 
+                                                                             y="ln(0.1 + Enrichment of Zcwpw1 in Zcwpw1-humanPrdm9 cotransfection)"),
+          p3 + commongrobs + theme(legend.position = "none") + labs(title="Transfected vs Singly-transfected",
+                                                                             x="ln(0.1 + Enrichment of H3K4me3 in humanPRDM9 transfection)", 
+                                                                             y="ln(0.1 + Enrichment of Zcwpw1 in Zcwpw1 single transfection)"),
+          p4 + commongrobs + theme(legend.position = "none") + labs(title="Un-transfected vs Cotransfected",
+                                                                             x="ln(0.1 + Enrichment of H3K4me3 in untransfected)", 
+                                                                             y="ln(0.1 + Enrichment of Zcwpw1 in Zcwpw1-humanPrdm9 cotransfection)"),
+          p2 + commongrobs + theme(legend.position = "none") + labs(title="Un-transfected vs Singly-transfected",
+                                                                             x="ln(0.1 + Enrichment of H3K4me3 in untransfected)", 
+                                                                             y="ln(0.1 + Enrichment of Zcwpw1 in Zcwpw1 single transfection)"))
 
-pdf(width = 14, height = 14)
+pdf("H3K4strength2.pdf", width = 14, height = 14)
 plot_grid(pmain, get_legend(p1 + commongrobs), ncol=1, rel_heights = c(1, 0.05))
 dev.off()
 
@@ -420,6 +437,8 @@ fraction_overlapN <- function(dt,x,y, n=25, filters=c("All"), returndf=F){
 
 forcecalled$enrichment <- forcecalled$h3k4me3_hP9_enrichment
 
+pdf("H3K4strength_binned.pdf")
+
 fraction_overlapN(forcecalled[h3k4me3_hP9_cov_input>5 & zcw_cov_input>5], 
                     "h3k4me3_hP9_enrichment","zcw_hP9_enrichment", n=25) + scale_x_log10()
 
@@ -431,18 +450,21 @@ tmp <- rbind(
                     "h3k4me3_hP9_enrichment","zcw_hP9_enrichment", n=25, returndf = T, filter="UTP9==2")
 )
 
+
 ggplot(tmp, aes(mean_enrichment, Mean, colour=Subset)) +
   geom_point() +
   scale_x_log10() +
-  xlab("Mean h3k4me3_hP9_enrichment") +
-  ylab("Mean zcw_hP9_enrichment") +
+  xlab("Mean H3K4me3 enrichment in humanPRDM9 transfection") +
+  ylab("Mean Zcwpw1 enrichment in Zcwpw1-humanPRDM9 cotransfection") +
   geom_pointrange(aes(ymax = uq, ymin = lq)) +
   geom_errorbar(aes(ymax = Mean + 2*sem, ymin = Mean - 2*sem), width = 0.05) +
-  scale_colour_manual(labels = c("hP9 (p<1e-7) & No UT_H3K4 (p>1e-5)",
-                               "hP9 (p<1e-7) & UT_H3K4 (p<1e-5)"),
+  scale_colour_manual(labels = c("humanPRDM9 bound (p<1e-7) & No Untransfected H3K4me3 (p>1e-5)",
+                               "Untransfected H3K4me3 (p<1e-5)"),
+                      guide=guide_legend(nrow=2),
                     values = RColorBrewer::brewer.pal(3, "Set1")) +
   theme_minimal() +
   theme(legend.position = "bottom")
+dev.off()
 
 ```
 
@@ -451,6 +473,8 @@ ggplot(tmp, aes(mean_enrichment, Mean, colour=Subset)) +
 
 ```{r}
 forcecalled$enrichment <- forcecalled$zcw_enrichment
+
+pdf("Zcw_ST_vs_CT_binned.pdf")
 
 fraction_overlapN(forcecalled[zcw_cov_input>5], 
                     "zcw_enrichment","zcw_hP9_enrichment", n=25)
@@ -463,6 +487,7 @@ tmp <- rbind(
                     "zcw_enrichment","zcw_hP9_enrichment", n=25, returndf = T, filter="hP9combo_pvalue<1e-9")
 )
 
+
 ggplot(tmp, aes(mean_enrichment, Mean, colour=Subset)) +
   geom_point() +
   xlab("Mean zcw_enrichment") +
@@ -474,6 +499,8 @@ ggplot(tmp, aes(mean_enrichment, Mean, colour=Subset)) +
                     values = RColorBrewer::brewer.pal(3, "Set1")) +
   theme_minimal() +
   theme(legend.position = "bottom")
+dev.off()
+
 ```
 
 # H3K36
@@ -481,8 +508,10 @@ ggplot(tmp, aes(mean_enrichment, Mean, colour=Subset)) +
 ```{r}
 forcecalled$enrichment <- forcecalled$h3k36me3_hP9_enrichment
 
+pdf("H3K36.pdf")
 fraction_overlapN(forcecalled[hP9combo_cov_input>5 & zcw_cov_input>5], 
                     "h3k36me3_hP9_enrichment","zcw_hP9_enrichment", n=25)
+dev.off()
 
 ```
 
