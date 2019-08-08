@@ -44,7 +44,7 @@ repeats <- prejoin(repeats, ext = 0)
 
 # check order preserverd
 stopifnot(sum(diff(repeats$id)<0)==0)
-stopifnot(sum(diff(repeats$id)!=1))
+stopifnot(sum(diff(repeats$id)!=1)==0)
 
 head(repeats[,.N,by=Name][order(-N)], 50)
 
