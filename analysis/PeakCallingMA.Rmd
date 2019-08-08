@@ -526,6 +526,117 @@ sum(!is.na(dmc1$Zcw_CVC_enrichment))
 
 ```
 
+# Proportions
+
+```{r}
+
+create_set_matrix <- function(peaks, k=100, returnpeaks=FALSE){
+  peaks$zcw_peaks_enrichment <- foverlaps(peaks, zcw_peaks_cin, mult="first")$enrichment
+  peaks$H3K4UT_enrichment <- foverlaps(peaks, h3k4me3_UT_peaks, mult="first")$enrichment
+  peaks$H3K4P9_enrichment <- foverlaps(peaks, h3k4me3_P9_peaks, mult="first")$enrichment
+  peaks$H3K36P9_enrichment <- foverlaps(peaks, h3k36me3_P9_peaks, mult="first")$enrichment
+  peaks$ZcwCVC_enrichment <- foverlaps(peaks, zcw_wP9_vs_chip_Z, mult="first")$enrichment
+  peaks$HP9combo_enrichment <- foverlaps(peaks, HP9combo_peaks, mult="first")$enrichment
+  peaks$dmc1_enrichment <- foverlaps(peaks, dmc1, mult="first")$enrichment
+  peaks$Alu_score <- foverlaps(peaks,repeats[grep("Alu",Name)], mult="first")$Score #[Name!="Alu"][CI_stop-CI_start>250 & CI_stop-CI_start<350]
+  peaks$NonAlu_score <- foverlaps(peaks,repeats[!grep("Alu",Name)], mult="first")$Score
+  peaks$CpGI <- foverlaps(peaks,CGI, mult="first")$V6
+  peaks$H1C_H4K20 <- foverlaps(peaks,H1C_H4K20, mult="first")$V5
+  
+  
+  peaks_QC <- peaks[cov_input>5][chr!="chrX"]
+  
+  peaks_QC[ , decile := cut(enrichment,
+                            breaks = quantile(enrichment, 
+                                              probs = seq(0, 1, by = 1/k)),
+                            labels = 1:k,
+                            include.lowest=T)]
+  
+  set_matrix <- peaks_QC[order(-enrichment)][,.(
+    "Zcw_Alone"=!is.na(zcw_peaks_enrichment),
+    "H3K4me3_UT"=!is.na(H3K4UT_enrichment),
+    "H3K4me3_P9"=!is.na(H3K4P9_enrichment),
+    "H3K36me3_P9"=!is.na(H3K36P9_enrichment),
+    "Zcw_CVC"=!is.na(ZcwCVC_enrichment),
+    "hP9_Cterm"=!is.na(HP9combo_enrichment),
+    "Dmc1"=!is.na(dmc1_enrichment),
+    "Alu"=!is.na(Alu_score),
+    "NonAlu"=!is.na(NonAlu_score),
+    "CpGI"=!is.na(CpGI),
+    "H1C_H4K20"=!is.na(H1C_H4K20),
+    "total_peaks"=nrow(peaks_QC), #(as.numeric(decile)/k)*nrow(peaks_QC)
+    "decile"=as.numeric(decile))]#[!is.na(decile)]*1
+  
+  if(returnpeaks){
+    peaks_QC
+  }else{
+    return(set_matrix)
+  }
+}
+
+
+set_matrix_zcw_peaks <- create_set_matrix(zcw_peaks_cin, k=100)
+set_matrix_zcw_peaks$Experiment <- "Zcw_Alone"
+
+set_matrix_zcw_wP9_peaks_cin <- create_set_matrix(zcw_wP9_peaks_cin, k=100)
+set_matrix_zcw_wP9_peaks_cin$Experiment <- "Zcw_P9_Cotransfection"
+
+# set_matrix_zcw_wP9_peaks_cin_QCM50 <- create_set_matrix(zcw_wP9_peaks_cin_QCM50, k=100)
+# set_matrix_zcw_wP9_peaks_cin_QCM50$Experiment <- "Zcw_P9_Cotransfection QCM50"
+
+set_matrix_zcw_wP9_vs_chip_Z <- create_set_matrix(zcw_wP9_vs_chip_Z, k=100)
+set_matrix_zcw_wP9_vs_chip_Z$Experiment <- "Zcw_P9_Cotransfection_VS_Zcw_alone"
+
+set_matrix_comb <- rbind(set_matrix_zcw_peaks, set_matrix_zcw_wP9_peaks_cin, set_matrix_zcw_wP9_vs_chip_Z)
+
+proportions <- set_matrix_comb[,.("Not Zcw Alone" = sum(Zcw_Alone==0) / .N,
+                             "Zcw Alone, Not hP9, + ut_H3K4" = sum(Zcw_Alone==1 & hP9_Cterm==0 & H3K4me3_UT==1) / .N,
+                             "Zcw Alone, Not hP9, + Not ut_H3K4 + NotAlu + not H1C_H4K20" = sum(Zcw_Alone==1 & hP9_Cterm==0 & H3K4me3_UT==0 & Alu==0 & H1C_H4K20==0) / .N,
+                             "Zcw Alone, Not hP9, + Not ut_H3K4 + NotAlu + H1C_H4K20" = sum(Zcw_Alone==1 & hP9_Cterm==0 & H3K4me3_UT==0 & Alu==0 & H1C_H4K20==1) / .N,
+                             "Zcw Alone, Not hP9, + Not ut_H3K4 + Alu" = sum(Zcw_Alone==1 & hP9_Cterm==0 & H3K4me3_UT==0& Alu==1) / .N,
+                             "Zcw Alone, + hP9, + p9_H3K4" = sum(Zcw_Alone==1 & hP9_Cterm==1 & H3K4me3_P9==1) / .N,
+                             "Zcw Alone, + hP9, + Not p9_H3K4" = sum(Zcw_Alone==1 & hP9_Cterm==1 & H3K4me3_P9==0) / .N
+                             ),
+                          by=c("decile","Experiment","total_peaks")]
+
+#devtools::install_github("zeehio/facetscales")
+library(facetscales)
+
+scales_x <- list(
+  Zcw_Alone = scale_x_continuous(expand=c(0,0), 
+    labels = function(x) format((x/100)*unique(set_matrix_zcw_peaks$total_peaks), scientific = T, digits=2)),
+  Zcw_P9_Cotransfection = scale_x_continuous(expand=c(0,0), 
+    labels = function(x) format((x/100)*unique(set_matrix_zcw_wP9_peaks_cin$total_peaks), scientific = T, digits=2)),
+  Zcw_P9_Cotransfection_VS_Zcw_alone = scale_x_continuous(expand=c(0,0), 
+    labels = function(x) format((x/100)*unique(set_matrix_zcw_wP9_vs_chip_Z$total_peaks), scientific = T, digits=2))
+)
+
+tmp <- melt(proportions, id.vars = c("decile","Experiment","total_peaks"), variable.name = "Subset")
+
+proportions_plot <- ggplot(tmp, aes(decile, value, fill=Subset, colour=Subset)) +
+  geom_col() + 
+  facet_grid_sc(cols=vars(Experiment), scales=list(x=scales_x))+
+  scale_fill_brewer(palette = "Paired") +
+  scale_colour_brewer(palette = "Paired") +
+  scale_y_continuous(expand=c(0,0)) +
+  theme(legend.position = "bottom", axis.text.x=element_text(angle=25, vjust=1, hjust=1)) +
+  guides(colour = guide_legend(ncol = 2), fill = guide_legend(ncol = 2)) +
+  ylab("Proportion of peaks for a given centile") +
+  xlab("Enrichment Ranking") +
+  ggtitle(paste0("For peaks with cov_in>5, overlap (CI+/-250) with other seperately called peaks (not force called)"))
+
+proportions_plot
+
+pdf("../results/proportions_plot_v5.pdf", width = 10, height = 5)
+proportions_plot
+dev.off()
+
+UpSetR::upset(set_matrix_zcw_peaks[decile==1][,1:11]*1, nsets = 11)
+UpSetR::upset(set_matrix_zcw_peaks[decile==100][,1:11]*1, nsets = 11)
+#UpSetR::upset(set_matrix[,c("Zcw_Alone", "hP9_Cterm","Dmc1","decile"),with=F][decile==50])
+```
+```
+
 # H4K20
 
 ```{r}
