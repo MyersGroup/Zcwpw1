@@ -526,6 +526,82 @@ sum(!is.na(dmc1$Zcw_CVC_enrichment))
 
 ```
 
+# H4K20
+
+```{r}
+
+IPSC_H4K20 <- loadBed("~/Dropbox/Downloads/ENCFF295WQL.bed")  #    Homo sapiens GM23338 originated from GM23248 https://www.encodeproject.org/experiments/ENCSR293NAJ/
+
+H1C_H4K20 <- loadBed("~/Dropbox/Downloads/ENCFF665UWA.bed") #     Homo sapiens H1 https://www.encodeproject.org/experiments/ENCSR728SZE/
+H1C_H4K20_rep <- loadBed("~/Dropbox/Downloads/ENCFF439CWL.bed") #     Homo sapiens H1 https://www.encodeproject.org/experiments/ENCSR728SZE/
+
+H9C_H4K20 <- loadBed("~/Dropbox/Downloads/ENCFF280SGN.bed") #    Homo sapiens hepatocyte originated from H9 https://www.encodeproject.org/experiments/ENCSR289TGF/
+H9CSMO_H4K20 <- loadBed("~/Dropbox/Downloads/ENCFF653UGW.bed") #     Homo sapiens smooth muscle cell originated from H9 https://www.encodeproject.org/experiments/ENCSR189XIE/
+H9CNP_H4K20 <- loadBed("~/Dropbox/Downloads/ENCFF435BYC.bed") # Some,   Homo sapiens neural progenitor cell originated from H9 https://www.encodeproject.org/experiments/ENCSR720ZAX/
+
+IMR90_H4K20 <- loadBed("~/Dropbox/Downloads/ENCFF567BLE.bed") # up to 37, Homo sapiens IMR-90 https://www.encodeproject.org/experiments/ENCSR804SRO/
+
+MCF7_H4K20 <- loadBed("~/Dropbox/Downloads/ENCFF151LTX.bed") #    Homo sapiens MCF-7, https://www.encodeproject.org/experiments/ENCSR639RHG/
+HCT116_H4K20 <- loadBed("~/Dropbox/Downloads/ENCFF403LQH.bed") #     Homo sapiens HCT116 https://www.encodeproject.org/experiments/ENCSR474DOV/
+
+KMS11_H4K20 <- loadBed("~/Dropbox/Downloads/ENCFF720TFF.bed")  #     Homo sapiens KMS-11 https://www.encodeproject.org/experiments/ENCSR790QWJ/
+
+H1NC_H4K20 <- loadBed("~/Dropbox/Downloads/ENCFF108PRX.bed") #Homo sapiens neural cell originated from H1 https://www.encodeproject.org/experiments/ENCSR958ZMM/
+
+
+fraction_overlapN2(zcw_peaks_cin[cov_input>5], H1C_H4K20, "ZcwST", "H1C_H4K20", shift=1e8, n=100) # 12 to 50%
+fraction_overlapN2(zcw_peaks_cin[cov_input>5], H1C_H4K20_rep, "ZcwST", "H1C_H4K20_rep", shift=1e8, n=100) # 5 to 30%
+
+fraction_overlapN2(zcw_peaks_cin[cov_input>5], IMR90_H4K20, "ZcwST", "H9CSMO_H4K20", shift=1e8, n=100) # 10% to 37% enriched
+
+fraction_overlapN2(zcw_peaks_cin[cov_input>5], IPSC_H4K20, "ZcwST", "IPSC_H4K20", shift=1e8, n=100) # flat, but small enrichment
+
+fraction_overlapN2(zcw_peaks_cin[cov_input>5], H9C_H4K20, "ZcwST", "H9C_H4K20", shift=1e8, n=100) # mostly flat, v small enrich
+fraction_overlapN2(zcw_peaks_cin[cov_input>5], H9CNP_H4K20, "ZcwST", "H9CNP_H4K20", shift=1e8, n=100) # moderate increase, 10% to ~27%
+fraction_overlapN2(zcw_peaks_cin[cov_input>5], H9CSMO_H4K20, "ZcwST", "H9CSMO_H4K20", shift=1e8, n=100) # mostly flat, increase 10 to 27 at high enrich
+
+fraction_overlapN2(zcw_peaks_cin[cov_input>5], MCF7_H4K20, "ZcwST", "MCF7_H4K20", shift=1e8, n=100) # again mostly flat, increase 10 to 27 at high enrich
+
+fraction_overlapN2(zcw_peaks_cin[cov_input>5], HCT116_H4K20, "ZcwST", "HCT116_H4K20", shift=1e8, n=100) # Depleated!
+
+fraction_overlapN2(zcw_peaks_cin[cov_input>5], KMS11_H4K20, "ZcwST", "KMS11_H4K20", shift=1e8, n=100) # Depleated!
+
+fraction_overlapN2(zcw_peaks_cin[cov_input>5], H1NC_H4K20, "ZcwST", "H1NC_H4K20", shift=1e8, n=100) # enriched for high enrichZcw
+```
+
+```{r}
+fraction_overlapN2(zcw_wP9_vs_chip_Z[cov_input>5], H1C_H4K20, "ZcwST", "H1C_H4K20", shift=1e8, n=100) # 50
+
+fraction_overlapN2(HP9combo_peaks[cov_input>5], H1C_H4K20, "HP9combo", "H1C_H4K20", shift=1e8, n=100) # 30%
+
+fraction_overlapN2(HP9N_peaks[cov_input>5], H1C_H4K20, "HP9N", "H1C_H4K20", shift=1e8, n=100) # 12 
+```
+
+
+```{r}
+library(ChIPseeker)
+library(TxDb.Hsapiens.UCSC.hg38.knownGene)
+library(org.Hs.eg.db)
+
+txdb <- TxDb.Hsapiens.UCSC.hg38.knownGene
+
+peakAnno <- annotatePeak("Zcw_alone_unexplained.bed", tssRegion=c(-3000, 3000),
+                         TxDb=txdb, annoDb="org.Hs.eg.db")
+
+peakAnno2 <- annotatePeak("Zcw_alone_explained.bed", tssRegion=c(-3000, 3000),
+                         TxDb=txdb, annoDb="org.Hs.eg.db")
+
+
+plotAnnoPie(peakAnno)
+plotAnnoPie(peakAnno2)
+#vennpie(peakAnno)
+upsetplot(peakAnno)
+upsetplot(peakAnno2)
+
+
+```
+
+
 # Rank change with +P9
 
 ```{r}
