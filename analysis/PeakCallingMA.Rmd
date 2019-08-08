@@ -308,7 +308,13 @@ fraction_overlapN_old <- function(dt,x,y,n=100){
 
 fraction_overlapN <- function(dt,x,y, n=25, filters=c("All"), returndf=F){
   setorder(dt, enrichment)
-  dt$enrichment_bin <- cut(1:nrow(dt), n)
+  if(is.integer(dt$enrichment)){
+    dt$enrichment_bin <- dt$enrichment
+    warning("Using enrichment as bin (integer type detected)")
+  }else{
+    dt$enrichment_bin <- cut(1:nrow(dt), n)
+  }
+  
   
   All=TRUE
   
@@ -404,6 +410,7 @@ fraction_overlapN2 <- function(x,y, x1, y1, n=25, shift=1e5, filters=c("All"), r
       scale_color_brewer(palette = 'Set1') +
       xlab(paste("Mean",x1,"Enrichment")) +
       scale_x_log10() +
+      ylim(-0.01,1.01) +
       ylab(paste("Fraction of ",x1,"peaks\n that overlap",y1,"peaks"))
   )}
 }
