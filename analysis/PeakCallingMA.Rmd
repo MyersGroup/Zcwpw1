@@ -526,6 +526,23 @@ sum(!is.na(dmc1$Zcw_CVC_enrichment))
 
 ```
 
+# Rank change with +P9
+
+```{r}
+HP9combo_peaks$ZcwST_peaks_enrichment <- foverlaps(HP9combo_peaks, zcw_peaks_cin, mult="first")$enrichment
+
+ggplot(HP9combo_peaks[cov_input>5], aes(enrichment, ZcwST_peaks_enrichment)) + geom_point(alpha=0.1, stroke=0)
+ggplot(HP9combo_peaks[cov_input>5], aes(rank(enrichment), rank(ZcwST_peaks_enrichment))) + geom_point(alpha=0.1, stroke=0)
+
+ggplot(HP9combo_peaks[cov_input>5], aes(rank(enrichment), rank(FC_Zcw_enrichment))) + geom_point(alpha=0.1, stroke=0)
+
+ggplot(HP9combo_peaks[cov_input>5], aes(rank(enrichment), rank(FC_Zcw_wP9_enrichment))) + geom_point(alpha=0.1, stroke=0)
+
+ggplot(HP9combo_peaks[cov_input>5], aes(rank(enrichment), rank(FC_Zcw_CVC_enrichment))) + geom_point(alpha=0.1, stroke=0)
+```
+
+
+
 
 # HP9HA_C vs HP9V5_C
 
