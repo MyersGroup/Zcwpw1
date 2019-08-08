@@ -161,7 +161,14 @@ hist(CG_count, breaks=50)
 
 # % of Alu
 repeatsAlu$enrichment <- repeatsAlu$CG_count
-fraction_overlapN2(repeatsAlu, zcw_peaks_cin, x1="Alu Repeats by CpG Count (Not ", y1="Zcw UT", shift=1e8, n=40) + scale_x_continuous()
+p <- fraction_overlapN2(repeatsAlu, zcw_peaks_cin, x1="Alu Repeats by CpG Count (Not ", y1="Zcw UT", shift=1e9) + 
+  scale_x_continuous() +
+  xlim(0,25) + # min of 200 data points required
+  xlab("CpG Count") + 
+  ylab("Fraction of Alu Repeats overlaping Zcwpw1 peaks (no Prdm9)") +
+  theme(legend.position = "bottom")
+
+ggsave("../results/Alu_by_CpG.pdf",p, width = 6, height = 6)
 
 # % of Zcw
 fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeatsAlu[enrichment==0], x1="Zcw UT", y1="Alu Repeats CpG=0", shift=1e8) + scale_y_continuous()
@@ -382,27 +389,70 @@ bedtools random -n 1264519 -l 300 -g hg38_sizes23.bed -seed 71346 | sort -k1,1 -
 bedtools intersect -a peaks/Zcw_random.bed -b CpG_hg38.bed -c > Zcw_random_CpGcount.bed
 
 
-# mean(chr1_rand_cpg$V7) = 2.817 - close!
 
-cpg_table <- rbind(data.table(table(chr1_rand_cpg$V7), type="Randomised Peaks"),
-      data.table(table(zcw_peaks_cin_cpg$CpGcount), type="Observed Peaks"))
+chr1_rand_cpg <- fread("../data/peaks/Zcw_random_CpGcount.bed") #"~/Downloads/chr1_random_CpGcount.bed")
+# mean(chr1_rand_cpg$V7) = 2.817 - close!
+setnames(chr1_rand_cpg, c("chr","CI_start_ext","CI_stop_ext","x","width","strand","CpGcount"))
+
+
+zcw_peaks_cin_cpg_alu <- foverlaps(zcw_peaks_cin_cpg, repeatsAlu, mult = "first")
+chr1_rand_cpg_alu <- foverlaps(chr1_rand_cpg, repeatsAlu, mult = "first")
+
+cpg_table <- rbind(data.table(table(chr1_rand_cpg_alu[is.na(Name)]$CpG), type="Randomised Peaks"),
+      data.table(table(zcw_peaks_cin_cpg_alu[is.na(Name)]$CpGcount), type="Observed Peaks"))
 
 ggplot(cpg_table, aes(as.numeric(V1), N, fill=type)) +
   geom_col(position="dodge") +
-  xlim(0,20) +
+  xlim(-1,20) +
   scale_fill_brewer(palette = "Set1") +
   labs(x="Count of CpGs under peak +/-150", y="Frequency")
 
+cpg_table <- rbind(data.table(table(chr1_rand_cpg_alu[!is.na(Name)]$CpG), type="Randomised Peaks"),
+      data.table(table(zcw_peaks_cin_cpg_alu[!is.na(Name)]$CpGcount), type="Observed Peaks"))
+
+ggplot(cpg_table, aes(as.numeric(V1), N, fill=type)) +
+  geom_col(position="dodge") +
+  xlim(-1,20) +
+  scale_fill_brewer(palette = "Set1") +
+  labs(x="Count of CpGs under peak +/-150", y="Frequency")
+
+repeatsAlu
 
 zcw_peaks_cin_cpg[CpGcount==0][order(-enrichment)][cov_input>5]
 cor.test(zcw_peaks_cin_cpg[cov_input>5]$enrichment, zcw_peaks_cin_cpg[cov_input>5]$CpGcount)
 
 plot(zcw_peaks_cin_cpg[cov_input>5]$CpGcount, zcw_peaks_cin_cpg[cov_input>5]$enrichment)
 
-tmp <- zcw_peaks_cin_cpg[cov_input>5][,.(MeanEnrich=mean(enrichment)),by=CpGcount][order(CpGcount)]
-qplot(tmp$CpGcount, tmp$MeanEnrich) + ylim(1,2.5)
+# overall
+tmp <- zcw_peaks_cin_cpg[cov_input>5][,.(MeanEnrich=mean(enrichment),.N),by=CpGcount][order(CpGcount)]
+qplot(tmp$CpGcount, tmp$MeanEnrich)
 
-plot(zcw_peaks_cin_cpg[cov_input>5][,.(MeanEnrich=mean(enrichment<1.25)),by=CpGcount][order(CpGcount)]$MeanEnrich)
+zcw_peaks_cin_cpg_alu$isAlu <- !is.na(zcw_peaks_cin_cpg_alu$Name)
+tmp <- zcw_peaks_cin_cpg_alu[cov_input>5][,.(MeanEnrich=mean(i.enrichment),.N, sd=sd(i.enrichment)),by=c("CpGcount","isAlu")][order(CpGcount)]
+p1 <- ggplot(tmp, aes(CpGcount, MeanEnrich, colour=isAlu, size=N)) + geom_point() + scale_color_brewer(palette = "Set1") + xlim(0,20)
+#geom_pointrange(aes(ymin=MeanEnrich - 2*(sd/sqrt(N)), ymax=MeanEnrich + 2*(sd/sqrt(N)))) # too small to see
+
+tmp <- cbind(data.table(table(chr1_rand_cpg_alu[!is.na(Name)]$CpG), type="Randomised Peaks"),
+      data.table(table(zcw_peaks_cin_cpg_alu[!is.na(Name)]$CpGcount), type="Observed Peaks"))
+tmp <- tmp[1:25]
+tmp2 <- cbind(data.table(table(chr1_rand_cpg_alu[is.na(Name)]$CpG), type="Randomised Peaks"),
+      data.table(table(zcw_peaks_cin_cpg_alu[is.na(Name)]$CpGcount), type="Observed Peaks"))
+tmp2 <- tmp2[1:25]
+tmp$isAlu <- T
+tmp2$isAlu <- F
+tmp <- rbind(tmp, tmp2)
+setnames(tmp, c("CpGCount","NRand","t1","v1","NObs","t2","isAlu"))
+
+tmp$CpGCount <- as.numeric(tmp$CpGCount)
+ggplot(tmp, aes(CpGCount, NObs/NRand, colour=isAlu)) + geom_point()
+
+p2 <- ggplot(tmp, aes(CpGCount, NObs/NRand, colour=isAlu)) + geom_point() + scale_y_log10() + ylab("Observed Peaks : Randomised Peaks") + scale_color_brewer(palette = "Set1") + theme(legend.position = "bottom")
+
+pdf("../results/Cpg_general.pdf")
+p1
+p2
+dev.off()
+
 ```
 
 
