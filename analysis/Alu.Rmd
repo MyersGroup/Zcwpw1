@@ -356,7 +356,12 @@ cut -f 1-3 CpG_hg38.bed > CpG_hg38_cut.bed
 # count CpG at each peak (Chr1)
 tail -n +2 peaks/SingleBasePeaks.WTCHG_538916_221156_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144.p0.000001.sep250.ALL.bed |
 bedtools slop -i stdin -g ../single-cell/sequencing/metadata/hg38_sizes.chrom -b 150 | grep -P "chr1\t" |
-bedtools intersect -a stdin -b CpG_chr1.bed -c > peaks/SingleBasePeaks.WTCHG_538916_221156_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144.p0.000001.sep250.ALL_wCpGcount.bed
+bedtools intersect -a stdin -b CpG_chr1.bed -c > peaks/SingleBasePeaks.WTCHG_538916_221156_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144.p0.000001.sep250.ALL_wCpGcount_chr1.bed
+
+# count CpG at each peak Whole genome
+tail -n +2 peaks/SingleBasePeaks.WTCHG_538916_221156_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144.p0.000001.sep250.ALL.bed |
+bedtools slop -i stdin -g ../single-cell/sequencing/metadata/hg38_sizes.chrom -b 150 |
+bedtools intersect -a stdin -b CpG_hg38.bed -c > peaks/SingleBasePeaks.WTCHG_538916_221156_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144.p0.000001.sep250.ALL_wCpGcount.bed
 
 
 # 115320 peaks, each 300bp
@@ -370,7 +375,13 @@ bedtools random -n 115320 -l 300 -g chr1_size.bed -seed 71346 | sort -k1,1 -k2,2
 
 bedtools intersect -a chr1_random.bed -b CpG_chr1.bed -c > chr1_random_CpGcount.bed
 
-chr1_rand_cpg <- fread("~/Downloads/chr1_random_CpGcount.bed")
+# whole genome
+head -23 ../single-cell/sequencing/metadata/hg38_sizes.chrom > hg38_sizes23.bed
+bedtools random -n 1264519 -l 300 -g hg38_sizes23.bed -seed 71346 | sort -k1,1 -k2,2n > peaks/Zcw_random.bed
+
+bedtools intersect -a peaks/Zcw_random.bed -b CpG_hg38.bed -c > Zcw_random_CpGcount.bed
+
+
 # mean(chr1_rand_cpg$V7) = 2.817 - close!
 
 cpg_table <- rbind(data.table(table(chr1_rand_cpg$V7), type="Randomised Peaks"),

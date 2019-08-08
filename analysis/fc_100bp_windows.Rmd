@@ -19,29 +19,30 @@ library(data.table)
 library(ggplot2)
 library(cowplot)
 
+#grep -P 'chr1\\t|chr\\t' 
 
-CpG_100bp <- fread("grep -P 'chr1\\t|chr\\t' CpG_hg38_100bpwindows.bed")
+CpG_100bp <- fread("CpG_hg38_100bpwindows.bed")
 
-h3k4me3_UT_100bp <- fread("grep -P 'chr1\\t|chr\\t' peaks/ForceCalledPeaks_NA15-SRR5627150_vs_NA15-SRR5627142_AT_genome.windows.100wide.100slide.bed.bed")
-h3k4me3_hP9_100bp <- fread("grep -P 'chr1\\t|chr\\t' peaks/ForceCalledPeaks_NA15-SRR5627152_AND_NA15-SRR5627153_vs_NA15-SRR5627143_AT_genome.windows.100wide.100slide.bed.bed")
+h3k4me3_UT_100bp <- fread("peaks/ForceCalledPeaks_NA15-SRR5627150_vs_NA15-SRR5627142_AT_genome.windows.100wide.100slide.bed.bed")
+h3k4me3_hP9_100bp <- fread("peaks/ForceCalledPeaks_NA15-SRR5627152_AND_NA15-SRR5627153_vs_NA15-SRR5627143_AT_genome.windows.100wide.100slide.bed.bed")
 
-h3k36me3_hP9_100bp <- fread("grep -P 'chr1\\t|chr\\t' peaks/ForceCalledPeaks_NA15-SRR5627149_vs_NA15-SRR5627143_AT_genome.windows.100wide.100slide.bed.bed")
-
-
-zcw_100bp <- fread("grep -P 'chr1\\t|chr\\t' peaks/ForceCalledPeaks_WTCHG_538916_221156_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144_AT_genome.windows.100wide.100slide.bed.bed")
-
-zcw_hP9_100bp <- fread("grep -P 'chr1\\t|chr\\t' peaks/ForceCalledPeaks_WTCHG_538916_223180_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144_AT_genome.windows.100wide.100slide.bed.bed")
-
-zcw_cP9_100bp <- fread("grep -P 'chr1\\t|chr\\t' peaks/ForceCalledPeaks_WTCHG_538916_224192_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144_AT_genome.windows.100wide.100slide.bed.bed")
-
-zcw_hCVC <- fread("grep -P 'chr1\\t|chr\\t' peaks/ForceCalledPeaks_WTCHG_538916_223180_vs_WTCHG_538916_221156_AT_genome.windows.100wide.100slide.bed.bed")
-
-zcw_cCVC <- fread("grep -P 'chr1\\t|chr\\t' peaks/ForceCalledPeaks_WTCHG_538916_224192_vs_WTCHG_538916_221156_AT_genome.windows.100wide.100slide.bed.bed")
+h3k36me3_hP9_100bp <- fread("peaks/ForceCalledPeaks_NA15-SRR5627149_vs_NA15-SRR5627143_AT_genome.windows.100wide.100slide.bed.bed")
 
 
-hP9combo <- fread("grep -P 'chr1\\t|chr\\t' peaks/ForceCalledPeaks_NA15-SRR5627146_AND_NA15-SRR5627147_vs_NA15-SRR5627143_AT_genome.windows.100wide.100slide.bed.bed")
+zcw_100bp <- fread("peaks/ForceCalledPeaks_WTCHG_538916_221156_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144_AT_genome.windows.100wide.100slide.bed.bed")
 
-cP9combo <- fread("grep -P 'chr1\\t|chr\\t' peaks/ForceCalledPeaks_NA15-SRR5627145_AND_NA15-SRR5627144_vs_NA15-SRR5627143_AT_genome.windows.100wide.100slide.bed.bed")
+zcw_hP9_100bp <- fread("peaks/ForceCalledPeaks_WTCHG_538916_223180_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144_AT_genome.windows.100wide.100slide.bed.bed")
+
+zcw_cP9_100bp <- fread("peaks/ForceCalledPeaks_WTCHG_538916_224192_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144_AT_genome.windows.100wide.100slide.bed.bed")
+
+zcw_hCVC <- fread("peaks/ForceCalledPeaks_WTCHG_538916_223180_vs_WTCHG_538916_221156_AT_genome.windows.100wide.100slide.bed.bed")
+
+zcw_cCVC <- fread("peaks/ForceCalledPeaks_WTCHG_538916_224192_vs_WTCHG_538916_221156_AT_genome.windows.100wide.100slide.bed.bed")
+
+
+hP9combo <- fread("peaks/ForceCalledPeaks_NA15-SRR5627146_AND_NA15-SRR5627147_vs_NA15-SRR5627143_AT_genome.windows.100wide.100slide.bed.bed")
+
+cP9combo <- fread("peaks/ForceCalledPeaks_NA15-SRR5627145_AND_NA15-SRR5627144_vs_NA15-SRR5627143_AT_genome.windows.100wide.100slide.bed.bed")
 
 # CAREFULL WITH ORDERING WHEN ADDING NEW COLUMNS!
 
@@ -55,7 +56,7 @@ forcecalled$h3k4me3_UT_reads <- forcecalled[,cov_r1 + cov_r2]
 forcecalled$h3k4me3_UT_cov_input <- forcecalled$cov_input
 forcecalled$h3k4me3_UT_pvalue <- forcecalled$pvalue
 
-forcecalled$CpG <- CpG_100bp$V4
+forcecalled$CpG <- CpG_100bp[V1 %in% paste0("chr",c(1:22,"X"))]$V4
 
 forcecalled$h3k4me3_hP9_enrichment <- h3k4me3_hP9_100bp$enrichment
 forcecalled$h3k4me3_hP9_reads <- h3k4me3_hP9_100bp[,cov_r1 + cov_r2]
@@ -261,7 +262,7 @@ p2 <- ggplot(forcecalled[zcw_cov_input>5 & cP9combo_cov_input>5], (aes(zcw_enric
   ylim(0,8)
 
 
-pdf("Zcw_vs_CoTransfection_summary_plot.pdf", width=12)
+pdf("Zcw_vs_CoTransfection_summary_plot_allchr.pdf", width=12)
 plot_grid(p1, p2)
 dev.off()
 
@@ -390,7 +391,7 @@ pmain <- plot_grid(p1 + commongrobs + theme(legend.position = "none") + labs(tit
                                                                              x="ln(0.1 + Enrichment of H3K4me3 in untransfected)", 
                                                                              y="ln(0.1 + Enrichment of Zcwpw1 in Zcwpw1 single transfection)"))
 
-pdf("H3K4strength2.pdf", width = 14, height = 14)
+pdf("H3K4strength_allchr.pdf", width = 14, height = 14)
 plot_grid(pmain, get_legend(p1 + commongrobs), ncol=1, rel_heights = c(1, 0.05))
 dev.off()
 
@@ -437,7 +438,7 @@ fraction_overlapN <- function(dt,x,y, n=25, filters=c("All"), returndf=F){
 
 forcecalled$enrichment <- forcecalled$h3k4me3_hP9_enrichment
 
-pdf("H3K4strength_binned.pdf")
+pdf("H3K4strength_binned_allchr.pdf")
 
 fraction_overlapN(forcecalled[h3k4me3_hP9_cov_input>5 & zcw_cov_input>5], 
                     "h3k4me3_hP9_enrichment","zcw_hP9_enrichment", n=25) + scale_x_log10()
