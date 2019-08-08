@@ -635,6 +635,77 @@ UpSetR::upset(set_matrix_zcw_peaks[decile==1][,1:11]*1, nsets = 11)
 UpSetR::upset(set_matrix_zcw_peaks[decile==100][,1:11]*1, nsets = 11)
 #UpSetR::upset(set_matrix[,c("Zcw_Alone", "hP9_Cterm","Dmc1","decile"),with=F][decile==50])
 ```
+
+## Overlap Hunting
+
+```{r}
+
+chr17 76735902 76737548
+
+set_matrix_zcw_peaks2 <- create_set_matrix(zcw_peaks_cin, k=1, returnpeaks = T)
+
+set_matrix_zcw_peaks2[chr=="chr17" && CI_start>76735902 && CI_stop<76737548]
+set_matrix_zcw_peaks2[chr=="chr1" && CI_start>248711913 && CI_stop<248711956]
+ 
+set_matrix_zcw_peaks3 <- create_set_matrix(zcw_peaks_cin, k=1)
+
+fwrite(zcw_peaks_cin[cov_input>5][chr!="chrX"][order(-enrichment)][set_matrix_zcw_peaks3[,which(Zcw_Alone==T & hP9_Cterm==F & H3K4me3_UT==F & Alu==F & H3K36me3_P9==F)]][,.(chr,CI_start, CI_stop)],"Zcw_alone_unexplained.bed", col.names = F, sep="\t")
+#224380
+
+fwrite(zcw_peaks_cin[cov_input>5][chr!="chrX"][order(-enrichment)][set_matrix_zcw_peaks3[,which((hP9_Cterm==T | H3K4me3_UT==T | Alu==T | H3K36me3_P9==T))]][,.(chr,CI_start, CI_stop)],"Zcw_alone_explained.bed", col.names = F, sep="\t")
+#227573
+
+fwrite(zcw_peaks_cin[cov_input>5][chr!="chrX"][order(-enrichment)][set_matrix_zcw_peaks3[,which(Zcw_Alone==T & hP9_Cterm==F & H3K4me3_UT==F & Alu==F & H3K36me3_P9==F)]][,.(chr, center_start-250, center_stop+250)],"Zcw_alone_unexplained_500w.bed", col.names = F, sep="\t")
+
+fwrite(zcw_peaks_cin[cov_input>5][chr!="chrX"][order(-enrichment)][set_matrix_zcw_peaks3[,which(Zcw_Alone==T & hP9_Cterm==F & H3K4me3_UT==F & Alu==F & H3K36me3_P9==F)]][,.(chr, center_start-500L, center_stop+500L)],"Zcw_alone_unexplained_1000w.bed", col.names = F, sep="\t")
+
+```
+
+```{r}
+loadBed <- function(file, ext=250){
+  Trim28 <- fread(file)
+  names(Trim28)[1:3] <- c("chr","CI_start","CI_stop")
+  Trim28 <- prejoin(Trim28, ext)
+  return(Trim28)
+}
+
+ctcf <- loadBed("~/Dropbox/Downloads/ENCFF314ZAL.bed")
+Trim28 <- loadBed("~/Dropbox/Downloads/ENCFF860DHS.bed")
+h3k9 <- loadBed("~/Dropbox/Downloads/ENCFF342JBJ.bed")
+h3K27ac <- loadBed("~/Dropbox/Downloads/ENCFF451UZW.bed")
+h3k4me1 <- loadBed("~/Dropbox/Downloads/ENCFF483QXH.bed")
+
+system("cut -f 1-3 ~/Dropbox/Downloads/ENCFF001VRG.bed > ~/Dropbox/Downloads/ENCFF001VRG.bed3")
+setdb1 <- loadBed("~/Dropbox/Downloads/ENCFF001VRG_hg38.bed3")
+
+
+CGI <- fread("~/Dropbox/Downloads/cpgIslandExtUnmasked.txt") #CpG
+names(CGI)[2:4] <- c("chr","CI_start","CI_stop")
+CGI <- prejoin(CGI, ext = 250)
+
+system("cut -f 2-4 cpgIslandExtUnmasked.txt > cpgIslandExtUnmasked.bed")
+
+ctcfl <- loadBed("~/Dropbox/Downloads/ENCFF678TFE.bed") #CTCFL ChIP-seq protocol v041610.1 on human K562 https://www.encodeproject.org/experiments/ENCSR000BNK/
+
+
+fraction_overlapN2(zcw_peaks_cin[cov_input>5], ctcf, "ZcwST", "ctcf", shift=1e8, n=100)
+
+fraction_overlapN2(zcw_peaks_cin[cov_input>5], Trim28, "ZcwST", "Trim28", shift=1e8, n=100)
+
+fraction_overlapN2(zcw_peaks_cin[cov_input>5], h3k9, "ZcwST", "h3k9", shift=1e8, n=100)
+
+fraction_overlapN2(zcw_peaks_cin[cov_input>5], CGI, "ZcwST", "CpG Islands", shift=1e8, n=100)
+
+fraction_overlapN2(zcw_peaks_cin[cov_input>5], h3K27ac, "ZcwST", "h3K27ac", shift=1e8, n=100)
+
+fraction_overlapN2(zcw_peaks_cin[cov_input>5], h3k4me1, "ZcwST", "h3K4me1", shift=1e8, n=100)
+
+fraction_overlapN2(zcw_peaks_cin[cov_input>5], setdb1, "ZcwST", "setdb1", shift=1e8, n=100)
+
+fraction_overlapN2(zcw_peaks_cin[cov_input>5], ctcfl, "ZcwST", "Ctcfl in K562", shift=1e8, n=100)
+
+
+
 ```
 
 # H4K20
