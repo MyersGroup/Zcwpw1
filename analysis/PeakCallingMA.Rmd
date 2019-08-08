@@ -19,6 +19,7 @@ output:
 
 # peak bed files
 rsync --stats -avpn -e ssh stats2:/data/saxony/wells/zcwpw1/peaks/*Peaks* ~/Dropbox/DPhil/Zcwpw1/results/peaks
+rsync --stats -avpn -e ssh stats2:/data/saxony/wells/zcwpw1/peaks/SingleBasePeaks* ~/Dropbox/DPhil/Zcwpw1/results/peaks
 
 # plots
 rsync --stats -avpn --delete -e ssh stats2:/data/saxony/wells/zcwpw1/deeptools/*.pdf ~/Dropbox/DPhil/Zcwpw1/results/deeptools
@@ -52,36 +53,45 @@ library(data.table)
 
 # HA TAG UNLESS OTHERWISE SPECIFIED
 
-zcw_peaks <- fread("../results/peaks/SingleBasePeaks.WTCHG_538916_221156_vs_WTCHG_538916_217108.p0.000001.sep250.ALL.bed")
-zcw_wP9_peaks <- fread("../results/peaks/SingleBasePeaks.WTCHG_538916_223180_vs_WTCHG_538916_220144.p0.000001.sep250.ALL.bed")
-zcw_wP9_peaks_cin <- fread("../results/peaks/SingleBasePeaks.WTCHG_538916_223180_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144.p0.000001.sep250.ALL.bed")
+zcw_peaks <- fread("../data/peaks/SingleBasePeaks.WTCHG_538916_221156_vs_WTCHG_538916_217108.p0.000001.sep250.ALL.bed")
 
-zcw_wP9_vs_chip_Z <- fread("../results/peaks/SingleBasePeaks.WTCHG_538916_223180_vs_WTCHG_538916_221156.p0.000001.sep250.ALL.bed")
-
-zcw_wcP9_peaks_cin <- fread("../results/peaks/SingleBasePeaks.WTCHG_538916_224192_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144.p0.000001.sep250.ALL.bed")
+zcw_peaks_cin <- fread("../data/peaks/SingleBasePeaks.WTCHG_538916_221156_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144.p0.000001.sep250.ALL.bed")
 
 
-HP9_peaks <- fread("../results/peaks/SingleBasePeaks.SRA_Altemose2015_SRR5627146_vs_SRA_Altemose2015_SRR5627143.p0.000001.sep250.ALL.bed")
-HP9V5_peaks <- fread("../results/peaks/SingleBasePeaks.SRA_Altemose2015_SRR5627147_vs_SRA_Altemose2015_SRR5627143.p0.000001.sep250.ALL.bed")
+zcw_wP9_peaks <- fread("../data/peaks/SingleBasePeaks.WTCHG_538916_223180_vs_WTCHG_538916_220144.p0.000001.sep250.ALL.bed")
+zcw_wP9_peaks_cin <- fread("../data/peaks/SingleBasePeaks.WTCHG_538916_223180_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144.p0.000001.sep250.ALL.bed")
 
-HP9combo_peaks <- fread("../results/peaks/SingleBasePeaks.SRA_Altemose2015_SRR5627146_AND_SRA_Altemose2015_SRR5627147_vs_SRA_Altemose2015_SRR5627143.p0.000001.sep250.ALL.bed")
+zcw_wP9_peaks_cin_QCM50 <- fread("../data/peaks/SingleBasePeaks.WTCHG_538916_223180_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144.p0.000001.sep250.ALL_QCMappability50.bed")
 
+zcw_wP9_vs_chip_Z <- fread("../data/peaks/SingleBasePeaks.WTCHG_538916_223180_vs_WTCHG_538916_221156.p0.000001.sep250.ALL.bed")
 
-CP9_peaks <- fread("../results/peaks/SingleBasePeaks.SRA_Altemose2015_SRR5627144_vs_SRA_Altemose2015_SRR5627143.p0.000001.sep250.ALL.bed")
-
-CP9V5_peaks <- fread("../results/peaks/SingleBasePeaks.SRA_Altemose2015_SRR5627145_vs_SRA_Altemose2015_SRR5627143.p0.000001.sep250.ALL.bed")
-
-CP9combo_peaks <- fread("../results/peaks/SingleBasePeaks.SRA_Altemose2015_SRR5627145_AND_SRA_Altemose2015_SRR5627144_vs_SRA_Altemose2015_SRR5627143.p0.000001.sep250.ALL.bed")
+zcw_wcP9_peaks_cin <- fread("../data/peaks/SingleBasePeaks.WTCHG_538916_224192_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144.p0.000001.sep250.ALL.bed")
+zcw_wcP9_vs_chip_Z <- fread("../data/peaks/SingleBasePeaks.WTCHG_538916_224192_vs_WTCHG_538916_221156.p0.000001.sep250.ALL.bed")
 
 
-HP9N_peaks <- fread("../results/peaks/SingleBasePeaks.SRA_Altemose2015_SRR5627138_AND_SRR5627139_vs_SRA_Altemose2015_SRR5627140.bed")
+HP9_peaks <- fread("../data/peaks/SingleBasePeaks.SRA_Altemose2015_SRR5627146_vs_SRA_Altemose2015_SRR5627143.p0.000001.sep250.ALL.bed")
+HP9V5_peaks <- fread("../data/peaks/SingleBasePeaks.SRA_Altemose2015_SRR5627147_vs_SRA_Altemose2015_SRR5627143.p0.000001.sep250.ALL.bed")
 
-h3k4me3_P9_peaks <- fread("../results/peaks/SingleBasePeaks.SRA_Altemose2015_SRR5627152_AND_SRR5627153_vs_SRA_Altemose2015_SRR5627143.p0.000001.sep250.ALL.bed")
-h3k36me3_P9_peaks <- fread("../results/peaks/SingleBasePeaks.SRA_Altemose2015_SRR5627149_vs_SRA_Altemose2015_SRR5627143.p0.000001.sep250.ALL.bed")
+HP9combo_peaks <- fread("../data/peaks/SingleBasePeaks.SRA_Altemose2015_SRR5627146_AND_SRA_Altemose2015_SRR5627147_vs_SRA_Altemose2015_SRR5627143.p0.000001.sep250.ALL.bed")
 
-h3k4me3_UT_peaks <- fread("../results/peaks/SingleBasePeaks.SRA_Altemose2015_SRR5627150_vs_SRA_Altemose2015_SRR5627142.p0.000001.sep250.ALL.bed")
-h3k36me3_UT_peaks <- fread("../results/peaks/SingleBasePeaks.SRA_Altemose2015_SRR5627148_vs_SRA_Altemose2015_SRR5627142.p0.000001.sep250.ALL.bed")
 
+CP9_peaks <- fread("../data/peaks/SingleBasePeaks.SRA_Altemose2015_SRR5627144_vs_SRA_Altemose2015_SRR5627143.p0.000001.sep250.ALL.bed")
+
+CP9V5_peaks <- fread("../data/peaks/SingleBasePeaks.SRA_Altemose2015_SRR5627145_vs_SRA_Altemose2015_SRR5627143.p0.000001.sep250.ALL.bed")
+
+CP9combo_peaks <- fread("../data/peaks/SingleBasePeaks.SRA_Altemose2015_SRR5627145_AND_SRA_Altemose2015_SRR5627144_vs_SRA_Altemose2015_SRR5627143.p0.000001.sep250.ALL.bed")
+
+
+HP9N_peaks <- fread("../data/peaks/SingleBasePeaks.SRA_Altemose2015_SRR5627138_AND_SRR5627139_vs_SRA_Altemose2015_SRR5627140.bed")
+
+h3k4me3_P9_peaks <- fread("../data/peaks/SingleBasePeaks.SRA_Altemose2015_SRR5627152_AND_SRR5627153_vs_SRA_Altemose2015_SRR5627143.p0.000001.sep250.ALL.bed")
+h3k36me3_P9_peaks <- fread("../data/peaks/SingleBasePeaks.SRA_Altemose2015_SRR5627149_vs_SRA_Altemose2015_SRR5627143.p0.000001.sep250.ALL.bed")
+
+h3k4me3_UT_peaks <- fread("../data/peaks/SingleBasePeaks.SRA_Altemose2015_SRR5627150_vs_SRA_Altemose2015_SRR5627142.p0.000001.sep250.ALL.bed")
+h3k36me3_UT_peaks <- fread("../data/peaks/SingleBasePeaks.SRA_Altemose2015_SRR5627148_vs_SRA_Altemose2015_SRR5627142.p0.000001.sep250.ALL.bed")
+
+h3k4me3_P9vsUT_peaks <- fread("../data/peaks/SingleBasePeaks.SRA_Altemose2015_SRR5627152_AND_SRA_Altemose2015_SRR5627153_vs_SRA_Altemose2015_SRR5627150_AND_SRA_Altemose2015_SRR5627151.p0.000001.sep250.ALL.bed")
+h3k36me3_P9vsUT_peaks <- fread("../data/peaks/SingleBasePeaks.SRA_Altemose2015_SRR5627149_vs_SRA_Altemose2015_SRR5627148.p0.000001.sep250.ALL.bed")
 ```
 
 
