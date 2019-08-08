@@ -374,15 +374,15 @@ fraction_overlapN2 <- function(x,y, x1, y1, n=25, shift=1e5, filters=c("All"), r
   a <- fraction_overlapN(base, "base", "test_enrichment", n=n, returndf = T)
   b <- fraction_overlapN(base_shifted, "base_shifted", "test_enrichment",n=n, returndf = T)
   
-  a$type <- "Normal"
-  b$type <- "Randomised"
+  a$Type <- "Observed"
+  b$Type <- "Randomised"
   
   tmp <- rbind(a,b)
   
   if(corrected){
-    tmp <- dcast(tmp, enrichment_bin + mean_enrichment + num + Subset ~ type, value.var = "Overlap")
+    tmp <- dcast(tmp, enrichment_bin + mean_enrichment + num + Subset ~ Type, value.var = "Overlap")
     tmp[,Overlap := (1 - ( (1-Normal) / (1-Randomised) ))]
-    tmp[,type := "Corrected"]
+    tmp[,Type := "Corrected"]
     tmp[,sep := sqrt((Overlap * (1- Overlap))/num), by=enrichment_bin]
   }
   
@@ -391,7 +391,7 @@ fraction_overlapN2 <- function(x,y, x1, y1, n=25, shift=1e5, filters=c("All"), r
     return(tmp)
   }else{
   
-    p <- ggplot(tmp, aes(mean_enrichment, Overlap, colour=type, group=type))
+    p <- ggplot(tmp, aes(mean_enrichment, Overlap, colour=Type, group=Type))
       
     if(!corrected){
       p <- p + geom_hline(yintercept = base[,mean(!is.na(test_enrichment))], colour="red", linetype="dashed") +
