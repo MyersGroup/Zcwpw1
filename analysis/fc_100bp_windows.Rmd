@@ -226,11 +226,13 @@ forcecalled[,hP9Combo.bound := NA]
 forcecalled[hP9combo_pvalue==1, hP9Combo.bound := FALSE]
 forcecalled[hP9combo_pvalue<1e-9, hP9Combo.bound := TRUE]
 
-p1 <- ggplot(forcecalled[zcw_cov_input>5 & hP9combo_cov_input>5], (aes(zcw_enrichment, zcw_hP9_enrichment, z=hP9Combo.bound))) +
-  stat_summary_hex(bins=200, alpha=0.5, fun= function(x) as.character(mean(x))) + # na.rm=T
-  #stat_summary_hex(bins=200, alpha=0.5, fun= function(x)if(length(x)>=3){as.character(mean(x))}else{NA}) + # na.rm=T
+p1 <- ggplot(forcecalled[zcw_cov_input>5 & hP9combo_cov_input>5][!zcw_enrichment<1e-2 & !zcw_hP9_enrichment<1e-2], (aes(zcw_enrichment, zcw_hP9_enrichment, z=hP9Combo.bound))) +
+  #stat_summary_hex(bins=200, alpha=0.5, fun= function(x) as.character(mean(x))) + # na.rm=T
+  stat_summary_hex(bins=200, alpha=0.5, fun= function(x)if(length(x)>=3){as.character(mean(x))}else{NA}) + # na.rm=T
+  geom_density_2d(aes(colour=hP9Combo.bound),bins=15) +
   labs(x="Enrichment of Zcwpw1", y="Enrichment of Zcwpw1 when cotransfected with human Prdm9") +
   scale_fill_manual(labels = c("p = 1", "p < 10^(-9)"), values = c("#E41A1C", "#377EB8")) +
+  scale_colour_manual(values = c("#E41A1C", "#377EB8"), guide=FALSE) +
   labs(fill="Evidence of human Prdm9 binding") +
   theme(legend.position = "bottom") +
   ylim(0,8) + xlim(0,8)
@@ -250,16 +252,18 @@ p1l <- ggplot(forcecalled[zcw_cov_input>5 & hP9combo_cov_input>5], (aes(log(zcw_
 #1e-4
 forcecalled[,cP9Combo.bound := NA]
 forcecalled[cP9combo_pvalue==1, cP9Combo.bound := FALSE]
-forcecalled[cP9combo_pvalue<1e-4, cP9Combo.bound := TRUE]
+forcecalled[cP9combo_pvalue<1e-3, cP9Combo.bound := TRUE]
 
-p2 <- ggplot(forcecalled[zcw_cov_input>5 & cP9combo_cov_input>5], (aes(zcw_enrichment, zcw_cP9_enrichment, z=cP9Combo.bound))) +
-  stat_summary_hex(bins=200, alpha=0.5, fun= function(x) as.character(mean(x))) + # na.rm=T
-  #stat_summary_hex(bins=200, alpha=0.5, fun= function(x)if(length(x)>=1){as.character(mean(x))}else{NA}) + # na.rm=T
+p2 <- ggplot(forcecalled[zcw_cov_input>5 & cP9combo_cov_input>5][!zcw_enrichment<1e-2 & !zcw_cP9_enrichment<1e-2], (aes(zcw_enrichment, zcw_cP9_enrichment, z=cP9Combo.bound))) +
+  #stat_summary_hex(bins=200, alpha=0.5, fun= function(x) as.character(mean(x))) + # na.rm=T
+  stat_summary_hex(bins=200, alpha=0.5, fun= function(x)if(length(x)>=3){as.character(mean(x))}else{NA}) + # na.rm=T
+  geom_density_2d(aes(colour=cP9Combo.bound),bins=15) +
   labs(x="Enrichment of Zcwpw1", y="Enrichment of Zcwpw1 when cotransfected with chimp Prdm9") +
-  scale_fill_manual(labels = c("p = 1", "p < 10^(-4)"), values = c("#E41A1C", "#377EB8")) +
+  scale_fill_manual(labels = c("p = 1", "p < 10^(-3)"), values = c("#E41A1C", "#377EB8")) +
+  scale_colour_manual(values = c("#E41A1C", "#377EB8"), guide=FALSE) +
   labs(fill="Evidence of chimp Prdm9 binding") +
   theme(legend.position = "bottom") +
-  ylim(0,8)
+  ylim(0,6) + xlim(0,6)
 
 
 pdf("Zcw_vs_CoTransfection_summary_plot_allchr.pdf", width=12)
@@ -353,13 +357,15 @@ p3 <- ggplot(forcecalled[zcw_cov_input>5 & h3k4me3_hP9_cov_input>5][,.SD[sample(
 p4 <- ggplot(forcecalled[zcw_cov_input>5 & h3k4me3_UT_cov_input>5][,.SD[sample(.N, min(mingroup,.N))], by = UTP9], (aes(log(h3k4me3_UT_enrichment+0.1), log(zcw_hP9_enrichment+0.1), group=UTP9, z=as.numeric(UTP9)))) #+
 
 commongrobs <- list(
-  stat_summary_hex(bins=150, alpha=0.5, fun= function(x) if(length(x)>=3){as.character(mean(x))}else{NA}), # duplicate this line for multi-alpha density shading?
+  stat_summary_hex(bins=150, alpha=0.5, fun= function(x) if(length(x)>=5){as.character(mean(x))}else{NA}), # duplicate this line for multi-alpha density shading?
+  geom_density_2d(aes(colour=UTP9)),
   theme(legend.position = "bottom"),
   scale_fill_manual(labels = c("Not humanPRDM9 bound (p=1)",
                                "humanPRDM9 bound (p<1e-7) & No Untransfected H3K4me3 (p>1e-5)",
                                "Untransfected H3K4me3 (p<1e-5)"),
                     values = RColorBrewer::brewer.pal(3, "Set1"), 
                     name = "Subset"),
+  scale_colour_manual(values = RColorBrewer::brewer.pal(3, "Set1"), guide=FALSE),
   xlim(NA,4),
   ylim(NA,2.5)
 )
