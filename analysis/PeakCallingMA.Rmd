@@ -647,6 +647,50 @@ fraction_overlapN(h3k4me3_P9_peaks[cov_input>=5], "h3k4me3_P9_peaks", "HP9N_enri
 
 ```
 
+# Chimp vs Human
+
+```{r}
+
+# CoT
+fraction_overlapN2(zcw_wP9_peaks_cin[cov_input>5], zcw_wcP9_peaks_cin, "Zcw+hP9", "Zcw+cP9", shift=1e8)
+fraction_overlapN2(zcw_wcP9_peaks_cin[cov_input>5], zcw_wP9_peaks_cin, "Zcw+cP9", "Zcw+hP9", shift=1e8)
+
+# CVC
+fraction_overlapN2(zcw_wP9_vs_chip_Z[cov_input>5], zcw_wcP9_vs_chip_Z, "ZcwCVChuman", "ZcwCVCchimp", shift=1e8)
+fraction_overlapN2(zcw_wcP9_vs_chip_Z[cov_input>5], zcw_wP9_vs_chip_Z, "ZcwCVCchimp", "ZcwCVChuman", shift=1e8)
+
+# P9
+fraction_overlapN2(HP9combo_peaks[cov_input>5], CP9combo_peaks, "HP9combo", "CP9combo", shift=1e8)
+fraction_overlapN2(CP9combo_peaks[cov_input>5], HP9combo_peaks, "HP9combo", "CP9combo", shift=1e8)
+
+
+# P9 vs CoT
+fraction_overlapN2(HP9combo_peaks[cov_input>5], zcw_wP9_peaks_cin, "HP9combo", "Zcw+hP9", shift=1e8)
+fraction_overlapN2(HP9combo_peaks[cov_input>5], zcw_wcP9_peaks_cin, "HP9combo", "Zcw+cP9", shift=1e8)
+
+fraction_overlapN2(CP9combo_peaks[cov_input>5], zcw_wP9_peaks_cin, "CP9combo", "Zcw+hP9", shift=1e8)
+fraction_overlapN2(CP9combo_peaks[cov_input>5], zcw_wcP9_peaks_cin, "CP9combo", "Zcw+cP9", shift=1e8)
+
+
+# P9 vs CVC
+fraction_overlapN2(HP9combo_peaks[cov_input>5], zcw_wP9_vs_chip_Z, "HP9combo", "humanZcwCVC", shift=1e8) # up to 75%, even with n=100
+fraction_overlapN2(HP9combo_peaks[cov_input>5], zcw_wcP9_vs_chip_Z, "HP9combo", "chimpZcwCVC", shift=1e8) # 0
+
+fraction_overlapN2(CP9combo_peaks[cov_input>5], zcw_wP9_vs_chip_Z, "CP9combo", "humanZcwCVC", shift=1e8)
+fraction_overlapN2(CP9combo_peaks[cov_input>5], zcw_wcP9_vs_chip_Z, "CP9combo", "chimpZcwCVC", shift=1e8)
+
+# CVC vs P9
+fraction_overlapN2(zcw_wP9_vs_chip_Z[cov_input>5], HP9combo_peaks,   "humanZcwCVC",  "HP9combo", shift=1e8) # ~ 90%
+fraction_overlapN2(zcw_wP9_vs_chip_Z[cov_input>5], CP9combo_peaks,   "humanZcwCVC",  "CP9combo", shift=1e8) # depleated, close to 0
+
+
+fraction_overlapN2(zcw_wcP9_vs_chip_Z[cov_input>5], CP9combo_peaks, "chimpZcwCVC",  "CP9combo", shift=1e8) # ~ 80%
+fraction_overlapN2(zcw_wcP9_vs_chip_Z[cov_input>5], HP9combo_peaks, "chimpZcwCVC",  "HP9combo", shift=1e8) # still enriched at 50%....
+
+
+
+```
+
 
 # HP9 vs H3K4
 
