@@ -3,309 +3,87 @@ title: "DMC1 Chipseq"
 output: html_notebook
 ---
 
-```{r}
-
-
-# WTCHG_688471_1.fastq.gz
-# GATCGGAAGAGCACACGTCTGAACTCCAGTCACATTCCTTTATCTCGTATG #TruSeq Adapter, Index 27 (97% over 44bp)
-# GATCGGAAGAGCACACGTCTGAACTCCAGTCACATTCCTTTATCTCGTTTT #Index TruSeq adapter up to the bar code (5'-GATCGGAAGAGCACACGTCTGAACTCCAGTCA*C)
-
-# WTCHG_688471_2.fastq.gz
-# GATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGT # Illumina Single End PCR Primer 1
-# GATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGT
-
-# WTCHG_688472_1.fastq.gz
-# GATCGGAAGAGCACACGTCTGAACTCCAGTCACCGTACGTAATCTCGTATG # TruSeq Adapter, Index 22
-# GATCGGAAGAGCACACGTCTGAACTCCAGTCACCGTACGTAATTTCGTATT
-
-# WTCHG_688472_2.fastq.gz
-# GATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGT # Illumina Single End PCR Primer 1
-# GATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGT
-
-
-
-fastqc raw_data/bsg-ftp.well.ox.ac.uk/190524_D00529_0716_AH2G53BCX3/WTCHG_688471_1.fastq.gz -o qc/fastqc
-fastqc raw_data/bsg-ftp.well.ox.ac.uk/190524_D00529_0716_AH2G53BCX3/WTCHG_688471_2.fastq.gz -o qc/fastqc
-
-fastqc raw_data/bsg-ftp.well.ox.ac.uk/190524_D00529_0716_AH2G53BCX3/WTCHG_688472_1.fastq.gz -o qc/fastqc
-fastqc raw_data/bsg-ftp.well.ox.ac.uk/190524_D00529_0716_AH2G53BCX3/WTCHG_688472_2.fastq.gz -o qc/fastqc
-
-fastqc raw_data/bsg-ftp.well.ox.ac.uk/190524_D00529_0716_AH2G53BCX3/WTCHG_688472_0_1.fastq.gz -o qc/fastqc
-fastqc raw_data/bsg-ftp.well.ox.ac.uk/190524_D00529_0716_AH2G53BCX3/WTCHG_688472_0_2.fastq.gz -o qc/fastqc
-
-
-ASCIIGenome-1.15.0/ASCIIGenome raw_data/bsg-ftp.well.ox.ac.uk/190524_D00529_0716_AH2G53BCX3/WTCHG_688472.bam
-
-ASCIIGenome-1.15.0/ASCIIGenome raw_data/bsg-ftp.well.ox.ac.uk/190524_D00529_0716_AH2G53BCX3/WTCHG_688471.bam raw_data/bsg-ftp.well.ox.ac.uk/190524_D00529_0716_AH2G53BCX3/WTCHG_688472.bam -fa ../single-cell/sequencing/metadata/Mus_musculus.GRCm38.dna_sm.toplevel.fasta
-
-chr10:23398243-23398480
-
-
-
-java -jar /homes/wells/saxony/single-cell/sequencing/software/picard.jar MarkDuplicates \
-    INPUT=raw_data/bsg-ftp.well.ox.ac.uk/190524_D00529_0716_AH2G53BCX3/WTCHG_688471.bam \
-    OUTPUT=undup/WTCHG_688471.bam \
-    METRICS_FILE=undup/WTCHG_688471_metrics.txt \
-    REMOVE_DUPLICATES=true
-
-bedtools genomecov -bg -ibam undup/WTCHG_688471.bam > bedgraphs/WTCHG_688471.bedgraph
-
-
-java -jar /homes/wells/saxony/single-cell/sequencing/software/picard.jar MarkDuplicates \
-    INPUT=raw_data/bsg-ftp.well.ox.ac.uk/190524_D00529_0716_AH2G53BCX3/WTCHG_688472.bam \
-    OUTPUT=undup/WTCHG_688472.bam \
-    METRICS_FILE=undup/WTCHG_688471_metrics.txt \
-    REMOVE_DUPLICATES=true
-
-bedtools genomecov -bg -ibam undup/WTCHG_688472.bam > bedgraphs/WTCHG_688472.bedgraph
-
-#samtools view undup/WTCHG_688471.bam | less
-
-samtools view undup/WTCHG_688471.bam -L chr19_sample.bed -b -o sample_regions/WTCHG_688471_chr19.bam
-samtools index sample_regions/WTCHG_688471_chr19.bam
-
-chr6:103,647,017-103,651,428
-
-b6 <- fread("~/Downloads/B6.bedgraph")
-fwrite(b6[,.(paste0("chr",chr), pos, pos+1, heat)], "~/Downloads/B6_IGV.bedgraph", sep = "\t", col.names = F, quote = F)
-```
+# Calculate Average Profiles
 
 ```{r}
-wget -qO- http://ftp.ensembl.org/pub/release-96/gtf/mus_musculus/Mus_musculus.GRCm38.96.gtf.gz \
-    | gunzip --stdout - \
-    | grep "protein_coding" - \
-    | awk '$3 == "gene"' - \
-    | awk '{ if ($0 ~ "transcript_id") print $0; else print $0" transcript_id \"\";"; }' - \
-    | convert2bed -i gtf - \
-    > deeptools/beds/Mus_Musculus_genes_prot_coding_ens.bed
+# combine seperate chromosome files into one
+cat ssDNA_ZCWPW1_HOM_260619_rep1_type1_filtered_only_rmdup.chr*.5prime.bedgraph.gz > ssDNA_ZCWPW1_HOM_260619_rep1_type1_filtered_only_rmdup.chrALL.5prime.bedgraph.gz
 
-```
-
-# Plot SSDS Dmc1 reads at B6 and KO hotspots
-
-```{r}
-
-b6 <- fread("~/Downloads/B6.bedgraph")
-fwrite(b6[,.(chr, pos, pos+1, heat)], "~/Downloads/B6_hotspots.bedgraph", sep = "\t", col.names = F, quote = F)
-fwrite(b6[hshared==0,.(chr, pos, pos+1, heat)], "~/Downloads/B6_hotspots_nothshared.bedgraph", sep = "\t", col.names = F, quote = F)
-fwrite(b6[hshared==1,.(chr, pos, pos+1, heat)], "~/Downloads/B6_hotspots_hshared.bedgraph", sep = "\t", col.names = F, quote = F)
-
-
-b6 <- fread("~/Downloads/KO.txt")
-fwrite(b6[,.(chr, pos, pos+1, heat)], "~/Downloads/B6_KO_hotspots.bedgraph", sep = "\t", col.names = F, quote = F)
-
-
-computeMatrix reference-point \
-    -S deeptools/bigwigs/WTCHG_688472_CPM.bw \
-        deeptools/bigwigs/WTCHG_688471_CPM.bw \
-        deeptools/bigwigs/WTCHG_688471_CPM_max50.bw \
-        deeptools/bigwigs/WTCHG_688472_0_CPM.bw \
-    -R deeptools/beds/B6_hotspots.bedgraph \
-      deeptools/beds/B6_hotspots_nothshared.bedgraph \
-      deeptools/beds/B6_hotspots_hshared.bedgraph \
-      deeptools/beds/B6_KO_hotspots.bedgraph \
-    -a 5000 \
-    -b 5000 \
-    -p 15 \
-    --skipZeros \
-    -o deeptools/matrices/Dmc1_r1.gz
-
-plotProfile \
-    -m deeptools/matrices/Dmc1_r1.gz \
-    -out deeptools/plots/Dmc1_r1_AT_B6.pdf \
-    --refPointLabel "Centre" \
-    --samplesLabel Het Hom Hom50max Het0 \
-    --numPlotsPerRow 2 \
-    --perGroup \
-    --regionsLabel B6 B6_notshared B6_shared B6_KO
-
-
-
-cat 
-
-#awk '{print "chr" $0;}' ../single-cell/sequencing/metadata/mm10_sizes.chrom > ../single-cell/sequencing/metadata/mm10_sizes_chr.chrom
-
-
-#cut -f 1 ssDNA_ZCWPW1_HOM_290519_rep1_type1_filtered_only_rmdup.chrALLclean.3prime.bedgraph | uniq
-
-# bedGraphToBigWig ssDNA_ZCWPW1_HOM_290519_rep1_type1_filtered_only_rmdup.chrALLclean.5prime.bedgraph ../single-cell/sequencing/metadata/mm10_sizes.chrom ssDNA_ZCWPW1_HOM_290519_rep1_type1_filtered_only_rmdup.chrALL.5prime.bw
-# bedGraphToBigWig ssDNA_ZCWPW1_HOM_290519_rep1_type1_filtered_only_rmdup.chrALLclean.3prime.bedgraph ../single-cell/sequencing/metadata/mm10_sizes.chrom ssDNA_ZCWPW1_HOM_290519_rep1_type1_filtered_only_rmdup.chrALL.3prime.bw
-# bedGraphToBigWig ssDNA_ZCWPW1_HET_290519_rep1_type1_filtered_only_rmdup.chrALLclean.5prime.bedgraph ../single-cell/sequencing/metadata/mm10_sizes.chrom ssDNA_ZCWPW1_HET_290519_rep1_type1_filtered_only_rmdup.chrALL.5prime.bw
-# bedGraphToBigWig ssDNA_ZCWPW1_HET_290519_rep1_type1_filtered_only_rmdup.chrALLclean.3prime.bedgraph ../single-cell/sequencing/metadata/mm10_sizes.chrom ssDNA_ZCWPW1_HET_290519_rep1_type1_filtered_only_rmdup.chrALL.3prime.bw
-
-#wget http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/bigWigToBedGraph
-#chmod 777 bigWigToBedGraph
-#./bigWigToBedGraph deeptools/bigwigs/WTCHG_688472_CPM.bw tmp.bedgraph
-#wc -l tmp.bedgraph
-#./bigWigToBedGraph ssDNA_ZCWPW1_HOM_290519_rep1_type1_filtered_only_rmdup.chrALL.3prime.bw tmp.bedgraph
-#wc -l tmp.bedgraph
-
-#bedtools makewindows -g ../single-cell/sequencing/metadata/mm10_sizes.chrom -w 100 > 100bpwindows.bed
-#bedtools map -a 100bpwindows.bed -b ssDNA_ZCWPW1_HOM_290519_rep1_type1_filtered_only_rmdup.chrALLclean.3prime.bedgraph -c 4 -o mean > tmp.bed
-##sed 's/\./0/' tmp.bed > tmp.bed
-#grep -v '\.' tmp.bed > tmp2.bed
-#bedGraphToBigWig tmp2.bed ../single-cell/sequencing/metadata/mm10_sizes.chrom tmp.bw
-
-
-
+cat ssDNA_ZCWPW1_HOM_260619_rep1_type1_filtered_only_rmdup.chr*.3prime.bedgraph.gz > ssDNA_ZCWPW1_HOM_260619_rep1_type1_filtered_only_rmdup.chrALL.3prime.bedgraph.gz
 
 # remove odd chromosomes
 # reomve Mitochondria
 # convert chr1 to 1
 
-grep -v '_' ssDNA_ZCWPW1_HOM_290519_rep1_type1_filtered_only_rmdup.chrALL.5prime.bedgraph | grep -v 'M' | sed 's/chr//' > ssDNA_ZCWPW1_HOM_290519_rep1_type1_filtered_only_rmdup.chrALLclean.5prime.bedgraph
-grep -v '_' ssDNA_ZCWPW1_HOM_290519_rep1_type1_filtered_only_rmdup.chrALL.3prime.bedgraph | grep -v 'M' | sed 's/chr//' > ssDNA_ZCWPW1_HOM_290519_rep1_type1_filtered_only_rmdup.chrALLclean.3prime.bedgraph
+zgrep -v '_' ssDNA_ZCWPW1_HOM_260619_rep1_type1_filtered_only_rmdup.chrALL.5prime.bedgraph.gz | grep -v 'M' | sed 's/chr//' > ssDNA_ZCWPW1_HOM_260619_rep1_type1_filtered_only_rmdup.chrALLclean.5prime.bedgraph
+zgrep -v '_' ssDNA_ZCWPW1_HOM_260619_rep1_type1_filtered_only_rmdup.chrALL.3prime.bedgraph.gz | grep -v 'M' | sed 's/chr//' > ssDNA_ZCWPW1_HOM_260619_rep1_type1_filtered_only_rmdup.chrALLclean.3prime.bedgraph
 
-grep -v '_' ssDNA_ZCWPW1_HET_290519_rep1_type1_filtered_only_rmdup.chrALL.5prime.bedgraph | grep -v 'M' | sed 's/chr//' > ssDNA_ZCWPW1_HET_290519_rep1_type1_filtered_only_rmdup.chrALLclean.5prime.bedgraph
-grep -v '_' ssDNA_ZCWPW1_HET_290519_rep1_type1_filtered_only_rmdup.chrALL.3prime.bedgraph | grep -v 'M' | sed 's/chr//' > ssDNA_ZCWPW1_HET_290519_rep1_type1_filtered_only_rmdup.chrALLclean.3prime.bedgraph
 
-# convert bedgraph to bam for input into deeptools
+# create bed file from composite file form Anjali
+#1 = chr (20 = X?)
+#4 = allele (B6, KO, or UNK)
+#5 = hshared
+#10 = motif center pos
+awk -v OFS='\t' '$10=sprintf("%.0f",$10) {if($1 != "20" && $5=="0" && $4=="B6") print $1,$10,$10,"0","0","-";}'  B6_composite.txt > B6.bed
 
-bedToBam -i ssDNA_ZCWPW1_HOM_290519_rep1_type1_filtered_only_rmdup.chrALLclean.5prime.bedgraph -g ../../single-cell/sequencing/metadata/mm10_sizes.chrom > dmc1_Hom_5p.bam
-bedToBam -i ssDNA_ZCWPW1_HOM_290519_rep1_type1_filtered_only_rmdup.chrALLclean.3prime.bedgraph -g ../../single-cell/sequencing/metadata/mm10_sizes.chrom > dmc1_Hom_3p.bam
+awk -v OFS='\t' '{if($1 != "20") print $1,$2,$2,"0","0","-";}'  KO.txt | tail -n +2 > KO.bed
 
-bedToBam -i ssDNA_ZCWPW1_HET_290519_rep1_type1_filtered_only_rmdup.chrALLclean.5prime.bedgraph -g ../../single-cell/sequencing/metadata/mm10_sizes.chrom > dmc1_Het_5p.bam
-bedToBam -i ssDNA_ZCWPW1_HET_290519_rep1_type1_filtered_only_rmdup.chrALLclean.3prime.bedgraph -g ../../single-cell/sequencing/metadata/mm10_sizes.chrom > dmc1_Het_3p.bam
+# convert bedgraph to Bigwig
+bedGraphToBigWig ssDNA_ZCWPW1_HOM_260619_rep1_type1_filtered_only_rmdup.chrALLclean.3prime.bedgraph ../../../single-cell/sequencing/metadata/mm10_sizes.chrom hom3p.bigWig
+bedGraphToBigWig ssDNA_ZCWPW1_HOM_260619_rep1_type1_filtered_only_rmdup.chrALLclean.5prime.bedgraph ../../../single-cell/sequencing/metadata/mm10_sizes.chrom hom5p.bigWig
 
-samtools index dmc1_Hom_5p.bam
-samtools index dmc1_Hom_3p.bam
-samtools index dmc1_Het_5p.bam
-samtools index dmc1_Het_3p.bam
+# bigWig to profile
+bwtool aggregate 2000:2000 B6.bed hom3p.bigWig B6_3p.tsv -fill=0
+bwtool aggregate 2000:2000 B6.bed hom5p.bigWig B6_5p.tsv -fill=0
 
-# calculate coverage using deeptools
-
-bamCoverage \
-      --bam dmc1_Hom_5p.bam \
-      -o dmc1_Hom_5p.bw \
-      --normalizeUsing CPM \
-      -p 15
-
-bamCoverage \
-      --bam dmc1_Hom_3p.bam \
-      -o dmc1_Hom_3p.bw \
-      --normalizeUsing CPM \
-      -p 15
-
-bamCoverage \
-      --bam dmc1_Het_5p.bam \
-      -o dmc1_Het_5p.bw \
-      --normalizeUsing CPM \
-      -p 15
-
-bamCoverage \
-      --bam dmc1_Het_3p.bam \
-      -o dmc1_Het_3p.bw \
-      --normalizeUsing CPM \
-      -p 15
-
-# create profile plot
-
-computeMatrix reference-point \
-    -S  dmc1_Hom_3p.bw \
-        dmc1_Hom_5p.bw \
-    -R deeptools/beds/B6_hotspots.bedgraph \
-      deeptools/beds/B6_KO_hotspots.bedgraph \
-    -a 5000 \
-    -b 5000 \
-    -p 15 \
-    --skipZeros \
-    -o deeptools/matrices/Dmc1_r1_type1.gz
-
-plotProfile \
-    -m deeptools/matrices/Dmc1_r1_type1.gz \
-    -out deeptools/plots/Dmc1_r1_type1_AT_B6.pdf \
-    --refPointLabel "Centre" \
-    --samplesLabel Dmc1_3prime Dmc1_5prime \
-    --perGroup \
-    --regionsLabel B6_WT_Hotspot_Locations B6_Prdm9_KO_Hotspot_Locations
-
-  
+bwtool aggregate 2000:2000 KO.bed hom3p.bigWig KO_3p.tsv -fill=0
+bwtool aggregate 2000:2000 KO.bed hom5p.bigWig KO_5p.tsv -fill=0
 ```
 
-
-# DMC1 reads averaged over genes (TSS Exons TES)
+# plot profile
 
 ```{r}
-wget http://ftp.ensembl.org/pub/release-96/gtf/mus_musculus/Mus_musculus.GRCm38.96.gtf.gz
-gunzip Mus_musculus.GRCm38.96.gtf.gz
+library(data.table)
+B6_3p <- fread("dmc1/new_data/B6_3p.tsv")
+B6_5p <- fread("dmc1/new_data/B6_5p.tsv")
 
-computeMatrix scale-regions \
-    --metagene \
-    -S dmc1_Hom_3p.bw \
-        dmc1_Hom_5p.bw \
-        dmc1_Het_3p.bw \
-        dmc1_Het_5p.bw \
-      -R Mus_musculus.GRCm38.96.gtf \
-      -m 8000 \
-      -a 4000 \
-      -b 4000 \
-      -bs 50 \
-      -p 15 \
-      --skipZeros \
-      --missingDataAsZero \
-      -o gtf_exon_dmc1.gz
-
-plotProfile \
-    -m gtf_exon_dmc1.gz \
-    --numPlotsPerRow 2 \
-    --samplesLabel Hom3p Hom5p Het3p Het5p \
-    -out gtf_exon_dmc1.pdf
+KO_3p <- fread("dmc1/new_data/KO_3p.tsv")
+KO_5p <- fread("dmc1/new_data/KO_5p.tsv")
 
 
-# type 1 and type 2 reads unfiltered
+KO_5p$Strand <- "5 prime"
+KO_5p$Genotype <- "B6 Prdm9 KO DMC1 regions"
+KO_3p$Strand <- "3 prime"
+KO_3p$Genotype <- "B6 Prdm9 KO DMC1 regions"
 
-computeMatrix scale-regions \
-    --metagene \
-    -S ../deeptools/bigwigs/WTCHG_688472_CPM.bw \
-        ../deeptools/bigwigs/WTCHG_688471_CPM.bw \
-      -R Mus_musculus.GRCm38.96.gtf \
-      -m 8000 \
-      -a 4000 \
-      -b 4000 \
-      -bs 50 \
-      -p 15 \
-      --skipZeros \
-      --missingDataAsZero \
-      -o gtf_exon_dmc1_unfiltered.gz
+B6_3p$Strand <- "3 prime"
+B6_3p$Genotype <- "B6 Wild Type DMC1 regions"
+B6_5p$Strand <- "5 prime"
+B6_5p$Genotype <- "B6 Wild Type DMC1 regions"
 
-plotProfile \
-    -m gtf_exon_dmc1_unfiltered.gz \
-    --numPlotsPerRow 2 \
-    --samplesLabel Het Hom \
-    -out gtf_exon_dmc1_unfiltered.pdf
+tmp <- rbind(KO_5p, KO_3p, B6_5p, B6_3p)
+names(tmp)[1:2] <- c("Position","MeanCoverage")
+tmp[, Genotype := factor(Genotype, levels=c("B6 Wild Type DMC1 regions","B6 Prdm9 KO DMC1 regions"))]
 
-
-
+pdf("DMC1_SSDS.pdf")
+ggplot(tmp, aes(Position, MeanCoverage,colour=Strand, group=Strand)) +
+  geom_line() +
+  facet_wrap(~Genotype, nrow=2) +
+  scale_color_brewer(palette = "Set1") +
+  theme_minimal()
+dev.off()
+ 
 ```
 
-# What fraction of QCreads are Type1 reads?
 
-```{r}
-bedtools intersect -v -a ../filtered/WTCHG_688471.bam \
-  -b ssDNA_ZCWPW1_HOM_290519_rep1_type1_filtered_only_rmdup.chrALLclean.5prime.bedgraph
-      ssDNA_ZCWPW1_HOM_290519_rep1_type1_filtered_only_rmdup.chrALLclean.3prime.bedgraph > WTCHG_688471.notT1.bam
-
-samtools flagstat -@ 10 ../filtered/WTCHG_688471.bam
-# 159986 + 0 in total (QC-passed reads + QC-failed reads)
-# 79993 + 0 read1
-# 79993 + 0 read2
-
-
-samtools flagstat -@ 10 WTCHG_688471.notT1.bam
-# 78871 + 0 in total (QC-passed reads + QC-failed reads)
-# 39428 + 0 read1
-# 39443 + 0 read2
-
-# 159986-78871 = 81k
-```
 
 # DMC1 Vs Spo11 in WT and KO
 
 ```{r, fig.width=6}
 B6 <- fread("../data/dmc1/B6_composite.txt")
 # cut -f 1 -d " " B6.txt | uniq
-hom3p <- fread("../data/dmc1/ssDNA_ZCWPW1_HOM_290519_rep1_type1_filtered_only_rmdup.chrALL.3prime.bedgraph")
-hom5p <- fread("../data/dmc1/ssDNA_ZCWPW1_HOM_290519_rep1_type1_filtered_only_rmdup.chrALL.5prime.bedgraph")
+hom3p <- fread("../data/dmc1/ssDNA_ZCWPW1_HOM_260619_rep1_type1_filtered_only_rmdup.chrALL.3prime.bedgraph")
+hom5p <- fread("../data/dmc1/ssDNA_ZCWPW1_HOM_260619_rep1_type1_filtered_only_rmdup.chrALL.5prime.bedgraph")
 
 hom5p[,end:=5]
 hom3p[,end:=3]
@@ -391,7 +169,7 @@ c <- ggplot(perhotspot[hshared==0,.(Dmc1_KO=mean(N),Spo11_WT=mean(SPO11)),by=c("
   geom_point() #+
   #facet_wrap(~isX, scales = "free")
   
-
+load("../data/dmc1/b6full.out")
 
 cowplot::plot_grid(a,b,c)
 
@@ -415,29 +193,6 @@ plot(perhotspot[,.(Zcw=mean(N),dmc1=mean(dmc1_orig_heat)),by=c("bin","isX")][isX
 
 perhotspot[chr!="X",.(Zcw=mean(N),dmc1=mean(DMC1)),by=bin]
 perhotspot[chr=="X",.(Zcw=mean(N),dmc1=mean(DMC1)),by=binX]
-
-```
-
-
-
-```{r}
-bamCoverage \
-      --bam filtered/WTCHG_688471.bam \
-      -o deeptools/bigwigs/WTCHG_688471_CPM_min50.bw \
-      --normalizeUsing CPM \
-      --centerReads \
-      --extendReads \
-      -p 5 \
-      --minFragmentLength 50
-
-bamCoverage \
-      --bam filtered/WTCHG_688471.bam \
-      -o deeptools/bigwigs/WTCHG_688471_CPM_max50.bw \
-      --normalizeUsing CPM \
-      --centerReads \
-      --extendReads \
-      -p 5 \
-      --maxFragmentLength 50
 
 ```
 
