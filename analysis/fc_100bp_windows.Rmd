@@ -430,10 +430,10 @@ fraction_overlapN <- function(dt,x,y, n=25, filters=c("All"), returndf=F, pseudo
     return(tmp)
   }else{
   return(
-    ggplot(tmp, aes(mean_enrichment, Mean, colour=Subset, group=Subset)) +
-      #geom_point(size=2) +
-      geom_hline(yintercept = dt[,mean(get(y))], colour="blue", linetype="dashed") +
-      geom_pointrange(aes(ymax = uq, ymin = lq)) +
+    ggplot(tmp, aes(mean_enrichment, Mean, colour=Subset, group=Subset)) + #mean_enrichment
+      #geom_hline(yintercept = dt[,mean(get(y))], colour="blue", linetype="dashed") +
+      geom_point(size=2, stroke=0) +
+      geom_linerange(aes(ymax = Mean+2*sem, ymin = Mean-2*sem), colour='black') +
       theme_minimal() +
       scale_color_brewer(palette = 'Set1') +
       xlab(paste("Mean",x,"Enrichment")) +
