@@ -442,13 +442,37 @@ fraction_overlapN <- function(dt,x,y, n=25, filters=c("All"), returndf=F, pseudo
 
 }
 
+
 forcecalled$enrichment <- forcecalled$h3k4me3_hP9_enrichment
 
+
+p1 <- fraction_overlapN(forcecalled[sample(1:nrow(forcecalled))][h3k4me3_hP9_cov_input>15 & zcw_cov_input>5 & h3k4me3_UT_pvalue>1e-5],
+                        "h3k4me3_hP9_enrichment","zcw_hP9_enrichment", n=100) +
+  scale_y_log10() + scale_x_log10() +
+  theme(legend.position = "none") +
+  ylab("Mean Zcwpw1 Enrichment when co-transfected with Prdm9") +
+  xlab("Mean H3K4me3 Enrichment when co-transfected with Prdm9+ 0.01")
+
+
+forcecalled$enrichment <- forcecalled$h3k36me3_hP9_enrichment
+
+
+p2 <- fraction_overlapN(forcecalled[sample(1:nrow(forcecalled))][h3k36me3_hP9_cov_input>15 & zcw_cov_input>5],
+                        "h3k36me3_hP9_enrichment","zcw_hP9_enrichment", n=100) + 
+  scale_y_log10() + scale_x_log10() +
+  theme(legend.position = "none") +
+  ylab("Mean Zcwpw1 Enrichment when co-transfected with Prdm9") +
+  xlab("Mean H3K36me3 Enrichment when co-transfected with Prdm9 + 0.01")
+
+pdf("H3Kme3_vs_Zcw_wP9.pdf", width = 11)
+plot_grid(p1,p2)
+dev.off()
+
+
+
+
 pdf("H3K4strength_binned_allchr.pdf")
-
-fraction_overlapN(forcecalled[h3k4me3_hP9_cov_input>5 & zcw_cov_input>5], 
-                    "h3k4me3_hP9_enrichment","zcw_hP9_enrichment", n=25) + scale_x_log10()
-
+forcecalled$enrichment <- forcecalled$h3k4me3_hP9_enrichment
 
 tmp <- rbind(
   fraction_overlapN(forcecalled[h3k4me3_hP9_cov_input>15 & zcw_cov_input>5][UTP9==1], 
