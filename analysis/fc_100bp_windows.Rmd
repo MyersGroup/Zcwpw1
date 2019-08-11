@@ -408,13 +408,13 @@ dev.off()
 
 ```{r}
 
-fraction_overlapN <- function(dt,x,y, n=25, filters=c("All"), returndf=F){
+fraction_overlapN <- function(dt,x,y, n=25, filters=c("All"), returndf=F, pseudoenrich=0.01){
   setorder(dt, enrichment)
   dt$enrichment_bin <- cut(1:nrow(dt), n)
   
   All=TRUE
   
-  tmp <- dt[eval(parse(text=filters[1])),.(mean_enrichment = mean(enrichment),
+  tmp <- dt[eval(parse(text=filters[1])),.(mean_enrichment = mean(enrichment + pseudoenrich),
                                       num = .N,
                                       Mean = mean(get(y)),
                                       Subset = filters[1],
