@@ -46,5 +46,9 @@ ggplot(melt(enrichment, id.vars=c("Position","samplePair"), variable.name="Regio
   scale_y_log10() +
   facet_wrap(~samplePair, scales='free_y') +
   expand_limits(y = c(1, 2)) +
+  theme_minimal() +
+  theme(legend.position = "bottom",
+        panel.border = element_rect(color = "grey40", fill = NA, size = 0.5),
+        strip.background = element_rect(color = "grey40", size = 0.5)) +
   ggtitle(regionsName) #gsub(".pdf","",strsplit(outfile,"_AT_")[[1]][2])
 dev.off()
