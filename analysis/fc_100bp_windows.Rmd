@@ -451,9 +451,9 @@ fraction_overlapN(forcecalled[h3k4me3_hP9_cov_input>5 & zcw_cov_input>5],
 
 
 tmp <- rbind(
-  fraction_overlapN(forcecalled[h3k4me3_hP9_cov_input>5 & zcw_cov_input>5][UTP9==1], 
+  fraction_overlapN(forcecalled[h3k4me3_hP9_cov_input>15 & zcw_cov_input>5][UTP9==1], 
                     "h3k4me3_hP9_enrichment","zcw_hP9_enrichment", n=25, returndf = T, filter="UTP9==1"),
-  fraction_overlapN(forcecalled[h3k4me3_hP9_cov_input>5 & zcw_cov_input>5][UTP9==2], 
+  fraction_overlapN(forcecalled[h3k4me3_hP9_cov_input>15 & zcw_cov_input>5][UTP9==2], 
                     "h3k4me3_hP9_enrichment","zcw_hP9_enrichment", n=25, returndf = T, filter="UTP9==2")
 )
 
