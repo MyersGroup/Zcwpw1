@@ -1,0 +1,119 @@
+---
+title: "DMC1 Counts"
+output: html_notebook
+---
+
+
+```{r, fig.width=5, fig.retina=T}
+
+# # # # # # # # # # # #
+# Load KO counts
+# # # # # # # # # # # #
+
+dmc1_counts_KO <- readxl::read_excel("../data/zcw_dmc1.xlsx", sheet = "KO")
+dmc1_counts_KO$...4 <- colnames(dmc1_counts_KO)[1]
+dmc1_counts_KO$...10 <- colnames(dmc1_counts_KO)[7]
+dmc1_counts_KO$...14 <- colnames(dmc1_counts_KO)[11]
+
+colnames(dmc1_counts_KO) <- unlist(dmc1_counts_KO[1,])
+colnames(dmc1_counts_KO)[c(4,10,14)] <- "Mouse"
+
+dmc1_counts_KO <- rbind(dmc1_counts_KO[,1:4],
+                     dmc1_counts_KO[,7:10],
+                     dmc1_counts_KO[,11:14])
+
+dmc1_counts_KO$Genotype <- "ZCW -/-"
+
+# # # # # # # # # # # #
+# Load WT counts
+# # # # # # # # # # # #
+
+
+dmc1_counts_WT <- readxl::read_excel("../data/zcw_dmc1.xlsx", sheet = "WT")
+
+dmc1_counts_WT$...4 <- colnames(dmc1_counts_WT)[1]
+dmc1_counts_WT$...8 <- colnames(dmc1_counts_WT)[5]
+
+colnames(dmc1_counts_WT) <- unlist(dmc1_counts_WT[1,])
+colnames(dmc1_counts_WT)[c(4,8)] <- "Mouse"
+
+dmc1_counts_WT <- rbind(dmc1_counts_WT[,1:4],
+                     dmc1_counts_WT[,5:8])
+
+dmc1_counts_WT$Genotype <- "Wild Type"
+
+# # # # # # # # # # # #
+# Load P9 KO counts
+# # # # # # # # # # # #
+
+dmc1_counts_P9 <- readxl::read_excel("../data/zcw_dmc1.xlsx", sheet = "Prdm9 KO")
+
+dmc1_counts_P9$...4 <- colnames(dmc1_counts_P9)[1]
+
+colnames(dmc1_counts_P9) <- unlist(dmc1_counts_P9[1,])
+colnames(dmc1_counts_P9)[c(4)] <- "Mouse"
+
+dmc1_counts_P9$Genotype <- "Prdm9 -/-"
+
+# # # # # # # # # # # #
+# Unrelated WT counts
+# # # # # # # # # # # #
+
+dmc1_counts_UWT <- readxl::read_excel("../data/zcw_dmc1.xlsx", sheet = "Unrelated wt")
+dmc1_counts_UWT$...4 <- colnames(dmc1_counts_UWT)[1]
+dmc1_counts_UWT$...9 <- colnames(dmc1_counts_UWT)[6]
+dmc1_counts_UWT$...13 <- colnames(dmc1_counts_UWT)[10]
+
+colnames(dmc1_counts_UWT) <- unlist(dmc1_counts_UWT[1,])
+colnames(dmc1_counts_UWT)[c(4,9,13)] <- "Mouse"
+
+dmc1_counts_UWT <- rbind(dmc1_counts_UWT[,1:4],
+                     dmc1_counts_UWT[,6:9],
+                     dmc1_counts_UWT[,10:13])
+
+colnames(dmc1_counts_UWT)[1] <- "Image"
+colnames(dmc1_counts_UWT)[3] <- "DMC1 foci"
+
+dmc1_counts_UWT$Genotype <- "Wild Type (unrelated)"
+
+
+# # # # # # # # # # # #
+# Combine & Plot
+# # # # # # # # # # # #
+
+dmc1_counts <- rbind(dmc1_counts_KO,
+                     #dmc1_counts_WT,
+                     dmc1_counts_P9,
+                     dmc1_counts_UWT)
+
+dmc1_counts <- dmc1_counts[!(toupper(dmc1_counts$Image)=="IMAGE"),]
+dmc1_counts$`DMC1 foci` <- as.integer(dmc1_counts$`DMC1 foci`)
+
+
+dmc1_counts <- dmc1_counts[!is.na(dmc1_counts$Stage),]
+
+dmc1_counts$Stage <- stringr::str_to_title(dmc1_counts$Stage)
+
+dmc1_counts[dmc1_counts$Stage=="L",]$Stage <- "Late L"
+dmc1_counts[dmc1_counts$Stage=="P?",]$Stage <- "P"
+dmc1_counts[dmc1_counts$Stage=="Pseudop",]$Stage <- "P"
+
+dmc1_counts[dmc1_counts$Genotype=="Wild Type (unrelated)",]$Genotype <- "Wild Type"
+
+dmc1_counts$Stage <- factor(dmc1_counts$Stage, levels = c("L","Late L","Early Z","Z","Late Z","P","P?","Pseudop"))
+dmc1_counts$Genotype <- factor(dmc1_counts$Genotype, levels = c("Wild Type","Wild Type (unrelated)","ZCW -/-","Prdm9 -/-"))
+
+ggplot(dmc1_counts, aes(Stage, `DMC1 foci`, colour=Genotype)) + 
+  geom_point(size=0.5, position = position_jitterdodge()) + 
+  scale_color_brewer(palette = "Set1") + 
+  theme_minimal() + 
+  geom_boxplot(alpha=0)
+
+ggsave("../results/dmc1_counts.pdf", width = 9, height = 5)
+
+ggplot(dmc1_counts, aes(Stage, `DMC1 foci`, colour=Mouse)) + geom_jitter() + facet_wrap(~Genotype)
+
+
+```
+
+
