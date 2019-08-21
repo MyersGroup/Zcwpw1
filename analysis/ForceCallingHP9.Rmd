@@ -79,12 +79,13 @@ HP9combo_peaks$FC_h3k36me3_P9_enrichment <- h3k36me3_P9_AT_HP9combo$enrichment
 HP9combo_peaks$FC_Zcw_CVC_pvalue <- Zcw_CVC_AT_hP9combo$pvalue
 
 HP9combo_peaks$FC_Zcw_CVC_cov_input <- Zcw_CVC_AT_hP9combo$cov_input
+HP9combo_peaks$FC_Zcw_wP9_cov_input <- Zcw_wP9_AT_hP9combo$cov_input
 HP9combo_peaks$FC_h3k4me3_P9_cov_input <- h3k4me3_P9_AT_HP9combo$cov_input
 HP9combo_peaks$FC_h3k4me3_UT_cov_input <- h3k4me3_UT_AT_HP9combo$cov_input
 HP9combo_peaks$FC_h3k36me3_P9_cov_input <- h3k36me3_P9_AT_HP9combo$cov_input
 
 
-HP9combo_peaks$FC_Zcw_CVC_cov_input <- Zcw_CVC_AT_hP9combo$cov_input
+all.equal(Zcw_CVC_AT_hP9combo$center_start, HP9combo_peaks$center_start)
 ```
 
 
@@ -144,6 +145,14 @@ HP9N_peaks$FC_h3k36me3_P9_cov_input <- h3k36me3_P9_AT_HP9N$cov_input
 ```
 
 ```{r}
+dmc1 <- fread("../data/pratto_dmc1/Pratto_human_DSB_Aintersect_autosomal_hg38.bed")
+setnames(dmc1, c("chr","CI_start","CI_stop","enrichment","enrichmentAB"))
+dmc1 <- prejoin(dmc1, 0)
+dmc1 <- trim_peaks(dmc1, 800)
+```
+
+
+```{r}
 fraction_overlap_FC_pthresh <- function(dt,x,y,n=100){
   setorder(dt, enrichment)
   binning_vector <- cut(1:nrow(dt), n)
@@ -168,6 +177,7 @@ fraction_overlap_FC_mean <- function(dt,x,y,n=100){
 ```{r}
 #check ordering
 mean(Zcw_CVC_AT_hP9$center_start == HP9_peaks$center_start)
+mean(Zcw_CVC_AT_hP9N$center_start == HP9N_peaks$center_start)
 unique(Zcw_CVC_AT_hP9$chr)
 unique(HP9_peaks$chr)
 
@@ -409,6 +419,8 @@ bayesplot::mcmc_areas(posterior, pars=c("b_enrichment", "b_FC_Zcw_CVC_enrichment
 ```
 
 
+N term better at predicting due to better Nterm Prdm9 correlation with Dmc1, but unfair to compare Zcwpw1 which was co-transfected with cterm P9 with the nterm P9
+
 # HP9 Cterm GLM
 
 enrichment = hPrdm9 Cterm, has estimate near 0
@@ -416,6 +428,8 @@ enrichment = hPrdm9 Cterm, has estimate near 0
 Because it adds little given Zcw enrichments?
 
 ```{r}
+HP9combo_peaks$DMC1_enrichment <- foverlaps(HP9combo_peaks, dmc1, mult="first")$enrichment
+
 HP9combo_peaks$isDMC1 <- !is.na(HP9combo_peaks$DMC1_enrichment)
 
 CtermDMC1glm <- glm(isDMC1 ~ enrichment + 
@@ -432,26 +446,135 @@ summary(CtermDMC1glm)
 ## Preditcion with C term
 
 ```{r}
-probs = predict(CtermDMC1glm,
-                newdata = HP9combo_peaks[cov_input>5 & FC_Zcw_CVC_cov_input>5 & FC_h3k4me3_P9_cov_input>5 & 
-                                           FC_h3k4me3_UT_cov_input>5 & FC_h3k36me3_P9_cov_input>5 & chr != "chrX"],
+
+testChrs <- c("chr1","chr3","chr5")
+
+CtermDMC1glmOnlyP9 <- glm(isDMC1 ~ enrichment,
+    family=binomial(link='logit'),
+    data=HP9combo_peaks[cov_input>5 & FC_Zcw_CVC_cov_input>5 & chr != "chrX" & cov_input<200 & FC_Zcw_CVC_enrichment<10][!chr %in% testChrs])
+
+CtermDMC1glmOnlyZCVC <- glm(isDMC1 ~ FC_Zcw_CVC_enrichment,
+    family=binomial(link='logit'),
+    data=HP9combo_peaks[cov_input>5 & FC_Zcw_CVC_cov_input>5 & chr != "chrX" & cov_input<200 & FC_Zcw_CVC_enrichment<10][!chr %in% testChrs])
+
+CtermDMC1glmBoth <- glm(isDMC1 ~ enrichment + FC_Zcw_CVC_enrichment,
+    family=binomial(link='logit'),
+    data=HP9combo_peaks[cov_input>5 & FC_Zcw_CVC_cov_input>5 & chr != "chrX" & cov_input<200 & FC_Zcw_CVC_enrichment<10][!chr %in% testChrs])
+
+CtermDMC1glmOnlyZwP9 <- glm(isDMC1 ~ FC_Zcw_wP9_enrichment,
+    family=binomial(link='logit'),
+    data=HP9combo_peaks[cov_input>5 & FC_Zcw_CVC_cov_input>5 & chr != "chrX" & cov_input<200 & FC_Zcw_CVC_enrichment<10][!chr %in% testChrs])
+
+
+summary(CtermDMC1glmOnlyP9)
+summary(CtermDMC1glmOnlyZCVC)
+summary(CtermDMC1glmBoth)
+summary(CtermDMC1glmOnlyZwP9)
+
+probs1 = predict(CtermDMC1glmOnlyP9,
+                newdata = HP9combo_peaks[cov_input>5 & FC_Zcw_CVC_cov_input>5 & chr != "chrX" & cov_input<200 & FC_Zcw_CVC_enrichment<10][chr %in% testChrs],
                 type = "response")
 
-dmc1label = HP9combo_peaks[cov_input>5 & FC_Zcw_CVC_cov_input>5 & FC_h3k4me3_P9_cov_input>5 & 
-                             FC_h3k4me3_UT_cov_input>5 & FC_h3k36me3_P9_cov_input>5 & chr != "chrX"]$isDMC1
+probs2 = predict(CtermDMC1glmOnlyZCVC,
+                newdata = HP9combo_peaks[cov_input>5 & FC_Zcw_CVC_cov_input>5 & chr != "chrX" & cov_input<200 & FC_Zcw_CVC_enrichment<10][chr %in% testChrs],
+                type = "response")
 
-caret::confusionMatrix(data = as.factor(probs>0.5),
-                reference = as.factor(dmc1label), positive = "TRUE")
+probs3 = predict(CtermDMC1glmBoth,
+                newdata = HP9combo_peaks[cov_input>5 & FC_Zcw_CVC_cov_input>5 & chr != "chrX" & cov_input<200 & FC_Zcw_CVC_enrichment<10][chr %in% testChrs],
+                type = "response")
+
+probs4 = predict(CtermDMC1glm,
+                newdata = HP9combo_peaks[cov_input>5 & FC_Zcw_CVC_cov_input>5 & chr != "chrX" & cov_input<200 & FC_Zcw_CVC_enrichment<10][chr %in% testChrs],
+                type = "response")
+
+dmc1label1 = HP9combo_peaks[cov_input>5 & FC_Zcw_CVC_cov_input>5 & chr != "chrX" & cov_input<200 & FC_Zcw_CVC_enrichment<10][chr %in% testChrs]$isDMC1
+
+
+caret::confusionMatrix(data = as.factor(probs1>0.05),
+                reference = as.factor(dmc1label1), positive = "TRUE")
 
 # ROC Curve
-tmp <- roc.curve(scores.class0 = probs, weights.class0 = dmc1label, curve = T)$curve
+tmp1 <- roc.curve(scores.class0 = probs1, weights.class0 = dmc1label1, curve = T)$curve
+tmp2 <- roc.curve(scores.class0 = probs2, weights.class0 = dmc1label1, curve = T)$curve
+tmp3 <- roc.curve(scores.class0 = probs3, weights.class0 = dmc1label1, curve = T)$curve
+tmp4 <- roc.curve(scores.class0 = probs4, weights.class0 = dmc1label1, curve = T)$curve
 
-plot(tmp, type='l', ylim=c(0,1), ylab='Sensitivity (TPR, Recall)', xlab='1-Specificity (1-FPR)', main='ROC') + abline(0,1, col='red')
+tmpP <- pROC::roc(dmc1label1, probs1)
+
+# plot(tmp1, type='l', ylim=c(0,1), ylab='Sensitivity (TPR, Recall)', xlab='1-Specificity (FPR)', main='ROC') + abline(0,1, col='red')
+# lines(tmp2, col="blue")
+# lines(tmp3, col="green")
+
+tmp1 <- data.table(tmp1)
+tmp2 <- data.table(tmp2)
+tmp3 <- data.table(tmp3)
+tmp4 <- data.table(tmp4)
+
+tmp1$Predictors <- "Prdm9 Only"
+tmp2$Predictors <- "Zcwpw1 (Prdm9-dependent) Only"
+tmp3$Predictors <- "Both"
+tmp4$Predictors <- "Both + H3Kme3"
+
+p1 <- ggplot(rbind(tmp1, tmp2, tmp3), aes(V1, V2, colour=Predictors)) +
+  geom_line() + 
+  scale_color_brewer(palette = "Set1") + 
+  geom_abline(slope = 1, intercept = 0, linetype="dashed") + 
+  theme_minimal() + 
+  theme(legend.position = "bottom") + 
+  ylab('Sensitivity (TPR, Recall)') +
+  xlab('1-Specificity (FPR)')
 
 # PR Curve
-tmp <- pr.curve(scores.class0 = probs, weights.class0 = dmc1label, curve = T)$curve
+tmp1 <- pr.curve(scores.class0 = probs1, weights.class0 = dmc1label1, curve = T)$curve
+tmp2 <- pr.curve(scores.class0 = probs2, weights.class0 = dmc1label1, curve = T)$curve
+tmp3 <- pr.curve(scores.class0 = probs3, weights.class0 = dmc1label1, curve = T)$curve
 
-plot(tmp, type='l', ylim=c(0,1), ylab='Precision (PPV)', xlab='Recall (TPR, Sensitivity)', main='PROC') + abline(h=0.0615, col='red')
+tmp1 <- data.table(tmp1)
+tmp2 <- data.table(tmp2)
+tmp3 <- data.table(tmp3)
+
+tmp1$Predictors <- "Prdm9 Only"
+tmp2$Predictors <- "Zcwpw1 (Prdm9-dependent) Only"
+tmp3$Predictors <- "Both"
+
+p2 <- ggplot(rbind(tmp1, tmp2, tmp3)[V1>0.005], aes(V1, V2, colour=Predictors)) +
+  geom_line() + 
+  scale_color_brewer(palette = "Set1") + 
+  geom_hline(yintercept = mean(dmc1label1), linetype="dashed") + 
+  theme_minimal() + 
+  theme(legend.position = "bottom") + 
+  ylab('Precision (PPV)') +
+  xlab('Recall (TPR, Sensitivity)')
+  
+
+
+pmain <- plot_grid(p1+theme(legend.position = "none"),
+                   p2+theme(legend.position = "none"))
+
+pdf("../results/DMC1_ROC_PR.pdf", width=10, height = 5)
+plot_grid(pmain, get_legend(p1), ncol=1, rel_heights = c(1, 0.07))
+dev.off()
+```
+
+```{r}
+bGLMN_C = brm(
+  isDMC1 ~ enrichment + 
+                  FC_Zcw_CVC_enrichment + 
+                  FC_h3k4me3_P9_enrichment+ 
+                  FC_h3k4me3_UT_enrichment + 
+                  FC_h3k36me3_P9_enrichment +
+                  enrichment:FC_Zcw_CVC_enrichment,
+  data = HP9combo_peaks[cov_input>5 & FC_Zcw_CVC_cov_input>5 & FC_h3k4me3_P9_cov_input>5 & FC_h3k4me3_UT_cov_input>5 & FC_h3k36me3_P9_cov_input>5 & chr != "chrX" & cov_input<200 & FC_Zcw_CVC_enrichment<10], 
+  family = 'bernoulli', 
+  prior = set_prior('normal(0, 3)'),
+  iter = 1000, 
+  chains = 3, 
+  cores = 3)
+
+summary(bGLMN_C)
+
+posterior_C <- as.array(bGLMN_C)
+bayesplot::mcmc_areas(posterior_C, pars=c("b_enrichment", "b_FC_Zcw_CVC_enrichment", "b_FC_h3k4me3_P9_enrichment", "b_FC_h3k4me3_UT_enrichment","b_FC_h3k36me3_P9_enrichment", "b_enrichment:FC_Zcw_CVC_enrichment")) + xlim(-1,3)
 ```
 
 
@@ -495,6 +618,18 @@ ggplot(HP9combo_peaks[cov_input>5 & FC_Zcw_CVC_cov_input>5], aes(FC_Zcw_CVC_enri
 ggplot(HP9N_peaks[cov_input>5 & FC_Zcw_CVC_cov_input>5], aes(FC_Zcw_CVC_enrichment, color=isDMC1)) +
   geom_density() +
   scale_x_log10() + ggtitle("Nterm") + geom_vline(xintercept = 0.9, linetype="dashed")
+
+p1 <- ggplot(HP9combo_peaks[cov_input>5 & FC_Zcw_CVC_cov_input>5], aes(FC_Zcw_CVC_enrichment, fill=isDMC1)) +
+    geom_density(alpha=0.5) +
+    scale_x_log10(limits=c(1e-2, 5)) +  theme_minimal() + theme(legend.position = "none") + scale_fill_brewer(palette = "Set1") + xlab("Enrichment of Zcwpw1 (with vs without humanPrdm9)")
+
+p2 <- ggplot(HP9combo_peaks[cov_input>5 & FC_Zcw_CVC_cov_input>5], aes(enrichment, fill=isDMC1)) +
+    geom_density(alpha=0.5) +
+    scale_x_log10(limits=c(0.5, 50)) +  theme_minimal() + scale_fill_brewer(palette = "Set1") + xlab("Enrichment of humanPrdm9")
+
+pdf("../results/DMC1_density.pdf", width=10, height = 5)
+plot_grid(p1, p2)
+dev.off()
 ```
 
 # Average DMC1 Overlap HP9 C term
@@ -609,7 +744,7 @@ split_overlap <- function(dt, n=10, filters, returndf=F){
 
 
 
-split_overlap(HP9N_peaks[cov_input>=4 & FC_Zcw_CVC_cov_input>=5 & chr!="chrX"],
+split_overlap(HP9N_peaks[cov_input>=4 & FC_Zcw_CVC_cov_input>=5 & chr!="chrX" & cov_input<200 & FC_Zcw_CVC_enrichment<10],
               filters=c("All",
                         "FC_Zcw_CVC_enrichment<0.3",
                         "FC_Zcw_CVC_enrichment>0.9")) + ylim(0,0.5) + theme(legend.position = "bottom")
