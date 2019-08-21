@@ -17,6 +17,7 @@
 # Zcw_HP9C & Zcw
 #bwtool matrix -fill=0 -decimals=1 -tiled-averages=5 2000:2000 bed6/SingleBasePeaks.NA15-SRR5627146_AND_NA15-SRR5627147_vs_NA15-SRR5627143.p0.000001.sep250.ALL_MotifCenteredStranded_Q00.bw.bed00 bedgraphs/depth_WTCHG_538916_223180.bigWig bwmatrices/depth_WTCHG_538916_223180_HP9N.bwm
 
+# generate profile data
 snakemake --cores 15 --snakefile pipelines/Plot_Heatmap.py -npr
 
 library(data.table)
@@ -70,49 +71,78 @@ makeColumn <- function(sample, input, title, ordering){
   return(heatmapcolumn)
 }
 
-plotHeatmap <- function(locations, name){
 
-  Zcw <- as.matrix(fread(paste0("bwmatrices/WTCHG_538916_221156_AT_",locations,".bwm")))
-  Zcw_hP9C <- as.matrix(fread(paste0("bwmatrices/WTCHG_538916_223180_AT_",locations,".bwm")))
-  Zcw_In <- as.matrix(fread(paste0("bwmatrices/WTCHG_538916_220144_AT_",locations,".bwm")))
-  Zcw_hP9C_In <- as.matrix(fread(paste0("bwmatrices/WTCHG_538916_217108_AT_",locations,".bwm")))
+read_normmatrix <- function(sample, locations, const){
+  return(
+    as.matrix(fread(paste0("bwmatrices/",sample,"_AT_",locations,".bwm"))) /
+      (as.numeric(fread(paste0("FragPos/Fragment_Position_",sample,".total"))$V1)/const)
+  )
+}
 
-  H3K4_hP9C <- as.matrix(fread(paste0("bwmatrices/NA15-SRR5627152_AND_NA15-SRR5627153_AT_",locations,".bwm")))
-  H3K36_hP9C <- as.matrix(fread(paste0("bwmatrices/NA15-SRR5627149_AT_",locations,".bwm")))
-  Input_hP9C <- as.matrix(fread(paste0("bwmatrices/NA15-SRR5627143_AT_",locations,".bwm")))
 
-  hP9C <- as.matrix(fread(paste0("bwmatrices/NA15-SRR5627146_AT_",locations,".bwm")))
+plotHeatmap <- function(locations, samples, controls, names, title){
 
-  UntIn <- as.matrix(fread(paste0("bwmatrices/NA15-SRR5627142_AT_",locations,".bwm")))
-  UntH3K4 <- as.matrix(fread(paste0("bwmatrices/NA15-SRR5627150_AND_NA15-SRR5627151_AT_",locations,".bwm")))
-  UntH3K36 <- as.matrix(fread(paste0("bwmatrices/NA15-SRR5627148_AT_",locations,".bwm")))
+  const <- 1e10
 
-  # ordering <- order(apply(H3K4_hP9C_vIn, 1, which.max)) # induces artificial ridge
+  # first samples are used to create ordering only
+  tmp <- normalise_matrix(read_normmatrix(samples[1], locations, const),
+                          read_normmatrix(controls[1], locations, const))
+  ordering <- order(-apply(tmp[,(ncol(tmp)/2-100):(ncol(tmp)/2+100)], 1, function(x) mean(x, na.rm =T)))
 
-  hP9C_vIn <- normalise_matrix(hP9C,Input_hP9C)
-  ordering <- order(-apply(hP9C_vIn[,300:500], 1, function(x) mean(x, na.rm =T)))
+  for(i in seq_along(samples)[-1]){
+    if(i==2){ # create list
+      ht_list <- makeColumn(read_normmatrix(samples[i], locations, const),
+                            read_normmatrix(controls[i], locations, const),
+                            names[i],
+                            ordering)
+    }else{ # append to list
+      ht_list <- ht_list + makeColumn(read_normmatrix(samples[i], locations, const),
+                                      read_normmatrix(controls[i], locations, const),
+                                      names[i],
+                                      ordering)
+    }
+  }
 
-  ht_list <- makeColumn(Zcw, Zcw_In+Zcw_hP9C_In, "ZHA vs In", ordering) +
-    makeColumn(Zcw_hP9C, Zcw_In+Zcw_hP9C_In, "ZHA_hP9V5 vs In", ordering) +
-    makeColumn(Zcw_hP9C, Zcw, "ZHA_hP9V5 vs ZHA", ordering) +
-    makeColumn(H3K4_hP9C, Input_hP9C, "H3K4_hP9HA vs InhP9HA", ordering) +
-    makeColumn(H3K36_hP9C, Input_hP9C, "H3K36_hP9HA vs InhP9HA", ordering) +
-    makeColumn(hP9C, Input_hP9C, "hP9HA vs InhP9HA", ordering) +
-    makeColumn(UntH3K4,UntIn, "UntH3K4 vs InhUnt", ordering) +
-    makeColumn(UntH3K36,UntIn, "UntH3K36 vs InUnt", ordering)
-
-  pdf(width = 15, height = 10, paste0("bwplots/NormalisedhP9C_vInOrder_",name,"-locations.pdf"))
+  pdf(width = 15, height = 10, paste0("bwplots/NormalisedhP9C_vInOrder_",title,"-locations.pdf"))
   draw(ht_list, merge_legend=T, heatmap_legend_side="bottom")
   dev.off()
 
 }
 
-plotHeatmap("SingleBasePeaks.NA15-SRR5627146_AND_NA15-SRR5627147_vs_NA15-SRR5627143.p0.000001.sep250.ALL_MotifCenteredStranded_Q00","HP9C")
-plotHeatmap("SingleBasePeaks.NA15-SRR5627138_AND_NA15-SRR5627139_vs_NA15-SRR5627140.p0.000001.sep250.ALL_MotifCenteredStranded_Q00","HP9N")
-plotHeatmap("SingleBasePeaks.NA15-SRR5627145_AND_NA15-SRR5627144_vs_NA15-SRR5627143.p0.000001.sep250.ALL_Q00","CHP9C")
-plotHeatmap("SingleBasePeaks.WTCHG_538916_223180_vs_WTCHG_538916_221156.p0.000001.sep250.ALL_Q00","hZcwCTvsST")
-plotHeatmap("SingleBasePeaks.WTCHG_538916_221156_vs_WTCHG_538916_217108.p0.000001.sep250.ALL_Q00","hZcwSTvsIn")
+samples <- c("WTCHG_538916_223180",
+             "WTCHG_538916_221156",
+             "WTCHG_538916_223180",
+             "WTCHG_538916_223180",
+             "NA15-SRR5627152_AND_NA15-SRR5627153",
+             "NA15-SRR5627149",
+             "NA15-SRR5627146",
+             "NA15-SRR5627150_AND_NA15-SRR5627151",
+             "NA15-SRR5627148")
 
+controls <- c("WTCHG_538916_221156",
+              "WTCHG_538916_217108_AND_WTCHG_538916_220144",
+              "WTCHG_538916_217108_AND_WTCHG_538916_220144",
+              "WTCHG_538916_221156",
+              "NA15-SRR5627143",
+              "NA15-SRR5627143",
+              "NA15-SRR5627143",
+              "NA15-SRR5627142",
+              "NA15-SRR5627142")
 
+names <- c("ZHA_hP9V5 vs ZHA",
+           "ZHA vs In",
+           "ZHA_hP9V5 vs In",
+           "ZHA_hP9V5 vs ZHA",
+           "H3K4_hP9HA vs InhP9HA",
+           "H3K36_hP9HA vs InhP9HA",
+           "hP9HA vs InhP9HA",
+           "UntH3K4 vs InhUnt",
+           "UntH3K36 vs InUnt")
 
+plotHeatmap("SingleBasePeaks.WTCHG_538916_223180_vs_WTCHG_538916_221156.p0.000001.sep250.ALL_Q00", samples, controls, names, "hZcwCTvsST")
+plotHeatmap("SingleBasePeaks.WTCHG_538916_221156_vs_WTCHG_538916_217108.p0.000001.sep250.ALL_Q00", samples, controls, names, "hZcwSTvsIn")
+plotHeatmap("SingleBasePeaks.NA15-SRR5627146_AND_NA15-SRR5627147_vs_NA15-SRR5627143.p0.000001.sep250.ALL_MotifCenteredStranded_Q00", samples, controls, names, "HP9C")
+plotHeatmap("SingleBasePeaks.NA15-SRR5627138_AND_NA15-SRR5627139_vs_NA15-SRR5627140.p0.000001.sep250.ALL_MotifCenteredStranded_Q00", samples, controls, names, "HP9N")
+
+plotHeatmap("SingleBasePeaks.NA15-SRR5627145_AND_NA15-SRR5627144_vs_NA15-SRR5627143.p0.000001.sep250.ALL_Q00", samples, controls, names, "CHP9C")
 
