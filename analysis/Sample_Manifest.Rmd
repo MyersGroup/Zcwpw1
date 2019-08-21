@@ -109,6 +109,24 @@ md5sum -c P190297-md5sum.txt > P190297-md5sumCHECK.txt
 ```
 
 
+# Project P190456 (223 GB)
+
+WGS
+
+Project P190456 (223GB)
+  -  WTCHG_706597_73135289 Sample:ZCW2.1a_HomKO Count:294815507
+  -  WTCHG_706597_73145290 Sample:ZCW2.1c_WT Count:308589826
+  -  WTCHG_706597_73155291 Sample:ZCW2.1b_HetKO Count:295197911
+
+```{r}
+cd saxony/zcwpw1/raw_data/
+wget -r ftp://meivmang:edpai-rayps-00@bsg-ftp.well.ox.ac.uk/190814_A00711_0053_AHJWTWDSXX
+
+cd bsg-ftp.well.ox.ac.uk/190814_A00711_0053_AHJWTWDSXX/
+md5sum -c P190456-md5sum.txt > P190456-md5sumCHECK.txt
+```
+
+
 # Altemose2015
 
 Remapping the data from Altemose et al 2015 (eLife) from hg37 to hg38
