@@ -9,6 +9,7 @@ fastq_dir:
   NA15: 'raw_data/altemose/'
   659233: 'raw_data/bsg-ftp.well.ox.ac.uk/190301_K00181_0120_BH3NTJBBXY/'
   Dmc1_r1: 'raw_data/bsg-ftp.well.ox.ac.uk/190524_D00529_0716_AH2G53BCX3/'
+  WGS1: 'raw_data/bsg-ftp.well.ox.ac.uk/190814_A00711_0053_AHJWTWDSXX'
 
 genome:
   594404: 'mm10'
@@ -16,6 +17,7 @@ genome:
   Altemose2015: 'hg38'
   659233: 'hg38'
   Dmc1_r1: 'mm10'
+  WGS1: 'mm10'
 
 
 #forcecallAT = "NA15-SRR5627138_AND_SRR5627139_vs_NA15-SRR5627140"
