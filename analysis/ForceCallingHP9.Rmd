@@ -19,16 +19,16 @@ output:
 ## C term
 
 ```{r}
-h3k4me3_UT_AT_HP9 <- fread("../results/peaks/ForceCalledPeaks_SRA_Altemose2015_SRR5627150_vs_SRA_Altemose2015_SRR5627142_AT_SRA_Altemose2015_SRR5627146_vs_SRA_Altemose2015_SRR5627143.bed")
+h3k4me3_UT_AT_HP9 <- fread("../data/peaks/ForceCalledPeaks_SRA_Altemose2015_SRR5627150_vs_SRA_Altemose2015_SRR5627142_AT_SRA_Altemose2015_SRR5627146_vs_SRA_Altemose2015_SRR5627143.bed")
 setkey(h3k4me3_UT_AT_HP9, chr, center_start, center_stop)
 
-h3k4me3_P9_AT_HP9 <- fread("../results/peaks/ForceCalledPeaks_SRA_Altemose2015_SRR5627152_AND_SRR5627153_vs_SRA_Altemose2015_SRR5627143_AT_SRA_Altemose2015_SRR5627146_vs_SRA_Altemose2015_SRR5627143.bed")
+h3k4me3_P9_AT_HP9 <- fread("../data/peaks/ForceCalledPeaks_SRA_Altemose2015_SRR5627152_AND_SRR5627153_vs_SRA_Altemose2015_SRR5627143_AT_SRA_Altemose2015_SRR5627146_vs_SRA_Altemose2015_SRR5627143.bed")
 setkey(h3k4me3_P9_AT_HP9, chr, center_start, center_stop)
 
-h3k36me3_P9_AT_HP9 <- fread("../results/peaks/ForceCalledPeaks_SRA_Altemose2015_SRR5627149_vs_SRA_Altemose2015_SRR5627143_AT_SRA_Altemose2015_SRR5627146_vs_SRA_Altemose2015_SRR5627143.bed")
+h3k36me3_P9_AT_HP9 <- fread("../data/peaks/ForceCalledPeaks_SRA_Altemose2015_SRR5627149_vs_SRA_Altemose2015_SRR5627143_AT_SRA_Altemose2015_SRR5627146_vs_SRA_Altemose2015_SRR5627143.bed")
 setkey(h3k36me3_P9_AT_HP9, chr, center_start, center_stop)
 
-Zcw_CVC_AT_hP9 <- fread("../results/peaks/ForceCalledPeaks_WTCHG_538916_223180_vs_WTCHG_538916_221156_AT_SRA_Altemose2015_SRR5627146_vs_SRA_Altemose2015_SRR5627143.bed")
+Zcw_CVC_AT_hP9 <- fread("../data/peaks/ForceCalledPeaks_WTCHG_538916_223180_vs_WTCHG_538916_221156_AT_SRA_Altemose2015_SRR5627146_vs_SRA_Altemose2015_SRR5627143.bed")
 setkey(Zcw_CVC_AT_hP9, chr, center_start, center_stop)
 
 HP9_peaks$FC_Zcw_CVC_enrichment <- Zcw_CVC_AT_hP9$enrichment
@@ -48,23 +48,23 @@ HP9_peaks$FC_Zcw_CVC_cov_input <- Zcw_CVC_AT_hP9$cov_input
 ## C term combo
 
 ```{r}
-h3k4me3_UT_AT_HP9combo <- fread("../results/peaks/ForceCalledPeaks_SRA_Altemose2015_SRR5627150_vs_SRA_Altemose2015_SRR5627142_AT_SRA_Altemose2015_SRR5627146_AND_SRA_Altemose2015_SRR5627147_vs_SRA_Altemose2015_SRR5627143.bed")
+h3k4me3_UT_AT_HP9combo <- fread("../data/peaks/ForceCalledPeaks_SRA_Altemose2015_SRR5627150_vs_SRA_Altemose2015_SRR5627142_AT_SRA_Altemose2015_SRR5627146_AND_SRA_Altemose2015_SRR5627147_vs_SRA_Altemose2015_SRR5627143.bed")
 setkey(h3k4me3_UT_AT_HP9combo, chr, center_start, center_stop)
 
-h3k4me3_P9_AT_HP9combo <- fread("../results/peaks/ForceCalledPeaks_SRA_Altemose2015_SRR5627152_AND_SRA_Altemose2015_SRR5627153_vs_SRA_Altemose2015_SRR5627143_AT_SRA_Altemose2015_SRR5627146_AND_SRA_Altemose2015_SRR5627147_vs_SRA_Altemose2015_SRR5627143.bed")
+h3k4me3_P9_AT_HP9combo <- fread("../data/peaks/ForceCalledPeaks_SRA_Altemose2015_SRR5627152_AND_SRA_Altemose2015_SRR5627153_vs_SRA_Altemose2015_SRR5627143_AT_SRA_Altemose2015_SRR5627146_AND_SRA_Altemose2015_SRR5627147_vs_SRA_Altemose2015_SRR5627143.bed")
 setkey(h3k4me3_P9_AT_HP9combo, chr, center_start, center_stop)
 
-h3k36me3_P9_AT_HP9combo <- fread("../results/peaks/ForceCalledPeaks_SRA_Altemose2015_SRR5627149_vs_SRA_Altemose2015_SRR5627143_AT_SRA_Altemose2015_SRR5627146_AND_SRA_Altemose2015_SRR5627147_vs_SRA_Altemose2015_SRR5627143.bed")
+h3k36me3_P9_AT_HP9combo <- fread("../data/peaks/ForceCalledPeaks_SRA_Altemose2015_SRR5627149_vs_SRA_Altemose2015_SRR5627143_AT_SRA_Altemose2015_SRR5627146_AND_SRA_Altemose2015_SRR5627147_vs_SRA_Altemose2015_SRR5627143.bed")
 setkey(h3k36me3_P9_AT_HP9combo, chr, center_start, center_stop)
 
-Zcw_CVC_AT_hP9combo <- fread("../results/peaks/ForceCalledPeaks_WTCHG_538916_223180_vs_WTCHG_538916_221156_AT_SRA_Altemose2015_SRR5627146_AND_SRA_Altemose2015_SRR5627147_vs_SRA_Altemose2015_SRR5627143.bed")
+Zcw_CVC_AT_hP9combo <- fread("../data/peaks/ForceCalledPeaks_WTCHG_538916_223180_vs_WTCHG_538916_221156_AT_SRA_Altemose2015_SRR5627146_AND_SRA_Altemose2015_SRR5627147_vs_SRA_Altemose2015_SRR5627143.bed")
 setkey(Zcw_CVC_AT_hP9combo, chr, center_start, center_stop)
 
 
-Zcw_wP9_AT_hP9combo <- fread("../results/peaks/ForceCalledPeaks_WTCHG_538916_223180_vs_WTCHG_538916_220144_AT_SRA_Altemose2015_SRR5627146_AND_SRA_Altemose2015_SRR5627147_vs_SRA_Altemose2015_SRR5627143.bed")
+Zcw_wP9_AT_hP9combo <- fread("../data/peaks/ForceCalledPeaks_WTCHG_538916_223180_vs_WTCHG_538916_220144_AT_SRA_Altemose2015_SRR5627146_AND_SRA_Altemose2015_SRR5627147_vs_SRA_Altemose2015_SRR5627143.bed")
 setkey(Zcw_wP9_AT_hP9combo, chr, center_start, center_stop)
 
-Zcw_AT_hP9combo <- fread("../results/peaks/ForceCalledPeaks_WTCHG_538916_221156_vs_WTCHG_538916_217108_AT_SRA_Altemose2015_SRR5627146_AND_SRA_Altemose2015_SRR5627147_vs_SRA_Altemose2015_SRR5627143.bed")
+Zcw_AT_hP9combo <- fread("../data/peaks/ForceCalledPeaks_WTCHG_538916_221156_vs_WTCHG_538916_217108_AT_SRA_Altemose2015_SRR5627146_AND_SRA_Altemose2015_SRR5627147_vs_SRA_Altemose2015_SRR5627143.bed")
 setkey(Zcw_AT_hP9combo, chr, center_start, center_stop)
 
 HP9combo_peaks$FC_Zcw_CVC_enrichment <- Zcw_CVC_AT_hP9combo$enrichment
@@ -91,31 +91,31 @@ HP9combo_peaks$FC_Zcw_CVC_cov_input <- Zcw_CVC_AT_hP9combo$cov_input
 ## N term
 
 ```{r}
-h3k4me3_UT_AT_HP9N <- fread("../results/peaks/ForceCalledPeaks_SRA_Altemose2015_SRR5627150_vs_SRA_Altemose2015_SRR5627142_AT_SRA_Altemose2015_SRR5627138_AND_SRR5627139_vs_SRA_Altemose2015_SRR5627140.bed")
+h3k4me3_UT_AT_HP9N <- fread("../data/peaks/ForceCalledPeaks_SRA_Altemose2015_SRR5627150_vs_SRA_Altemose2015_SRR5627142_AT_SRA_Altemose2015_SRR5627138_AND_SRR5627139_vs_SRA_Altemose2015_SRR5627140.bed")
 setkey(h3k4me3_UT_AT_HP9N, chr, center_start, center_stop)
 
-h3k4me3_P9_AT_HP9N <- fread("../results/peaks/ForceCalledPeaks_SRA_Altemose2015_SRR5627152_AND_SRA_Altemose2015_SRR5627153_vs_SRA_Altemose2015_SRR5627143_AT_SRA_Altemose2015_SRR5627138_AND_SRR5627139_vs_SRA_Altemose2015_SRR5627140.bed")
+h3k4me3_P9_AT_HP9N <- fread("../data/peaks/ForceCalledPeaks_SRA_Altemose2015_SRR5627152_AND_SRA_Altemose2015_SRR5627153_vs_SRA_Altemose2015_SRR5627143_AT_SRA_Altemose2015_SRR5627138_AND_SRR5627139_vs_SRA_Altemose2015_SRR5627140.bed")
 setkey(h3k4me3_P9_AT_HP9N, chr, center_start, center_stop)
 
-h3k36me3_P9_AT_HP9N <- fread("../results/peaks/ForceCalledPeaks_SRA_Altemose2015_SRR5627149_vs_SRA_Altemose2015_SRR5627143_AT_SRA_Altemose2015_SRR5627138_AND_SRR5627139_vs_SRA_Altemose2015_SRR5627140.bed")
+h3k36me3_P9_AT_HP9N <- fread("../data/peaks/ForceCalledPeaks_SRA_Altemose2015_SRR5627149_vs_SRA_Altemose2015_SRR5627143_AT_SRA_Altemose2015_SRR5627138_AND_SRR5627139_vs_SRA_Altemose2015_SRR5627140.bed")
 setkey(h3k36me3_P9_AT_HP9N, chr, center_start, center_stop)
 
-Zcw_CVC_AT_hP9N <- fread("../results/peaks/ForceCalledPeaks_WTCHG_538916_223180_vs_WTCHG_538916_221156_AT_SRA_Altemose2015_SRR5627138_AND_SRR5627139_vs_SRA_Altemose2015_SRR5627140.bed")
+Zcw_CVC_AT_hP9N <- fread("../data/peaks/ForceCalledPeaks_WTCHG_538916_223180_vs_WTCHG_538916_221156_AT_SRA_Altemose2015_SRR5627138_AND_SRR5627139_vs_SRA_Altemose2015_SRR5627140.bed")
 setkey(Zcw_CVC_AT_hP9N, chr, center_start, center_stop)
 
-Zcw_CVC_AT_hP9N_flank150 <- fread("../results/peaks/ForceCalledPeaks_WTCHG_538916_223180_vs_WTCHG_538916_221156_AT_SRA_Altemose2015_SRR5627138_AND_SRA_Altemose2015_SRR5627139_vs_SRA_Altemose2015_SRR5627140.flank150.bed")
+Zcw_CVC_AT_hP9N_flank150 <- fread("../data/peaks/ForceCalledPeaks_WTCHG_538916_223180_vs_WTCHG_538916_221156_AT_SRA_Altemose2015_SRR5627138_AND_SRA_Altemose2015_SRR5627139_vs_SRA_Altemose2015_SRR5627140.flank150.bed")
 setkey(Zcw_CVC_AT_hP9N_flank150, chr, center_start, center_stop)
 
-Zcw_wP9_AT_hP9N <- fread("../results/peaks/ForceCalledPeaks_WTCHG_538916_223180_vs_WTCHG_538916_220144_AT_SRA_Altemose2015_SRR5627138_AND_SRR5627139_vs_SRA_Altemose2015_SRR5627140.bed")
+Zcw_wP9_AT_hP9N <- fread("../data/peaks/ForceCalledPeaks_WTCHG_538916_223180_vs_WTCHG_538916_220144_AT_SRA_Altemose2015_SRR5627138_AND_SRR5627139_vs_SRA_Altemose2015_SRR5627140.bed")
 setkey(Zcw_wP9_AT_hP9N, chr, center_start, center_stop)
 
-Zcw_AT_hP9N <- fread("../results/peaks/ForceCalledPeaks_WTCHG_538916_221156_vs_WTCHG_538916_217108_AT_SRA_Altemose2015_SRR5627138_AND_SRR5627139_vs_SRA_Altemose2015_SRR5627140.bed")
+Zcw_AT_hP9N <- fread("../data/peaks/ForceCalledPeaks_WTCHG_538916_221156_vs_WTCHG_538916_217108_AT_SRA_Altemose2015_SRR5627138_AND_SRR5627139_vs_SRA_Altemose2015_SRR5627140.bed")
 setkey(Zcw_AT_hP9N, chr, center_start, center_stop)
 
-hP9_AT_hP9N <- fread("../results/peaks/ForceCalledPeaks_SRA_Altemose2015_SRR5627146_vs_SRA_Altemose2015_SRR5627143_AT_SRA_Altemose2015_SRR5627138_AND_SRR5627139_vs_SRA_Altemose2015_SRR5627140.bed")
+hP9_AT_hP9N <- fread("../data/peaks/ForceCalledPeaks_SRA_Altemose2015_SRR5627146_vs_SRA_Altemose2015_SRR5627143_AT_SRA_Altemose2015_SRR5627138_AND_SRR5627139_vs_SRA_Altemose2015_SRR5627140.bed")
 setkey(hP9_AT_hP9N, chr, center_start, center_stop)
 
-hP9combo_AT_hP9N <- fread("../results/peaks/ForceCalledPeaks_SRA_Altemose2015_SRR5627146_AND_SRA_Altemose2015_SRR5627147_vs_SRA_Altemose2015_SRR5627143_AT_SRA_Altemose2015_SRR5627138_AND_SRR5627139_vs_SRA_Altemose2015_SRR5627140.bed")
+hP9combo_AT_hP9N <- fread("../data/peaks/ForceCalledPeaks_SRA_Altemose2015_SRR5627146_AND_SRA_Altemose2015_SRR5627147_vs_SRA_Altemose2015_SRR5627143_AT_SRA_Altemose2015_SRR5627138_AND_SRR5627139_vs_SRA_Altemose2015_SRR5627140.bed")
 setkey(hP9combo_AT_hP9N, chr, center_start, center_stop)
 
 
