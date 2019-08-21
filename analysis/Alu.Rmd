@@ -108,6 +108,7 @@ fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[grep("AluSg",Name)], x1=
 
 ```{r}
 
+repeats$enrichment <- as.numeric(repeats$Score)
 fraction_overlapN2(repeats[Name!="Alu"][grep("Alu",Name)][CI_stop-CI_start>250 & CI_stop-CI_start<350], zcw_peaks_cin, x1="Alu Repeats by SmithWaterman Score (Not ", y1="Zcw UT", shift=1e8) # 
 
 # Only ~ 35% of ==Alu overlap Zcw
@@ -168,7 +169,29 @@ p <- fraction_overlapN2(repeatsAlu, zcw_peaks_cin, x1="Alu Repeats by CpG Count 
   ylab("Fraction of Alu Repeats overlaping Zcwpw1 peaks (no Prdm9)") +
   theme(legend.position = "bottom")
 
-ggsave("../results/Alu_by_CpG.pdf",p, width = 6, height = 6)
+
+###### % of Zcw
+
+tmp <- overlapGam(zcw_peaks_cin[cov_input>=5], repeats[Name!="Alu"][grep("Alu",Name)][CI_stop-CI_start>250 & CI_stop-CI_start<350])
+tmpR <- overlapGam(zcw_peaks_cin[cov_input>=5], repeats[Name!="Alu"][grep("Alu",Name)][CI_stop-CI_start>250 & CI_stop-CI_start<350], shift = 1e8)
+
+tmp2 <- fraction_overlapN2(zcw_peaks_cin[cov_input>=5], 
+                           repeats[Name!="Alu"][grep("Alu",Name)][CI_stop-CI_start>250 & CI_stop-CI_start<350],
+                           x1="Zcw UT", y1="Alu Repeats", shift=1e8) # yes up to 70%
+
+pi <- tmp2 + 
+  geom_ribbon(data=tmp, aes(ymin = Overlap - 2*se, ymax = Overlap + 2*se), fill = "#E41A1C", colour="#E41A1C", alpha=0.5) +
+  geom_ribbon(data=tmpR, aes(ymin = Overlap - 2*se, ymax = Overlap + 2*se), fill = "#377EB8", colour="#377EB8", alpha=0.5) +
+  scale_x_log10(limits=c(0.3,5)) +
+  theme(legend.position = "bottom") +
+  xlab("Zcwpw1 Enrichment (no Prdm9)") +
+  ylab("Fraction of Zcwpw1 peaks that overlap Alu repeats")
+
+pmain <- plot_grid(pi + theme(legend.position = "none"), p + theme(legend.position = "none"), labels = "AUTO")
+
+pdf("../results/Alu_by_CpG.pdf", width = 10, height = 5.5)
+plot_grid(pmain, get_legend(p), ncol=1, rel_heights = c(1, 0.07))
+dev.off()
 
 # % of Zcw
 fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeatsAlu[enrichment==0], x1="Zcw UT", y1="Alu Repeats CpG=0", shift=1e8) + scale_y_continuous()
