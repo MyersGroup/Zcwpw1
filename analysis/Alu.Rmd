@@ -395,9 +395,18 @@ chr1_rand_cpg <- fread("../data/peaks/Zcw_random_CpGcount.bed") #"~/Downloads/ch
 setnames(chr1_rand_cpg, c("chr","CI_start_ext","CI_stop_ext","x","width","strand","CpGcount"))
 
 
+zcw_peaks_cin_cpg <- fread("../data/peaks/SingleBasePeaks.WTCHG_538916_221156_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144.p0.000001.sep250.ALL_wCpGcount.bed")
+names(zcw_peaks_cin_cpg)[1:11] <- c("chr", "center_start", "center_stop", "CI_start", "CI_stop", "cov_r1", "cov_r2", "cov_input", "enrichment", "likelihood", "pvalue")
+names(zcw_peaks_cin_cpg)[12] <- "CpGcount"
+zcw_peaks_cin_cpg <- prejoin(zcw_peaks_cin_cpg, width=0)
+cor(zcw_peaks_cin_cpg$enrichment, zcw_peaks_cin_cpg$CpGcount)
+
+
 zcw_peaks_cin_cpg_alu <- foverlaps(zcw_peaks_cin_cpg, repeatsAlu, mult = "first")
+zcw_peaks_cin_cpg_repeats <- foverlaps(zcw_peaks_cin_cpg, repeats, mult = "first")
 chr1_rand_cpg_alu <- foverlaps(chr1_rand_cpg, repeatsAlu, mult = "first")
 
+# non Alus
 cpg_table <- rbind(data.table(table(chr1_rand_cpg_alu[is.na(Name)]$CpG), type="Randomised Peaks"),
       data.table(table(zcw_peaks_cin_cpg_alu[is.na(Name)]$CpGcount), type="Observed Peaks"))
 
@@ -407,6 +416,7 @@ ggplot(cpg_table, aes(as.numeric(V1), N, fill=type)) +
   scale_fill_brewer(palette = "Set1") +
   labs(x="Count of CpGs under peak +/-150", y="Frequency")
 
+# Alus
 cpg_table <- rbind(data.table(table(chr1_rand_cpg_alu[!is.na(Name)]$CpG), type="Randomised Peaks"),
       data.table(table(zcw_peaks_cin_cpg_alu[!is.na(Name)]$CpGcount), type="Observed Peaks"))
 
@@ -416,7 +426,7 @@ ggplot(cpg_table, aes(as.numeric(V1), N, fill=type)) +
   scale_fill_brewer(palette = "Set1") +
   labs(x="Count of CpGs under peak +/-150", y="Frequency")
 
-repeatsAlu
+###
 
 zcw_peaks_cin_cpg[CpGcount==0][order(-enrichment)][cov_input>5]
 cor.test(zcw_peaks_cin_cpg[cov_input>5]$enrichment, zcw_peaks_cin_cpg[cov_input>5]$CpGcount)
@@ -427,10 +437,61 @@ plot(zcw_peaks_cin_cpg[cov_input>5]$CpGcount, zcw_peaks_cin_cpg[cov_input>5]$enr
 tmp <- zcw_peaks_cin_cpg[cov_input>5][,.(MeanEnrich=mean(enrichment),.N),by=CpGcount][order(CpGcount)]
 qplot(tmp$CpGcount, tmp$MeanEnrich)
 
-zcw_peaks_cin_cpg_alu$isAlu <- !is.na(zcw_peaks_cin_cpg_alu$Name)
-tmp <- zcw_peaks_cin_cpg_alu[cov_input>5][,.(MeanEnrich=mean(i.enrichment),.N, sd=sd(i.enrichment)),by=c("CpGcount","isAlu")][order(CpGcount)]
-p1 <- ggplot(tmp, aes(CpGcount, MeanEnrich, colour=isAlu, size=N)) + geom_point() + scale_color_brewer(palette = "Set1") + xlim(0,20)
-#geom_pointrange(aes(ymin=MeanEnrich - 2*(sd/sqrt(N)), ymax=MeanEnrich + 2*(sd/sqrt(N)))) # too small to see
+#zcw_peaks_cin_cpg_repeats[Repeat == "L1M", .N, by=Name][order(-N)]
+
+# all repeats
+zcw_peaks_cin_cpg_repeats[is.na(Name), Repeat := "Non Repeat"]
+zcw_peaks_cin_cpg_repeats[!is.na(Name), Repeat := "Other Repeat"]
+zcw_peaks_cin_cpg_repeats[grep("^Alu",Name), Repeat := "Alu"]
+#zcw_peaks_cin_cpg_repeats[grep("^L1",Name), Repeat := "L1"]
+
+#zcw_peaks_cin_cpg_repeats[grep("^L1M",Name), Repeat := "L1M"], remove for simplicity
+
+zcw_peaks_cin_cpg_repeats[grep("^L1M[1-3]|^L1MA",Name), Repeat := "L1M1-3 or L1MA"]
+# zcw_peaks_cin_cpg_repeats[grep("^L1M4",Name), Repeat := "L1M4"]
+# zcw_peaks_cin_cpg_repeats[grep("^L1M5",Name), Repeat := "L1M5"]
+# zcw_peaks_cin_cpg_repeats[grep("^L1M6",Name), Repeat := "L1M6"]
+
+#zcw_peaks_cin_cpg_repeats[grep("^L1MA",Name), Repeat := "L1MA"] # now included in above or
+
+#zcw_peaks_cin_cpg_repeats[grep("^L1MD",Name), Repeat := "L1MD"]
+# zcw_peaks_cin_cpg_repeats[grep("^L1MB",Name), Repeat := "L1MB"]
+# zcw_peaks_cin_cpg_repeats[grep("^L1MC",Name), Repeat := "L1MC"]
+# zcw_peaks_cin_cpg_repeats[grep("^L1ME",Name), Repeat := "L1ME"]
+
+zcw_peaks_cin_cpg_repeats[grep("^L1P",Name), Repeat := "L1P"]
+#zcw_peaks_cin_cpg_repeats[grep("^L1PR",Name), Repeat := "L1PR"] # big change, but don't show to simplify
+# zcw_peaks_cin_cpg_repeats[grep("^L1PA",Name), Repeat := "L1PA"]
+# zcw_peaks_cin_cpg_repeats[grep("^L1PB",Name), Repeat := "L1PB"]
+
+
+# zcw_peaks_cin_cpg_repeats[grep("L2",Name), Repeat := "L2"]
+# zcw_peaks_cin_cpg_repeats[grep("MIR",Name), Repeat := "MIR"]
+# zcw_peaks_cin_cpg_repeats[grep("MER",Name), Repeat := "MER"]
+# zcw_peaks_cin_cpg_repeats[grep("LTR",Name), Repeat := "LTR"]
+# zcw_peaks_cin_cpg_repeats[grep("THE",Name), Repeat := "THE"]
+# zcw_peaks_cin_cpg_repeats[grep("HER",Name), Repeat := "HER"]
+# zcw_peaks_cin_cpg_repeats[grep("MST",Name), Repeat := "MST"]
+
+
+
+
+tmp <- zcw_peaks_cin_cpg_repeats[cov_input>5][,.(MeanEnrich=mean(i.enrichment),.N, sd=sd(i.enrichment)),by=c("CpGcount","Repeat")][order(CpGcount)]
+
+p1 <- ggplot(tmp, aes(CpGcount, MeanEnrich, colour=Repeat, size=N)) +
+  geom_point() +
+  scale_color_brewer(palette = "Set1") +
+  xlim(0,20) +
+  ylim(0.8, 2.5) +
+  geom_line(size=0.5, linetype="dashed") +
+  theme_minimal() +
+  geom_pointrange(aes(ymin=MeanEnrich - 2*(sd/sqrt(N)), ymax=MeanEnrich + 2*(sd/sqrt(N))), size=0.5) +
+  ylab("Mean Enrichment of Zcwpw1 peaks (without Prdm9)") +
+  xlab("Count of CpGs under peak +/-150")
+
+pdf("../results/CpG_general.pdf", width=10)
+p1
+dev.off()
 
 tmp <- cbind(data.table(table(chr1_rand_cpg_alu[!is.na(Name)]$CpG), type="Randomised Peaks"),
       data.table(table(zcw_peaks_cin_cpg_alu[!is.na(Name)]$CpGcount), type="Observed Peaks"))
