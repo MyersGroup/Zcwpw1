@@ -1,0 +1,71 @@
+---
+title: "Domain Architechture"
+output: html_notebook
+---
+
+
+```{r, fig.width=10}
+
+pkgload::load_all("~/Dropbox/Github/drawProteins/")
+
+rel_json <- drawProteins::get_features("Q9H0M4 Q6IR42") # H2RBY7 E2RFJ2 F7DK93 A0A3S5ZP38 G1PE65
+rel_data <- drawProteins::feature_to_dataframe(rel_json)
+
+rel_data[which(rel_data$type=="COILED"),]$description <- "Coiled Coil"
+
+p <- draw_canvas(rel_data)
+p <- draw_chains(p, rel_data, label_chains = F)
+p <- draw_domains(p, rel_data)
+p <- draw_domains(p, rel_data, type="ZN_FING")
+p <- draw_domains(p, rel_data, type="COILED")
+p <- p + scale_y_continuous(breaks=seq_along(unique(rel_data$entryName)), labels = unique(rel_data$entryName)) + xlim(0,NA)
+p <- p + theme_bw(base_size = 20) + # white background
+    theme(panel.grid.minor=element_blank(), 
+        panel.grid.major=element_blank()) +
+    theme(axis.ticks = element_blank(), 
+        ) + #axis.text.y = element_blank()
+    theme(panel.border = element_blank()) +
+  scale_fill_brewer(palette = "Set1")
+
+pdf("../results/Zcwpw1_domain_architechture.pdf", width = 10, height = 5)
+p + theme(legend.position = "none")
+dev.off()
+
+
+rel_json <- drawProteins::get_features("Q9NQV7 Q96EQ9")
+rel_data <- drawProteins::feature_to_dataframe(rel_json)
+
+rel_data$description <- gsub(";.+$", "", rel_data$description, perl = T)
+rel_data$description <- gsub(" [0-9]+$", "", rel_data$description, perl = T)
+
+p <- draw_canvas(rel_data)
+p <- draw_chains(p, rel_data, label_chains = F)
+p <- draw_domains(p, rel_data)
+p <- draw_domains(p, rel_data, type="ZN_FING", label_domains = F)
+p <- p + scale_y_continuous(breaks=seq_along(unique(rel_data$entryName)), labels = unique(rel_data$entryName)) + xlim(0,NA)
+p <- p + theme_bw(base_size = 20) + # white background
+    theme(panel.grid.minor=element_blank(), 
+        panel.grid.major=element_blank()) +
+    theme(axis.ticks = element_blank(), 
+        ) + #axis.text.y = element_blank()
+    theme(panel.border = element_blank()) +
+  scale_fill_brewer(palette = "Set1")
+
+pdf("../results/Prdm9_domain_architechture.pdf", width = 10, height = 5)
+p + theme(legend.position = "bottom") + labs(fill = "Feature")
+dev.off()
+
+# 
+# draw_protein <- function(ac="P07683"){
+#   rel_json <- drawProteins::get_features(ac)
+#     
+#   rel_data <- drawProteins::feature_to_dataframe(rel_json)
+#   p <- draw_canvas(rel_data)
+#   p <- draw_chains(p, rel_data)
+#   return(p)
+# 
+# }
+# 
+# draw_protein()
+
+```
