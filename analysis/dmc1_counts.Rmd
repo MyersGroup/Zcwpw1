@@ -110,11 +110,35 @@ p <- ggplot(dmc1_counts, aes(Stage, `DMC1 foci`, colour=Genotype)) +
   geom_boxplot(alpha=0) +
   theme(legend.position = "bottom")
 
-ggsave("../results/dmc1_counts.pdf", width = 9, height = 5)
 
+# check by mouse
 ggplot(dmc1_counts, aes(Stage, `DMC1 foci`, colour=Mouse)) + geom_jitter() + facet_wrap(~Genotype)
 
+# add pvalues
+for(stage in c("Late L","Early Z","Z","Late Z","P")){
+print(t.test(data.table(dmc1_counts)[Genotype=="Zcwpw1 -/-" & Stage ==stage]$`DMC1 foci`,
+       data.table(dmc1_counts)[Genotype=="Wild Type" & Stage ==stage]$`DMC1 foci`))
+}
 
+# convert 2e4 etc. to scientific notation
+fs <- function(l) {
+     # turn in to character string in scientific notation
+     l <- format(l, scientific = TRUE)
+     # quote the part before the exponent to keep all the digits
+     l <- gsub("^(.*)e", "'\\1'e", l)
+     # turn the 'e+' into plotmath format
+     l <- gsub("e", "%*%10^", l)
+     # return this as an expression
+     return(l)
+}
+
+p + geom_signif(y_position=c(80, 290, 325, 220, 230),
+                xmin=c(0.7, 1.7, 2.7, 3.7, 4.7),
+                xmax=c(1, 2, 3, 4, 5),
+              annotation=c("0.5",fs("2.0e-3"),fs("6.0e-10"),fs("1.2e-06"),fs("3.3e-52")),
+              tip_length=0.01, col="black", parse=TRUE) + ylim(0,330)
+
+ggsave("../results/dmc1_counts.pdf", width = 9, height = 5)
 ```
 
 
