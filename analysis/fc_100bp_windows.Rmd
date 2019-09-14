@@ -24,6 +24,9 @@ library(cowplot)
 CpG_100bp <- fread("CpG_hg38_100bpwindows.bed")
 
 h3k4me3_UT_100bp <- fread("peaks/ForceCalledPeaks_NA15-SRR5627150_vs_NA15-SRR5627142_AT_genome.windows.100wide.100slide.bed.bed")
+
+h3k36me3_UT_100bp <- fread("peaks/ForceCalledPeaks_NA15-SRR5627148_vs_NA15-SRR5627142_AT_genome.windows.100wide.100slide.bed.bed")
+
 h3k4me3_hP9_100bp <- fread("peaks/ForceCalledPeaks_NA15-SRR5627152_AND_NA15-SRR5627153_vs_NA15-SRR5627143_AT_genome.windows.100wide.100slide.bed.bed")
 
 h3k36me3_hP9_100bp <- fread("peaks/ForceCalledPeaks_NA15-SRR5627149_vs_NA15-SRR5627143_AT_genome.windows.100wide.100slide.bed.bed")
@@ -44,11 +47,18 @@ hP9combo <- fread("peaks/ForceCalledPeaks_NA15-SRR5627146_AND_NA15-SRR5627147_vs
 
 cP9combo <- fread("peaks/ForceCalledPeaks_NA15-SRR5627145_AND_NA15-SRR5627144_vs_NA15-SRR5627143_AT_genome.windows.100wide.100slide.bed.bed")
 
+hP9GFP <- fread("peaks/ForceCalledPeaks_NA15-SRR5627138_AND_NA15-SRR5627139_vs_NA15-SRR5627140_AT_genome.windows.100wide.100slide.bed.bed")
+
+
 # CAREFULL WITH ORDERING WHEN ADDING NEW COLUMNS!
 
-stopifnot(sum(diff(forcecalled$center_start)<100)==0)
-
 forcecalled <- h3k4me3_UT_100bp
+
+stopifnot(sum(diff(forcecalled[chr=="chr1"]$center_start)<100)==0)
+stopifnot(sum(diff(forcecalled[chr=="chr11"]$center_start)<100)==0)
+stopifnot(sum(diff(forcecalled[chr=="chr18"]$center_start)<100)==0)
+
+
 
 forcecalled$h3k4me3_UT <- forcecalled$enrichment
 forcecalled$h3k4me3_UT_enrichment <- forcecalled$h3k4me3_UT
@@ -56,12 +66,18 @@ forcecalled$h3k4me3_UT_reads <- forcecalled[,cov_r1 + cov_r2]
 forcecalled$h3k4me3_UT_cov_input <- forcecalled$cov_input
 forcecalled$h3k4me3_UT_pvalue <- forcecalled$pvalue
 
+
+forcecalled$h3k36me3_UT_enrichment <- h3k36me3_UT_100bp$enrichment
+forcecalled$h3k36me3_UT_pvalue <- h3k36me3_UT_100bp$pvalue
+
 forcecalled$CpG <- CpG_100bp[V1 %in% paste0("chr",c(1:22,"X"))]$V4
 
 forcecalled$h3k4me3_hP9_enrichment <- h3k4me3_hP9_100bp$enrichment
 forcecalled$h3k4me3_hP9_reads <- h3k4me3_hP9_100bp[,cov_r1 + cov_r2]
 forcecalled$h3k4me3_hP9_cov_input <- h3k4me3_hP9_100bp$cov_input
 forcecalled$h3k4me3_hP9_pvalue <- h3k4me3_hP9_100bp$pvalue
+
+forcecalled$hP9GFP_enrichment <- hP9GFP$enrichment
 
 forcecalled$zcw_enrichment <- zcw_100bp$enrichment
 forcecalled$zcw_pvalue <- zcw_100bp$pvalue
@@ -93,7 +109,8 @@ forcecalled$h3k36me3_hP9_cov_input <- h3k36me3_hP9_100bp$cov_input
 forcecalled$h3k36me3_hP9_pvalue <- h3k36me3_hP9_100bp$pvalue
 
 sum(forcecalled$center_start!=h3k36me3_hP9_100bp$center_start)
-stopifnot(sum(diff(forcecalled$center_start)<100)==0)
+#stopifnot(sum(diff(forcecalled$center_start)<100)==0)
+
 
 
 
@@ -441,7 +458,12 @@ fraction_overlapN <- function(dt,x,y, n=25, filters=c("All"), returndf=F, pseudo
   )}
 
 }
+```
 
+
+# Histone marks +ve correlate with Zcw enrich
+
+```{r}
 
 forcecalled$enrichment <- forcecalled$h3k4me3_hP9_enrichment
 
@@ -464,30 +486,33 @@ p2 <- fraction_overlapN(forcecalled[sample(1:nrow(forcecalled))][h3k36me3_hP9_co
   ylab("Mean Zcwpw1 Enrichment when co-transfected with Prdm9") +
   xlab("Mean H3K36me3 Enrichment when co-transfected with Prdm9 + 0.01")
 
-pdf("H3Kme3_vs_Zcw_wP9.pdf", width = 11)
+pdf("results/H3Kme3_vs_Zcw_wP9.pdf", width = 11)
 plot_grid(p1,p2)
 dev.off()
 
+```
 
+# Binned H3K4 Strength
 
+```{r}
 
 pdf("H3K4strength_binned_allchr.pdf")
 forcecalled$enrichment <- forcecalled$h3k4me3_hP9_enrichment
 
 tmp <- rbind(
   fraction_overlapN(forcecalled[h3k4me3_hP9_cov_input>15 & zcw_cov_input>5][UTP9==1], 
-                    "h3k4me3_hP9_enrichment","zcw_hP9_enrichment", n=25, returndf = T, filter="UTP9==1"),
+                    "h3k4me3_hP9_enrichment","zcw_hP9_enrichment", n=25, returndf = T, filter="UTP9==1", pseudoenrich = 0),
   fraction_overlapN(forcecalled[h3k4me3_hP9_cov_input>15 & zcw_cov_input>5][UTP9==2], 
-                    "h3k4me3_hP9_enrichment","zcw_hP9_enrichment", n=25, returndf = T, filter="UTP9==2")
+                    "h3k4me3_hP9_enrichment","zcw_hP9_enrichment", n=25, returndf = T, filter="UTP9==2", pseudoenrich = 0)
 )
 
 
-ggplot(tmp, aes(mean_enrichment, Mean, colour=Subset)) +
+p <- ggplot(tmp, aes(mean_enrichment, Mean, colour=Subset)) +
   geom_point() +
-  scale_x_log10() +
+  #scale_x_log10() +
   xlab("Mean H3K4me3 enrichment in humanPRDM9 transfection") +
   ylab("Mean Zcwpw1 enrichment in Zcwpw1-humanPRDM9 cotransfection") +
-  geom_pointrange(aes(ymax = uq, ymin = lq)) +
+  geom_pointrange(aes(ymax = uq, ymin = lq), linetype="dotted") +
   geom_errorbar(aes(ymax = Mean + 2*sem, ymin = Mean - 2*sem), width = 0.05) +
   scale_colour_manual(labels = c("humanPRDM9 bound (p<1e-7) & No Untransfected H3K4me3 (p>1e-5)",
                                "Untransfected H3K4me3 (p<1e-5)"),
@@ -530,6 +555,47 @@ ggplot(tmp, aes(mean_enrichment, Mean, colour=Subset)) +
                     values = RColorBrewer::brewer.pal(3, "Set1")) +
   theme_minimal() +
   theme(legend.position = "bottom")
+p
+dev.off()
+
+```
+
+## Gam version
+
+```{r}
+
+library(mgcv)
+
+labels <- c("humanPRDM9 bound (p<1e-7) & No Untransfected H3K4me3 (p>1e-5)","Untransfected H3K4me3 (p<1e-5)")
+
+forcecalled[,UTP9F := NULL]
+forcecalled[hP9combo_cov_input>5 & hP9combo_pvalue<1e-7, UTP9F := labels[1]]
+forcecalled[h3k4me3_UT_cov_input>5 & h3k4me3_UT_pvalue<1e-5, UTP9F := labels[2]] # this means the above also has condition h3k4me3_UT_pvalue>1e-5
+
+forcecalled[, UTP9F := factor(UTP9F)]
+log(+0.01)
+gam_y <- gam(zcw_hP9_enrichment ~ s((h3k4me3_hP9_enrichment), by=UTP9F) + UTP9F, method = "REML", data = forcecalled[h3k4me3_hP9_cov_input>15 & zcw_cov_input>5][!is.na(UTP9F)]) #[UTP9==1]
+
+# gam_y <- gam(zcw_hP9_enrichment ~ s(h3k4me3_hP9_enrichment, UTP9F, bs='fs'), method = "REML", data = forcecalled[h3k4me3_hP9_cov_input>15 & zcw_cov_input>5][!is.na(UTP9F)]) #[UTP9==1]
+summary(gam_y)
+
+n=500
+x_new <- seq(0.15, 30, length.out = n) #0.15
+y_pred <- data.table(h3k4me3_hP9_enrichment=rep(x_new, 2),
+                     UTP9F=factor(rep(labels, each=n)),
+                     data.frame(predict(gam_y, data.frame(h3k4me3_hP9_enrichment = rep(x_new, 2), UTP9F = factor(rep(labels, each=n))), se.fit=TRUE)))
+
+tmp2 <- y_pred
+names(tmp2)[1:3] <- c("mean_enrichment","Subset","Mean")
+
+pdf("H3K4strength_binned_allchr.pdf")
+p + geom_ribbon(aes(ymin = Mean - 2*se.fit, ymax = Mean + 2*se.fit, group=Subset),
+                data=tmp2[se.fit<0.5], fill = "grey70", colour="grey70", alpha=0.5) +
+  geom_hline(yintercept = 1.95, linetype="dashed")
+
+p + geom_ribbon(aes(ymin = Mean - 2*se.fit, ymax = Mean + 2*se.fit, group=Subset),
+                data=tmp2[se.fit<0.05], fill = "grey70", colour="grey70", alpha=0.5) +
+  geom_hline(yintercept = 1.95, linetype="dashed") + scale_x_log10()
 dev.off()
 
 ```
