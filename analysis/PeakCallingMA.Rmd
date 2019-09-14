@@ -299,11 +299,7 @@ h3k36me3_UT_peaks <- prejoin(h3k36me3_UT_peaks)
 h3k4me3_P9vsUT_peaks <- prejoin(h3k4me3_P9vsUT_peaks)
 h3k36me3_P9vsUT_peaks <- prejoin(h3k36me3_P9vsUT_peaks)
 
-zcw_peaks_cin_cpg <- fread("../data/peaks/SingleBasePeaks.WTCHG_538916_221156_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144.p0.000001.sep250.ALL_wCpGcount.bed")
-names(zcw_peaks_cin_cpg)[1:11] <- names(h3k4me3_P9_peaks)[1:11]
-names(zcw_peaks_cin_cpg)[12] <- "CpGcount"
-zcw_peaks_cin_cpg <- prejoin(zcw_peaks_cin_cpg, width=0)
-cor(zcw_peaks_cin_cpg$enrichment, zcw_peaks_cin_cpg$CpGcount)
+
 ```
 
 # DMC1 peaks
@@ -1126,6 +1122,82 @@ p2 <- fraction_overlapN2(zcw_wP9_peaks[cov_input>=5], h3k36me3_P9_peaks, x1="Zcw
 pdf("../results/Histone_correlation.pdf", width=10)
 plot_grid(p1, p2, nrow=1)
 dev.off()
+```
+
+# GAM plot
+
+```{r}
+
+    
+tmp <- overlapGam(zcw_peaks_cin[cov_input>=5], repeats[Name!="Alu"][grep("Alu",Name)][CI_stop-CI_start>250 & CI_stop-CI_start<350])
+tmpR <- overlapGam(zcw_peaks_cin[cov_input>=5], repeats[Name!="Alu"][grep("Alu",Name)][CI_stop-CI_start>250 & CI_stop-CI_start<350], shift = 1e8)
+
+tmp2 <- fraction_overlapN2(zcw_peaks_cin[cov_input>=5], 
+                           repeats[Name!="Alu"][grep("Alu",Name)][CI_stop-CI_start>250 & CI_stop-CI_start<350],
+                           x1="Zcw UT", y1="Alu Repeats", shift=1e8) # yes up to 70%
+
+tmp2 + 
+  geom_ribbon(data=tmp, aes(ymin = Overlap - 2*se, ymax = Overlap + 2*se), fill = "#E41A1C", colour="#E41A1C", alpha=0.5) +
+  geom_ribbon(data=tmpR, aes(ymin = Overlap - 2*se, ymax = Overlap + 2*se), fill = "#377EB8", colour="#377EB8", alpha=0.5) +
+  scale_x_log10(limits=c(0.3,5)) +
+  theme(legend.position = "bottom") +
+  xlab("Zcwpw1 Enrichment (no Prdm9)") +
+  ylab("Fraction of Zcwpw1 peaks \n that overlap Alu repeats")
+  
+
+
+tmp <- overlapGam(zcw_wP9_peaks[cov_input>=5], h3k36me3_P9_peaks, "a","b")
+
+
+tmp$overlap <- !is.na(tmp$test_enrichment)
+
+tmpgam <- gam(data=tmp, overlap ~ s(enrichment), family="quasibinomial")
+tmpglm <- glm(data=tmp, overlap ~ enrichment, family="binomial")
+
+n=500
+x_new <- seq(0.01, 50, length.out = n)
+y_pred <- data.table(enrichment = x_new,
+                     data.frame(predict(tmpgam, data.frame(enrichment = x_new), se.fit=TRUE, type="response")))
+tmpdt <- cbind(y_pred, Type="GAM")
+setnames(tmpdt, c("mean_enrichment","Overlap","se","Type"))
+
+y_pred2 <- data.table(enrichment = x_new,
+                     data.frame(predict(tmpglm, data.frame(enrichment = x_new), se.fit=TRUE, type="response")))
+tmpdt2 <- cbind(y_pred2, Type="GLM")
+setnames(tmpdt2, c("mean_enrichment","Overlap","se","resid","Type"))
+
+
+ggplot(y_pred, aes(enrichment, fit)) +
+    geom_ribbon(data=cbind(y_pred, Type="GAM"), aes(ymin = fit - 2*se.fit, ymax = fit + 2*se.fit), fill = "grey70", colour="grey70") +
+    geom_line() +
+    theme_minimal()
+
+tmp2 <- fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[Name!="Alu"][grep("Alu",Name)][CI_stop-CI_start>250 & CI_stop-CI_start<350], x1="Zcw UT", y1="Alu Repeats", shift=1e8) # yes up to 70%
+
+tmp2 + 
+  geom_ribbon(data=tmp, aes(ymin = Overlap - 2*se, ymax = Overlap + 2*se), fill = "grey70", colour="grey70", alpha=0.5) +
+  scale_x_log10(limits=c(0.3,5))
+
+p2 + 
+  geom_ribbon(data=tmpdt, aes(ymin = Overlap - 2*se, ymax = Overlap + 2*se), fill = "grey70", colour="grey70", alpha=0.5) +
+  geom_ribbon(data=tmpdt2, aes(ymin = Overlap - 2*se, ymax = Overlap + 2*se), fill = "grey70", colour="blue", alpha=0.5) +
+  scale_x_log10(limits=c(0.5,15))
+```
+
+
+# New
+
+```{r, fig.width=6}
+
+ggplot(zcw_wP9_peaks_cin[order(-HP9combo_enrichment)], (aes(zcw_peaks_enrichment, enrichment, colour=log(HP9combo_enrichment)))) +
+  geom_point(stroke=0, size=1) +
+  scale_color_viridis_c()
+
+ggplot(zcw_wP9_peaks_cin, (aes(zcw_peaks_enrichment, enrichment))) +
+  geom_hex(bins=100) +
+  scale_x_log10() +
+  scale_y_log10()
+
 ```
 
 
