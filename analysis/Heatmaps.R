@@ -110,8 +110,8 @@ plotHeatmap <- function(locations, samples, controls, names, title){
 }
 
 samples <- c("WTCHG_538916_223180",
-             "WTCHG_538916_221156",
-             "WTCHG_538916_223180",
+           #  "WTCHG_538916_221156",
+          #   "WTCHG_538916_223180",
              "WTCHG_538916_223180",
              "NA15-SRR5627152_AND_NA15-SRR5627153",
              "NA15-SRR5627149",
@@ -120,8 +120,8 @@ samples <- c("WTCHG_538916_223180",
              "NA15-SRR5627148")
 
 controls <- c("WTCHG_538916_221156",
-              "WTCHG_538916_217108_AND_WTCHG_538916_220144",
-              "WTCHG_538916_217108_AND_WTCHG_538916_220144",
+             # "WTCHG_538916_217108_AND_WTCHG_538916_220144",
+            #  "WTCHG_538916_217108_AND_WTCHG_538916_220144",
               "WTCHG_538916_221156",
               "NA15-SRR5627143",
               "NA15-SRR5627143",
@@ -130,12 +130,12 @@ controls <- c("WTCHG_538916_221156",
               "NA15-SRR5627142")
 
 names <- c("ZHA_hP9V5 vs ZHA",
-           "ZHA vs In",
-           "ZHA_hP9V5 vs In",
-           "ZHA_hP9V5 vs ZHA",
-           "H3K4_hP9HA vs InhP9HA",
-           "H3K36_hP9HA vs InhP9HA",
-           "hP9HA vs InhP9HA",
+           #"ZHA vs In",
+           #"ZHA_hP9V5 vs In",
+           "Zcwpw1 with Prdm9 vs without", #"ZHA_hP9V5 vs ZHA",
+           "H3K4me3 with Prdm9", #"H3K4_hP9HA vs InhP9HA",
+           "H3K36me3 with Prdm9", #"H3K36_hP9HA vs InhP9HA",
+           "Prdm9", #"hP9HA vs InhP9HA",
            "UntH3K4 vs InhUnt",
            "UntH3K36 vs InUnt")
 
