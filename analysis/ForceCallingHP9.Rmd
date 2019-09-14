@@ -465,11 +465,24 @@ CtermDMC1glmOnlyZwP9 <- glm(isDMC1 ~ FC_Zcw_wP9_enrichment,
     family=binomial(link='logit'),
     data=HP9combo_peaks[cov_input>5 & FC_Zcw_CVC_cov_input>5 & chr != "chrX" & cov_input<200 & FC_Zcw_CVC_enrichment<10][!chr %in% testChrs])
 
+CtermDMC1glmHist <- glm(isDMC1 ~ FC_h3k4me3_P9_enrichment+ 
+                  FC_h3k4me3_UT_enrichment + 
+                  FC_h3k36me3_P9_enrichment,
+    family=binomial(link='logit'),
+    data=HP9combo_peaks[cov_input>5 & FC_Zcw_CVC_cov_input>5 & chr != "chrX" & cov_input<200 & FC_Zcw_CVC_enrichment<10][!chr %in% testChrs])
+
+CtermDMC1glmAll <- glm(isDMC1 ~ enrichment + FC_Zcw_CVC_enrichment + FC_h3k4me3_P9_enrichment+ 
+                  FC_h3k4me3_UT_enrichment + 
+                  FC_h3k36me3_P9_enrichment,
+    family=binomial(link='logit'),
+    data=HP9combo_peaks[cov_input>5 & FC_Zcw_CVC_cov_input>5 & chr != "chrX" & cov_input<200 & FC_Zcw_CVC_enrichment<10][!chr %in% testChrs])
+
 
 summary(CtermDMC1glmOnlyP9)
 summary(CtermDMC1glmOnlyZCVC)
 summary(CtermDMC1glmBoth)
 summary(CtermDMC1glmOnlyZwP9)
+summary(CtermDMC1glmHist)
 
 probs1 = predict(CtermDMC1glmOnlyP9,
                 newdata = HP9combo_peaks[cov_input>5 & FC_Zcw_CVC_cov_input>5 & chr != "chrX" & cov_input<200 & FC_Zcw_CVC_enrichment<10][chr %in% testChrs],
@@ -483,9 +496,14 @@ probs3 = predict(CtermDMC1glmBoth,
                 newdata = HP9combo_peaks[cov_input>5 & FC_Zcw_CVC_cov_input>5 & chr != "chrX" & cov_input<200 & FC_Zcw_CVC_enrichment<10][chr %in% testChrs],
                 type = "response")
 
-probs4 = predict(CtermDMC1glm,
+probs4 = predict(CtermDMC1glmAll,
                 newdata = HP9combo_peaks[cov_input>5 & FC_Zcw_CVC_cov_input>5 & chr != "chrX" & cov_input<200 & FC_Zcw_CVC_enrichment<10][chr %in% testChrs],
                 type = "response")
+
+probs5 = predict(CtermDMC1glmHist,
+                newdata = HP9combo_peaks[cov_input>5 & FC_Zcw_CVC_cov_input>5 & chr != "chrX" & cov_input<200 & FC_Zcw_CVC_enrichment<10][chr %in% testChrs],
+                type = "response")
+
 
 dmc1label1 = HP9combo_peaks[cov_input>5 & FC_Zcw_CVC_cov_input>5 & chr != "chrX" & cov_input<200 & FC_Zcw_CVC_enrichment<10][chr %in% testChrs]$isDMC1
 
@@ -498,6 +516,7 @@ tmp1 <- roc.curve(scores.class0 = probs1, weights.class0 = dmc1label1, curve = T
 tmp2 <- roc.curve(scores.class0 = probs2, weights.class0 = dmc1label1, curve = T)$curve
 tmp3 <- roc.curve(scores.class0 = probs3, weights.class0 = dmc1label1, curve = T)$curve
 tmp4 <- roc.curve(scores.class0 = probs4, weights.class0 = dmc1label1, curve = T)$curve
+tmp5 <- roc.curve(scores.class0 = probs5, weights.class0 = dmc1label1, curve = T)$curve
 
 tmpP <- pROC::roc(dmc1label1, probs1)
 
@@ -509,11 +528,13 @@ tmp1 <- data.table(tmp1)
 tmp2 <- data.table(tmp2)
 tmp3 <- data.table(tmp3)
 tmp4 <- data.table(tmp4)
+tmp5 <- data.table(tmp5)
 
 tmp1$Predictors <- "Prdm9 Only"
 tmp2$Predictors <- "Zcwpw1 (Prdm9-dependent) Only"
 tmp3$Predictors <- "Both"
-tmp4$Predictors <- "Both + H3Kme3"
+tmp4$Predictors <- "All"
+tmp5$Predictors <- "H3KXme3" # better, but co-transfection efficieny..??
 
 p1 <- ggplot(rbind(tmp1, tmp2, tmp3), aes(V1, V2, colour=Predictors)) +
   geom_line() + 
