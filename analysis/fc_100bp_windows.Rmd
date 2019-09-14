@@ -694,62 +694,67 @@ ggplot(tmp, aes(mean_enrichment, Mean, colour=Subset)) +
                     values = RColorBrewer::brewer.pal(3, "Set1")) +
   theme_minimal() +
   theme(legend.position = "bottom")
-p
 dev.off()
 
 ```
 
-## Gam version
+# Dmc1
 
 ```{r}
 
-library(mgcv)
-
-labels <- c("humanPRDM9 bound (p<1e-7) & No Untransfected H3K4me3 (p>1e-5)","Untransfected H3K4me3 (p<1e-5)")
-
-forcecalled[,UTP9F := NULL]
-forcecalled[hP9combo_cov_input>5 & hP9combo_pvalue<1e-7, UTP9F := labels[1]]
-forcecalled[h3k4me3_UT_cov_input>5 & h3k4me3_UT_pvalue<1e-5, UTP9F := labels[2]] # this means the above also has condition h3k4me3_UT_pvalue>1e-5
-
-forcecalled[, UTP9F := factor(UTP9F)]
-log(+0.01)
-gam_y <- gam(zcw_hP9_enrichment ~ s((h3k4me3_hP9_enrichment), by=UTP9F) + UTP9F, method = "REML", data = forcecalled[h3k4me3_hP9_cov_input>15 & zcw_cov_input>5][!is.na(UTP9F)]) #[UTP9==1]
-
-# gam_y <- gam(zcw_hP9_enrichment ~ s(h3k4me3_hP9_enrichment, UTP9F, bs='fs'), method = "REML", data = forcecalled[h3k4me3_hP9_cov_input>15 & zcw_cov_input>5][!is.na(UTP9F)]) #[UTP9==1]
-summary(gam_y)
-
-n=500
-x_new <- seq(0.15, 30, length.out = n) #0.15
-y_pred <- data.table(h3k4me3_hP9_enrichment=rep(x_new, 2),
-                     UTP9F=factor(rep(labels, each=n)),
-                     data.frame(predict(gam_y, data.frame(h3k4me3_hP9_enrichment = rep(x_new, 2), UTP9F = factor(rep(labels, each=n))), se.fit=TRUE)))
-
-tmp2 <- y_pred
-names(tmp2)[1:3] <- c("mean_enrichment","Subset","Mean")
-
-pdf("H3K4strength_binned_allchr.pdf")
-p + geom_ribbon(aes(ymin = Mean - 2*se.fit, ymax = Mean + 2*se.fit, group=Subset),
-                data=tmp2[se.fit<0.5], fill = "grey70", colour="grey70", alpha=0.5) +
-  geom_hline(yintercept = 1.95, linetype="dashed")
-
-p + geom_ribbon(aes(ymin = Mean - 2*se.fit, ymax = Mean + 2*se.fit, group=Subset),
-                data=tmp2[se.fit<0.05], fill = "grey70", colour="grey70", alpha=0.5) +
-  geom_hline(yintercept = 1.95, linetype="dashed") + scale_x_log10()
-dev.off()
-
+dmc1 <- fread("Pratto_human_DSB_Aintersect_autosomal_hg38.bed")
+setnames(dmc1, c("chr","CI_start","CI_stop","enrichment","enrichmentAB"))
+dmc1 <- prejoin(dmc1)
+  
 ```
 
-# H3K36
+# Find negative control regions
 
 ```{r}
-forcecalled$enrichment <- forcecalled$h3k36me3_hP9_enrichment
+forcecalled$enrichment <- forcecalled$CpG
 
-pdf("H3K36.pdf")
-fraction_overlapN(forcecalled[hP9combo_cov_input>5 & zcw_cov_input>5], 
-                    "h3k36me3_hP9_enrichment","zcw_hP9_enrichment", n=25)
+pdf("CpG.pdf")
+ggplot(forcecalled[zcw_cov_input>5][,.(mean_enrich=mean(zcw_hP9_enrichment),stdv=sd(zcw_hP9_enrichment),.N),by=CpG][order(-CpG)], aes(CpG, mean_enrich)) + geom_pointrange(aes(ymin = mean_enrich - 2*(stdv/sqrt(N)), ymax = mean_enrich + 2*(stdv/sqrt(N))))
 dev.off()
 
+#curl -s "http://hgdownload.cse.ucsc.edu/goldenPath/hg38/database/cytoBand.txt.gz" | gunzip -c | grep acen | head
+
+gaps <- fread("curl -s http://hgdownload.cse.ucsc.edu/goldenPath/hg38/database/gap.txt.gz | gunzip -c")
+setnames(gaps, c("V2","V3","V4","V7","V8"),c("chr","center_start","center_stop","gap_length","gap_type"))
+
+setkey(gaps, chr, center_start, center_stop)
+setkey(forcecalled, chr, center_start, center_stop)
+forcecalled <- foverlaps(forcecalled, gaps)
+
+plot(forcecalled[is.na(gap_type) & CpG==0 & hP9combo_pvalue==1 & h3k36me3_hP9_pvalue==1 & h3k4me3_hP9_pvalue==1]$i.center_start)
+hist(forcecalled[is.na(gap_type) & CpG==0 & hP9combo_pvalue==1 & h3k36me3_hP9_pvalue==1 & h3k4me3_hP9_pvalue==1]$zcw_enrichment, breaks=100)
+dev.off()
+
+echo -e "chr1\t134143400\t134143500" > tmp.bed
+bedtools getfasta -s -fi motifs/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa -bed tmp.bed -name
+
+forcecalled[is.na(gap_type) & CpG==0 & hP9combo_pvalue==1 & h3k36me3_hP9_pvalue==1 & h3k4me3_hP9_pvalue==1][zcw_enrichment>10]
+
+mean(forcecalled[is.na(gap_type) & CpG==0 & hP9combo_pvalue==1 & h3k36me3_hP9_pvalue==1 & h3k4me3_hP9_pvalue==1]$zcw_enrichment>0.5)
+0.04527395
+
+forcecalled[is.na(gap_type) & CpG==0 & hP9combo_pvalue==1 & h3k36me3_hP9_pvalue==1 & h3k4me3_hP9_pvalue==1][sample(1:229000, 5)]
+
+
+
+mappability <- fread("mappability/hg38.75mer.Excludable.t0.5.chr1.merge500.bed")
+setnames(mappability, c("chr","i.center_start","i.center_stop"))
+setkey(mappability, chr, i.center_start, i.center_stop)
+mappability$exclude <- T
+forcecalled2 <- foverlaps(forcecalled, mappability)[is.na(exclude)]
+
+mean(forcecalled2[is.na(gap_type) & CpG==0 & hP9combo_pvalue==1 & h3k36me3_hP9_pvalue==1 & h3k4me3_hP9_pvalue==1]$zcw_enrichment>0.5)
+
+forcecalled2[is.na(gap_type) & CpG==0 & hP9combo_pvalue==1 & h3k36me3_hP9_pvalue==1 & h3k4me3_hP9_pvalue==1][sample(1:168000, 10)]
+
+177853400       177853500  
 ```
+
 
 # K36wP9 vs K4wP9
 
