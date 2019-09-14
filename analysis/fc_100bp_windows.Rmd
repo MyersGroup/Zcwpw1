@@ -113,7 +113,105 @@ sum(forcecalled$center_start!=h3k36me3_hP9_100bp$center_start)
 
 
 
+```
 
+# qPRC control regions
+
+```{r}
+
+quantile(forcecalled$h3k36me3_hP9_enrichment, c(0.8,0.9,0.95,0.975,0.98))
+quantile(forcecalled$h3k4me3_hP9_enrichment, c(0.8,0.9,0.95,0.975,0.98))
+quantile(forcecalled$h3k4me3_UT_pvalue, 1-c(0.8,0.9,0.95,0.975,0.98))
+quantile(forcecalled$cP9combo_enrichment, c(0.8,0.9,0.95,0.975,0.98))
+quantile(forcecalled$hP9combo_enrichment, c(0.8,0.9,0.95,0.975,0.98))
+quantile(forcecalled$zcw_hP9_enrichment, c(0.8,0.9,0.95,0.975,0.98))
+quantile(forcecalled$zcw_cP9_enrichment, c(0.8,0.9,0.95,0.975,0.98))
+quantile(forcecalled$hP9GFP_enrichment, c(0.8,0.9,0.95,0.975,0.98))
+
+# positive for hPrdm9 Zcw peak
+pos <- forcecalled[cov_input>5 & 
+              hP9combo_enrichment>1.5 & 
+              hP9GFP_enrichment>1 &
+              zcw_hP9_enrichment>1.5 & 
+              #zcw_cP9_enrichment<0.1 & # NB human Zcw sites, are also enriched when cP9 c/t, only 1 region found when using this
+              h3k36me3_hP9_enrichment>1.5 & 
+              h3k4me3_hP9_enrichment>2.4 & 
+              h3k4me3_UT_pvalue>0.5 &
+              h3k36me3_UT_pvalue>0.1 &
+              cP9combo_enrichment<0.1]
+
+# positive for cPrdm9 Zcw peak
+pos <- forcecalled[cov_input>5 & 
+              hP9combo_enrichment<0.1 & 
+              hP9GFP_enrichment<0.1 &
+              #zcw_hP9_enrichment>1.5 & 
+              zcw_cP9_enrichment>1.7 &
+              #h3k36me3_hP9_enrichment>1.5 & 
+              #h3k4me3_hP9_enrichment>2.4 & 
+              h3k4me3_UT_pvalue>0.5 &
+              h3k36me3_UT_pvalue>0.1 &
+              cP9combo_enrichment>3]
+
+# positive for Zcw without Prdm9
+pos <- forcecalled[cov_input>5 & 
+              hP9combo_enrichment<0.1 & 
+              hP9GFP_enrichment<0.1 &
+              zcw_hP9_enrichment>1.5 & 
+              #zcw_cP9_enrichment<0.1 & # NB human Zcw sites, are also enriched when cP9 c/t, only 1 region found when using this
+              h3k4me3_UT_pvalue>0.5 &
+              h3k36me3_UT_pvalue>0.1 &
+              cP9combo_enrichment<0.1 &
+                zcw_enrichment>2]
+
+pos[sample(1:nrow(pos),5)]
+
+# hP9 +ve Zcw
+a <- forcecalled[(chr=="chr1" & center_start==19060500) |
+              (chr=="chr17" & center_start==50584700) |
+              (chr=="chr3" & center_start==127563900) |
+              (chr=="chr19" & center_start==11423300) |
+              (chr=="chr4" & center_start==38733300) |
+              (chr=="chr15" & center_start==25767900)]
+
+# cP9 +vs Zcw
+b <- forcecalled[(chr=="chr5" & center_start==126310600) |
+              (chr=="chr1" & center_start==60858700) |
+              (chr=="chr19" & center_start==29128700) |
+              (chr=="chr7" & center_start==154372200) |
+              (chr=="chr8" & center_start==52201700)]
+    
+# P9 -ve Zcw
+c <- forcecalled[(chr=="chr2" & center_start==204098500) |
+            (chr=="chr3" & center_start==154940200) |
+            (chr=="chr8" & center_start==129397800) |
+            (chr=="chr2" & center_start==223205300) |
+            (chr=="chr4" & center_start==18418700)]
+ 
+a$class <- "humanPrdm9+ve_&_ZCWPW1"
+b$class <- "chimpPrdm9+ve_&_ZCWPW1"
+c$class <- "Prdm9-ve_&_ZCWPW1"
+
+fwrite(rbind(a,b,c), "qPRC_regions_12.09.2019.csv")
+
+# forcecalled[chr=="chr5"][abs(center_start-96003240)<1e2]
+# pos[chr=="chr2"][abs(center_start-100016200)<1e3]
+ 
+
+forcecalled[order(-h3k36me3_hP9_enrichment)]
+
+forcecalled$h3k4me3_hP9_enrichment
+
+forcecalled$h3k4me3_UT
+
+forcecalled$cP9combo_enrichment
+
+forcecalled$hP9combo_enrichment
+
+forcecalled$zcw_cP9_enrichment
+
+forcecalled$zcw_hP9_enrichment
+
+forcecalled$zcw_enrichment
 ```
 
 
