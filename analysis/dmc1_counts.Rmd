@@ -22,7 +22,7 @@ dmc1_counts_KO <- rbind(dmc1_counts_KO[,1:4],
                      dmc1_counts_KO[,7:10],
                      dmc1_counts_KO[,11:14])
 
-dmc1_counts_KO$Genotype <- "ZCW -/-"
+dmc1_counts_KO$Genotype <- "Zcwpw1 -/-"
 
 # # # # # # # # # # # #
 # Load WT counts
@@ -101,13 +101,14 @@ dmc1_counts[dmc1_counts$Stage=="Pseudop",]$Stage <- "P"
 dmc1_counts[dmc1_counts$Genotype=="Wild Type (unrelated)",]$Genotype <- "Wild Type"
 
 dmc1_counts$Stage <- factor(dmc1_counts$Stage, levels = c("L","Late L","Early Z","Z","Late Z","P","P?","Pseudop"))
-dmc1_counts$Genotype <- factor(dmc1_counts$Genotype, levels = c("Wild Type","Wild Type (unrelated)","ZCW -/-","Prdm9 -/-"))
+dmc1_counts$Genotype <- factor(dmc1_counts$Genotype, levels = c("Wild Type","Wild Type (unrelated)","Zcwpw1 -/-","Prdm9 -/-"))
 
-ggplot(dmc1_counts, aes(Stage, `DMC1 foci`, colour=Genotype)) + 
+p <- ggplot(dmc1_counts, aes(Stage, `DMC1 foci`, colour=Genotype)) + 
   geom_point(size=0.5, position = position_jitterdodge()) + 
   scale_color_brewer(palette = "Set1") + 
   theme_minimal() + 
-  geom_boxplot(alpha=0)
+  geom_boxplot(alpha=0) +
+  theme(legend.position = "bottom")
 
 ggsave("../results/dmc1_counts.pdf", width = 9, height = 5)
 
