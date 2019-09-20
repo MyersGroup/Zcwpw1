@@ -24,17 +24,17 @@ rule all:
 def get_chips(wildcards):
   if "_AND_" in wildcards.chip:
     two_samples = wildcards.chip.split("_AND_")
-    return(list([f'MAPeakCaller/Fragment_Position_{two_samples[0]}.sorted.bed',
-                f'MAPeakCaller/Fragment_Position_{two_samples[1]}.sorted.bed']))
+    return(list([f'FragPos/Fragment_Position_{two_samples[0]}.sorted.bed',
+                f'FragPos/Fragment_Position_{two_samples[1]}.sorted.bed']))
   else:
-    return(list([f'MAPeakCaller/Fragment_Position_{wildcards.chip}.sorted.bed.PR1',
-                f'MAPeakCaller/Fragment_Position_{wildcards.chip}.sorted.bed.PR2']))
+    return(list([f'FragPos/Fragment_Position_{wildcards.chip}.sorted.bed.PR1',
+                f'FragPos/Fragment_Position_{wildcards.chip}.sorted.bed.PR2']))
 
 
 rule estconst:
   input:
     chips = get_chips ,
-    control="MAPeakCaller/Fragment_Position_{control}.sorted.bed",
+    control="FragPos/Fragment_Position_{control}.sorted.bed",
     chrsizes=join(METADATA_DIR, "hg38_sizes.chrom"),
   output:
     c="peaks/Constants.{chip}_vs_{control}.tsv",
@@ -71,7 +71,7 @@ rule extend_peaks:
 rule call_peaks:
   input:
     chips = get_chips ,
-    control="MAPeakCaller/Fragment_Position_{control}.sorted.bed",
+    control="FragPos/Fragment_Position_{control}.sorted.bed",
     chrsizes=join(METADATA_DIR, "hg38_sizes.chrom"),
     forcepos= lambda wc: "forcepeaks/{forcecallAT}" if(".bed" in wc.forcecallAT) else "peaks/SingleBasePeaks.{forcecallAT}.p0.000001.sep250.ALL.bed",
     consts="peaks/Constants.{chip}_vs_{control}.tsv"
