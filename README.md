@@ -76,6 +76,10 @@ snakemake --cores 15 --snakefile pipelines/Plot_Heatmap.py -npr
 # force-call
 snakemake --cores 15 --snakefile pipelines/Force_Call_Peaks.py -npr
 
+# create DMC1 profile plot
+cd dmc1
+snakemake --cores 15 --snakefile ../pipelines/dmc1.py -npr
+
 # plot profile over gene
 metagene_plot.sh
 ```
