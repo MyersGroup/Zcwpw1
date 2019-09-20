@@ -197,21 +197,33 @@ fwrite(rbind(a,b,c), "qPRC_regions_12.09.2019.csv")
 # pos[chr=="chr2"][abs(center_start-100016200)<1e3]
  
 
-forcecalled[order(-h3k36me3_hP9_enrichment)]
+# collate force called enrichment values from actual qPCR coordinates into matrix
+read_plus <- function(flnm) {
+    fread(flnm) %>% 
+    mutate(filename = flnm)
+}
 
-forcecalled$h3k4me3_hP9_enrichment
+tbl_with_sources <-
+    list.files(path="peaks",
+               pattern = "AT_qPCRregions_18-09-19.bed.bed", 
+               full.names = T) %>% 
+    map_df(~read_plus(.))
 
-forcecalled$h3k4me3_UT
+tbl_with_sources <- data.table(tbl_with_sources)[center_start!=1]
+tbl_with_sources[, filename := gsub("peaks/ForceCalledPeaks_","",filename)]
+tbl_with_sources[, filename := gsub("_AT_qPCRregions_18-09-19.bed.bed","",filename)]
 
-forcecalled$cP9combo_enrichment
+regions <- fread("forcepeaks/qPCRregions_18-09-19.bed")
+regions <- regions[V2!=1]
 
-forcecalled$hP9combo_enrichment
+regions$class <- rep(c("humanPrdm9+ve_&_ZCWPW1","chimpPrdm9+ve_&_ZCWPW1","Prdm9-ve_&_ZCWPW1"),each=5)
+setnames(regions, c("chr","center_start","center_stop","class"))
 
-forcecalled$zcw_cP9_enrichment
+tbl_with_sources <- regions[tbl_with_sources, on=c("chr","center_start","center_stop")]
 
-forcecalled$zcw_hP9_enrichment
+casted <- dcast(tbl_with_sources, class + chr + center_start + center_stop ~ filename, value.var="enrichment")
+fwrite(casted, "qPCRregions_forcecalled_enrichments_18-09-19.csv")
 
-forcecalled$zcw_enrichment
 ```
 
 
@@ -565,7 +577,6 @@ fraction_overlapN <- function(dt,x,y, n=25, filters=c("All"), returndf=F, pseudo
 
 forcecalled$enrichment <- forcecalled$h3k4me3_hP9_enrichment
 
-
 p1 <- fraction_overlapN(forcecalled[sample(1:nrow(forcecalled))][h3k4me3_hP9_cov_input>15 & zcw_cov_input>5 & h3k4me3_UT_pvalue>1e-5],
                         "h3k4me3_hP9_enrichment","zcw_hP9_enrichment", n=100) +
   scale_y_log10() + scale_x_log10() +
@@ -575,7 +586,6 @@ p1 <- fraction_overlapN(forcecalled[sample(1:nrow(forcecalled))][h3k4me3_hP9_cov
 
 
 forcecalled$enrichment <- forcecalled$h3k36me3_hP9_enrichment
-
 
 p2 <- fraction_overlapN(forcecalled[sample(1:nrow(forcecalled))][h3k36me3_hP9_cov_input>15 & zcw_cov_input>5],
                         "h3k36me3_hP9_enrichment","zcw_hP9_enrichment", n=100) + 
@@ -590,6 +600,7 @@ dev.off()
 
 ```
 
+
 # Binned H3K4 Strength
 
 ```{r}
@@ -599,9 +610,9 @@ forcecalled$enrichment <- forcecalled$h3k4me3_hP9_enrichment
 
 tmp <- rbind(
   fraction_overlapN(forcecalled[h3k4me3_hP9_cov_input>15 & zcw_cov_input>5][UTP9==1], 
-                    "h3k4me3_hP9_enrichment","zcw_hP9_enrichment", n=25, returndf = T, filter="UTP9==1", pseudoenrich = 0),
+                    "h3k4me3_hP9_enrichment","zcw_hP9_enrichment", n=25, returndf = T, filter="UTP9==1", pseudoenrich = 0.01),
   fraction_overlapN(forcecalled[h3k4me3_hP9_cov_input>15 & zcw_cov_input>5][UTP9==2], 
-                    "h3k4me3_hP9_enrichment","zcw_hP9_enrichment", n=25, returndf = T, filter="UTP9==2", pseudoenrich = 0)
+                    "h3k4me3_hP9_enrichment","zcw_hP9_enrichment", n=25, returndf = T, filter="UTP9==2", pseudoenrich = 0.01)
 )
 
 
@@ -636,14 +647,14 @@ forcecalled[hP9combo_cov_input>5 & hP9combo_pvalue<1e-7, UTP9F := labels[1]]
 forcecalled[h3k4me3_UT_cov_input>5 & h3k4me3_UT_pvalue<1e-5, UTP9F := labels[2]] # this means the above also has condition h3k4me3_UT_pvalue>1e-5
 
 forcecalled[, UTP9F := factor(UTP9F)]
-log(+0.01)
-gam_y <- gam(zcw_hP9_enrichment ~ s((h3k4me3_hP9_enrichment), by=UTP9F) + UTP9F, method = "REML", data = forcecalled[h3k4me3_hP9_cov_input>15 & zcw_cov_input>5][!is.na(UTP9F)]) #[UTP9==1]
+
+gam_y <- gam(zcw_hP9_enrichment ~ s(log(0.01+h3k4me3_hP9_enrichment), by=UTP9F) + UTP9F, method = "REML", data = forcecalled[h3k4me3_hP9_cov_input>15 & zcw_cov_input>5][!is.na(UTP9F)]) #[UTP9==1]
 
 # gam_y <- gam(zcw_hP9_enrichment ~ s(h3k4me3_hP9_enrichment, UTP9F, bs='fs'), method = "REML", data = forcecalled[h3k4me3_hP9_cov_input>15 & zcw_cov_input>5][!is.na(UTP9F)]) #[UTP9==1]
 summary(gam_y)
 
 n=500
-x_new <- seq(0.15, 30, length.out = n) #0.15
+x_new <- seq(0.15, 30, length.out = n)
 y_pred <- data.table(h3k4me3_hP9_enrichment=rep(x_new, 2),
                      UTP9F=factor(rep(labels, each=n)),
                      data.frame(predict(gam_y, data.frame(h3k4me3_hP9_enrichment = rep(x_new, 2), UTP9F = factor(rep(labels, each=n))), se.fit=TRUE)))
