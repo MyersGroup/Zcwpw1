@@ -20,12 +20,14 @@ genome:
   WGS1: 'mm10'
 
 
-#forcecallAT = "NA15-SRR5627138_AND_SRR5627139_vs_NA15-SRR5627140"
-#forcecallAT = "NA15-SRR5627146_AND_NA15-SRR5627147_vs_NA15-SRR5627143"
-#forcecallAT = "NA15-SRR5627138_AND_NA15-SRR5627139_vs_NA15-SRR5627140.flank150"
-#forcecallAT = "qPCR_regions_for_validation.bed"
-
-forcecallAT: 'genome.windows.100wide.100slide.bed'
+# Put the file in "forcepeaks"
+# NB need at least one region per chromosome to avoid crashing
+#forcecallAT: "NA15-SRR5627138_AND_SRR5627139_vs_NA15-SRR5627140"
+#forcecallAT: "NA15-SRR5627146_AND_NA15-SRR5627147_vs_NA15-SRR5627143"
+#forcecallAT: "NA15-SRR5627138_AND_NA15-SRR5627139_vs_NA15-SRR5627140.flank150"
+#forcecallAT: "qPCR_regions_for_validation.bed"
+#forcecallAT: 'genome.windows.100wide.100slide.bed'
+forcecallAT: "qPCRregions_18-09-19.bed"
 
 ### Profile Plot Parameters
 
