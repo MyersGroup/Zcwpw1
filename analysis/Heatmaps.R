@@ -25,13 +25,16 @@ library(ComplexHeatmap)
 
 
 normalise_matrix <- function(sample, input, pseudocount=1, range=c(0.025, 1-0.025)){
+
   norm <- (sample+pseudocount)/(input+pseudocount)
+
   # 0/0 = 0
   norm[is.na(norm)] <- 0
 
   # x/0 = Inf, pass
   norm[!is.finite(norm)] <- NA
 
+  # Clip extreme values
   norm[norm>quantile(norm, na.rm=T, range[2])] <- quantile(norm, na.rm=T, range[2])
   norm[norm<quantile(norm, na.rm=T, range[1])] <- quantile(norm, na.rm=T, range[1])
 
@@ -42,6 +45,8 @@ normalise_matrix <- function(sample, input, pseudocount=1, range=c(0.025, 1-0.02
 
 
 makeColumn <- function(sample, input, title, ordering){
+
+  # create line plot for top of heatmap
   profile <- colMeans(sample, na.rm = T) / colMeans(input, na.rm = T)
   profileplot = HeatmapAnnotation("Avg"=anno_lines(profile,
                                                    height = unit(4, "cm"),
@@ -73,6 +78,8 @@ makeColumn <- function(sample, input, title, ordering){
 
 
 read_normmatrix <- function(sample, locations, const){
+  # read in matrix, normalised by total read count
+  # const to avoid numeric instability
   return(
     as.matrix(fread(paste0("bwmatrices/",sample,"_AT_",locations,".bwm"))) /
       (as.numeric(fread(paste0("FragPos/Fragment_Position_",sample,".total"))$V1)/const)
@@ -89,6 +96,7 @@ plotHeatmap <- function(locations, samples, controls, names, title){
                           read_normmatrix(controls[1], locations, const))
   ordering <- order(-apply(tmp[,(ncol(tmp)/2-100):(ncol(tmp)/2+100)], 1, function(x) mean(x, na.rm =T)))
 
+  # create list of heatmap column objects
   for(i in seq_along(samples)[-1]){
     if(i==2){ # create list
       ht_list <- makeColumn(read_normmatrix(samples[i], locations, const),
@@ -103,19 +111,23 @@ plotHeatmap <- function(locations, samples, controls, names, title){
     }
   }
 
-  pdf(width = 15, height = 10, paste0("bwplots/NormalisedhP9C_vInOrder_",title,"-locations.pdf"))
+  pdf(width = 16, height = 10, paste0("bwplots/NormalisedhP9C_vInOrder_",title,"-locations.pdf"))
   draw(ht_list, merge_legend=T, heatmap_legend_side="bottom")
   dev.off()
 
 }
 
+# first sample is used to set up the row ordering only
+
 samples <- c("WTCHG_538916_223180",
            #  "WTCHG_538916_221156",
           #   "WTCHG_538916_223180",
              "WTCHG_538916_223180",
+          "WTCHG_538916_224192",
              "NA15-SRR5627152_AND_NA15-SRR5627153",
              "NA15-SRR5627149",
-             "NA15-SRR5627146",
+             "NA15-SRR5627146_AND_NA15-SRR5627147",
+          "NA15-SRR5627145_AND_NA15-SRR5627144",
              "NA15-SRR5627150_AND_NA15-SRR5627151",
              "NA15-SRR5627148")
 
@@ -123,21 +135,25 @@ controls <- c("WTCHG_538916_221156",
              # "WTCHG_538916_217108_AND_WTCHG_538916_220144",
             #  "WTCHG_538916_217108_AND_WTCHG_538916_220144",
               "WTCHG_538916_221156",
+            "WTCHG_538916_221156",
               "NA15-SRR5627143",
               "NA15-SRR5627143",
               "NA15-SRR5627143",
+            "NA15-SRR5627143",
               "NA15-SRR5627142",
               "NA15-SRR5627142")
 
 names <- c("ZHA_hP9V5 vs ZHA",
            #"ZHA vs In",
            #"ZHA_hP9V5 vs In",
-           "Zcwpw1 with Prdm9 vs without", #"ZHA_hP9V5 vs ZHA",
-           "H3K4me3 with Prdm9", #"H3K4_hP9HA vs InhP9HA",
-           "H3K36me3 with Prdm9", #"H3K36_hP9HA vs InhP9HA",
-           "Prdm9", #"hP9HA vs InhP9HA",
-           "UntH3K4 vs InhUnt",
-           "UntH3K36 vs InUnt")
+           "Zcwpw1 with hPrdm9 vs w\\o", #"ZHA_hP9V5 vs ZHA",
+           "Zcwpw1 with cPrdm9 vs w\\o", #"ZHA_hP9V5 vs ZHA",
+           "H3K4me3 with hPrdm9", #"H3K4_hP9HA vs InhP9HA",
+           "H3K36me3 with hPrdm9", #"H3K36_hP9HA vs InhP9HA",
+           "hPrdm9", #"hP9HA vs InhP9HA",
+           "cPrdm9", #"hP9HA vs InhP9HA",
+           "Untransfected H3K4",
+           "Untransfected H3K36")
 
 plotHeatmap("SingleBasePeaks.WTCHG_538916_223180_vs_WTCHG_538916_221156.p0.000001.sep250.ALL_Q00", samples, controls, names, "hZcwCTvsST")
 plotHeatmap("SingleBasePeaks.WTCHG_538916_221156_vs_WTCHG_538916_217108.p0.000001.sep250.ALL_Q00", samples, controls, names, "hZcwSTvsIn")
