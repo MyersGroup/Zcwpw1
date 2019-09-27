@@ -156,7 +156,7 @@ synapsis[,infered_sucess := round(Synapsis*n)]
 synapsis <- cbind(synapsis,
                   data.table(Hmisc::binconf(synapsis$infered_sucess, synapsis$n, method="wilson")))
 
-p <- ggplot(synapsis, aes(Genotype, Synapsis)) +
+ps <- ggplot(synapsis, aes(Genotype, Synapsis)) +
   geom_pointrange(aes(ymin = Lower, ymax = Upper), position = position_jitter(width = 0.25)) +
   theme_minimal() +
   ylab("Full Synapsis") +
@@ -164,7 +164,7 @@ p <- ggplot(synapsis, aes(Genotype, Synapsis)) +
   scale_y_continuous(labels = scales::percent)
   #scale_size_area(name="n (cells)", max_size = 3)
 
-p
+ps
 
 ggsave("../results/Synapsis.pdf", width = 4, height = 4)
 
@@ -172,15 +172,15 @@ ggsave("../results/Synapsis.pdf", width = 4, height = 4)
 
 
 ```{r}
-weights <- data.table(lean_body_weight=c(19.7,21.98,19.8,20.42,22.56,20.66, 18.89, 19.62),
-           paired_testes_weight=c(35,56.9,179.2,183.8,190.4,49.8, 39.4, 50.9),
-           Genotype=c("Zcwpw1-/-","Zcwpw1-/-","Zcwpw1+/+","Zcwpw1+/+","Zcwpw1+/+","Zcwpw1-/-","Zcwpw1-/-","Zcwpw1-/-"))
+weights <- data.table(lean_body_weight=c(19.7,21.98,19.8,20.42,22.56,20.66, 18.89, 19.62, 21.77, 22.36),
+           paired_testes_weight=c(35,56.9,179.2,183.8,190.4,49.8, 39.4, 50.9, 50.3, 49.2),
+           Genotype=c("Zcwpw1-/-","Zcwpw1-/-","Zcwpw1+/+","Zcwpw1+/+","Zcwpw1+/+","Zcwpw1-/-","Zcwpw1-/-","Zcwpw1-/-", "Prdm9-/-", "Prdm9-/-"))
 
 weights[,ratio := paired_testes_weight/lean_body_weight]
 
 t.test(weights[Genotype=="Zcwpw1-/-"]$ratio, weights[Genotype=="Zcwpw1+/+"]$ratio)
 
-p<-ggplot(weights, aes(Genotype, ratio)) + 
+pw <-ggplot(weights, aes(Genotype, ratio)) + 
   geom_jitter(width = 0.1) +
   theme_minimal() +
   ylab("mg of testes per gram of lean body weight") +
@@ -190,6 +190,13 @@ p<-ggplot(weights, aes(Genotype, ratio)) +
               margin_top = 0.1) +
   theme(axis.line=element_line()) +
   scale_y_continuous(expand = c(0, 0), limits=c(0,11))
-p
+pw
 ggsave("../results/testes_weight.pdf", width = 4, height = 4)
 ```
+
+```{r}
+
+cowplot::plot_grid(pw, ps, nrow=1, labels=c("A","C"))
+ggsave("../results/weight_&_synapsis.pdf", width = 8, height = 4)
+```
+
