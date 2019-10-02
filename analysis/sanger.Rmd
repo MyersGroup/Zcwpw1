@@ -1,0 +1,77 @@
+---
+title: "Sanger Sequencing"
+output: html_notebook
+---
+
+Plot ab1 sanger sequencing traces with ggplot2
+
+```{r}
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install("sangerseqR")
+
+revComp <- function(x){
+  x@primarySeq <- reverseComplement(x@primarySeq)
+  x@traceMatrix <- x@traceMatrix[nrow(x@traceMatrix):1, 4:1]
+  x@peakPosMatrix <- nrow(x@traceMatrix) - x@peakPosMatrix[nrow(x@peakPosMatrix):1,]
+  return(x)
+}
+
+plot_trace <- function(wt, query="TACCAA", width=19, rev=F, fill=F){
+  
+  if(rev){
+    wt <- revComp(wt)
+  }
+
+  
+wtd <- data.table(wt@traceMatrix, n=1:nrow(wt@traceMatrix))
+names(wtd) <- c("A","C","G","T","n")
+melt(wtd, id.vars = "n")
+
+loc <- stringr::str_locate(as.character(wt@primarySeq),query)[,2]
+
+seq <- data.table(base = strsplit(as.character(wt@primarySeq),"")[[1]],
+                  position = wt@peakPosMatrix[,1])
+
+lims <- range(seq[(loc-width):(loc+width)]$position)
+
+p <- ggplot(melt(wtd, id.vars = "n")[n>lims[1] & n<lims[2]], aes(n, value, colour=variable, fill=variable)) +
+  scale_color_manual(values=c("T"="#E41A1C","C"="#377EB8","A"="#4DAF4A","G"="black")) +
+  scale_fill_manual(values=c("T"="#E41A1C","C"="#377EB8","A"="#4DAF4A","G"="black")) +
+  scale_x_continuous(breaks = seq[position>lims[1] & position<lims[2]]$position,
+                     labels = seq[position>lims[1] & position<lims[2]]$base,
+                     position = "top") +
+  theme_minimal() +
+  theme(panel.grid.minor.x=element_blank(),
+        panel.grid.minor.y=element_blank(),
+        panel.grid.major.y=element_blank(),
+        axis.title.x=element_blank(),
+        axis.title.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank(),
+        legend.position = "none")
+
+if(fill){
+  return(p + geom_area(alpha=0.25, position="identity"))
+}else{
+  return(p + geom_line())
+}
+}
+
+```
+
+
+```{r}
+library(sangerseqR)
+
+wt <- readsangerseq("../../../ZCWPW1 project/Paper/Figures/WT allele_ZCW_read as is.ab1")
+ko <- readsangerseq("../../../ZCWPW1 project/Paper/Figures/KO allele_ZCW_ read as reverse complement.ab1")
+
+pdf("../results/sanger_trace.pdf",width = 6, height = 3)
+plot_grid(plot_trace(wt), plot_trace(ko, rev = T), nrow=2)
+plot_grid(plot_trace(wt, fill=T), plot_trace(ko, rev = T, fill=T), nrow=2)
+dev.off()
+
+```
+
