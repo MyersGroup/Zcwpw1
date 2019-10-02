@@ -146,9 +146,11 @@ ggsave("../results/dmc1_counts.pdf", width = 9, height = 5)
 ```{r}
 synapsis <- data.table(Synapsis = c(0.98,0.94,0.946,0.02,0.00,0.019,0.054,0.06),
            n = c(51L,52L,56L,51L,51L,53L,55L,49L),
-           Genotype = c("Zcwpw1+/+","Zcwpw1+/+","Zcwpw1+/+","Zcwpw1-/-","Zcwpw1-/-","Zcwpw1-/-","Prdm9-/-","Prdm9-/-"))
+           Genotype = c("WT","WT","WT","Zcwpw1-/-","Zcwpw1-/-","Zcwpw1-/-","Prdm9-/-","Prdm9-/-"))
 
 synapsis[,infered_sucess := round(Synapsis*n)]
+
+synapsis[, Genotype := factor(Genotype, levels=c("WT","Zcwpw1-/-","Prdm9-/-"))]
 
 # not for small n!
 # synapsis[, sep := sqrt( (Synapsis * (1 - Synapsis)) / n)]
@@ -157,7 +159,7 @@ synapsis <- cbind(synapsis,
                   data.table(Hmisc::binconf(synapsis$infered_sucess, synapsis$n, method="wilson")))
 
 ps <- ggplot(synapsis, aes(Genotype, Synapsis)) +
-  geom_pointrange(aes(ymin = Lower, ymax = Upper), position = position_jitter(width = 0.25)) +
+  geom_pointrange(aes(ymin = Lower, ymax = Upper), position = position_dodge2(width = 0.5)) +
   theme_minimal() +
   ylab("Full Synapsis") +
   theme(axis.line=element_line()) +
@@ -166,37 +168,36 @@ ps <- ggplot(synapsis, aes(Genotype, Synapsis)) +
 
 ps
 
-ggsave("../results/Synapsis.pdf", width = 4, height = 4)
-
 ```
 
 
 ```{r}
 weights <- data.table(lean_body_weight=c(19.7,21.98,19.8,20.42,22.56,20.66, 18.89, 19.62, 21.77, 22.36),
            paired_testes_weight=c(35,56.9,179.2,183.8,190.4,49.8, 39.4, 50.9, 50.3, 49.2),
-           Genotype=c("Zcwpw1-/-","Zcwpw1-/-","Zcwpw1+/+","Zcwpw1+/+","Zcwpw1+/+","Zcwpw1-/-","Zcwpw1-/-","Zcwpw1-/-", "Prdm9-/-", "Prdm9-/-"))
+           Genotype=c("Zcwpw1-/-","Zcwpw1-/-","WT","WT","WT","Zcwpw1-/-","Zcwpw1-/-","Zcwpw1-/-", "Prdm9-/-", "Prdm9-/-"))
 
 weights[,ratio := paired_testes_weight/lean_body_weight]
 
-t.test(weights[Genotype=="Zcwpw1-/-"]$ratio, weights[Genotype=="Zcwpw1+/+"]$ratio)
+weights[, Genotype := factor(Genotype, levels=c("WT","Zcwpw1-/-","Prdm9-/-"))]
+
+str(t.test(weights[Genotype=="Zcwpw1-/-"]$ratio, weights[Genotype=="WT"]$ratio))
 
 pw <-ggplot(weights, aes(Genotype, ratio)) + 
-  geom_jitter(width = 0.1) +
+  geom_jitter(position = position_dodge2(width = 0.5)) +
   theme_minimal() +
   ylab("mg of testes per gram of lean body weight") +
-  geom_signif(comparisons = list(c("Zcwpw1-/-","Zcwpw1+/+")),
+  geom_signif(comparisons = list(c("Zcwpw1-/-","WT")),
               test="t.test",
               map_signif_level = function(x) paste0("p = ",signif(x,2)),
               margin_top = 0.1) +
   theme(axis.line=element_line()) +
   scale_y_continuous(expand = c(0, 0), limits=c(0,11))
 pw
-ggsave("../results/testes_weight.pdf", width = 4, height = 4)
 ```
 
 ```{r}
 
-cowplot::plot_grid(pw, ps, nrow=1, labels=c("A","C"))
-ggsave("../results/weight_&_synapsis.pdf", width = 8, height = 4)
+cowplot::plot_grid(pw, ps, nrow=2)
+ggsave("../results/weight_&_synapsis.pdf", width = 3, height = 7)
 ```
 
