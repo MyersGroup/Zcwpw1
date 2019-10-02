@@ -1,30 +1,12 @@
 
-
-# awk -v OFS='\t' '{print $1,$2,$3,"0","0",$6; }' HP9N_overlap_ZcwCVC.bed > HP9N_overlap_ZcwCVC.bed6
-# awk -v OFS='\t' '{print $1,$2,$3,"0","0",$6; }' HP9N_NOToverlap_ZcwCVC.bed > HP9N_NOToverlap_ZcwCVC.bed6
-#
-# awk -v OFS='\t' '{print $1,$2,$3,"0","0",$6; }' deeptools/beds/SingleBasePeaks.SRA_Altemose2015_SRR5627138_AND_SRA_Altemose2015_SRR5627139_vs_SRA_Altemose2015_SRR5627140.p0.000001.sep250.ALL_MotifCenteredStranded.bed  > HP9N_MotifCenterStranded.bed6
-
-# bwtool matrix 2000:2000 HP9N_overlap_ZcwCVC.bed6 bedgraphs/depth_WTCHG_538916_223180.bigWig,bedgraphs/depth_WTCHG_538916_221156.bigWig bwmatrices/depth_WTCHG_538916_223180_HP9N_overlap_ZcwCVC.bwm -fill=0
-# bwtool matrix -fill=0 -decimals=0 2000:2000 HP9N_overlap_ZcwCVC.bed6 bedgraphs/depth_WTCHG_538916_223180.bigWig,bedgraphs/depth_WTCHG_538916_221156.bigWig bwmatrices/depth_WTCHG_538916_223180_HP9N_overlap_ZcwCVC.bwm
-# bwtool matrix -fill=0 -decimals=1 -tiled-averages=5 2000:2000 HP9N_overlap_ZcwCVC.bed6 bedgraphs/depth_WTCHG_538916_223180.bigWig,bedgraphs/depth_WTCHG_538916_221156.bigWig bwmatrices/depth_WTCHG_538916_223180_HP9N_overlap_ZcwCVC.bwm
-
-
-
-# SingleBasePeaks.SRA_Altemose2015_SRR5627138_AND_SRA_Altemose2015_SRR5627139_vs_SRA_Altemose2015_SRR5627140.p0.000001.sep250.ALL_MotifCenteredStranded.bed00 # Nterm
-# SingleBasePeaks.SRA_Altemose2015_SRR5627146_AND_SRA_Altemose2015_SRR5627147_vs_SRA_Altemose2015_SRR5627143.p0.000001.sep250.ALL_MotifCenteredStranded.bed00 # C term combo
-
-# Zcw_HP9C & Zcw
-#bwtool matrix -fill=0 -decimals=1 -tiled-averages=5 2000:2000 bed6/SingleBasePeaks.NA15-SRR5627146_AND_NA15-SRR5627147_vs_NA15-SRR5627143.p0.000001.sep250.ALL_MotifCenteredStranded_Q00.bw.bed00 bedgraphs/depth_WTCHG_538916_223180.bigWig bwmatrices/depth_WTCHG_538916_223180_HP9N.bwm
-
 # generate profile data
-snakemake --cores 15 --snakefile pipelines/Plot_Heatmap.py -npr
+# snakemake --cores 15 --snakefile pipelines/Plot_Heatmap.py -npr
 
 library(data.table)
 library(ComplexHeatmap)
 
 
-normalise_matrix <- function(sample, input, pseudocount=1, range=c(0.025, 1-0.025)){
+normalise_matrix <- function(sample, input, pseudocount=1, range=c(0.01, 1-0.01)){
 
   norm <- (sample+pseudocount)/(input+pseudocount)
 
@@ -35,12 +17,11 @@ normalise_matrix <- function(sample, input, pseudocount=1, range=c(0.025, 1-0.02
   norm[!is.finite(norm)] <- NA
 
   # Clip extreme values
-  norm[norm>quantile(norm, na.rm=T, range[2])] <- quantile(norm, na.rm=T, range[2])
   norm[norm<quantile(norm, na.rm=T, range[1])] <- quantile(norm, na.rm=T, range[1])
+  norm[norm>quantile(norm, na.rm=T, range[2])] <- quantile(norm, na.rm=T, range[2])
 
   return(norm)
 }
-
 
 
 
