@@ -86,19 +86,27 @@ read_normmatrix <- function(sample, locations, const){
   )
 }
 
-
-plotHeatmap <- function(locations, samples, controls, names, title){
+#' Plot Heatmap of ChipSeq data
+#'
+#' @param locations string; partial filename of bwtools matrix file (between AT_ and .bwm)
+#' @param orderidx integer; index of sample/control pair to use for ordering the rows of the heatmap
+#' @param samples string vector; sample IDs
+#' @param controls string vector; control sample IDs
+#' @param names string vector; Titles for each heatmap column
+#' @param title string; identifier of heatmap, used in filename, convention to use peak locations
+#'
+plotHeatmap <- function(locations, orderidx, samples, controls, names, title){
 
   const <- 1e10
 
   # first samples are used to create ordering only
-  tmp <- normalise_matrix(read_normmatrix(samples[1], locations, const),
-                          read_normmatrix(controls[1], locations, const))
+  tmp <- normalise_matrix(read_normmatrix(samples[orderidx], locations, const),
+                          read_normmatrix(controls[orderidx], locations, const))
   ordering <- order(-apply(tmp[,(ncol(tmp)/2-100):(ncol(tmp)/2+100)], 1, function(x) mean(x, na.rm =T)))
 
   # create list of heatmap column objects
-  for(i in seq_along(samples)[-1]){
-    if(i==2){ # create list
+  for(i in seq_along(samples)){
+    if(i==1){ # create list
       ht_list <- makeColumn(read_normmatrix(samples[i], locations, const),
                             read_normmatrix(controls[i], locations, const),
                             names[i],
@@ -117,9 +125,7 @@ plotHeatmap <- function(locations, samples, controls, names, title){
 
 }
 
-# first sample is used to set up the row ordering only
-
-samples <- c("WTCHG_538916_223180",
+samples <- c(
            #  "WTCHG_538916_221156",
           #   "WTCHG_538916_223180",
              "WTCHG_538916_223180",
@@ -131,7 +137,7 @@ samples <- c("WTCHG_538916_223180",
              "NA15-SRR5627150_AND_NA15-SRR5627151",
              "NA15-SRR5627148")
 
-controls <- c("WTCHG_538916_221156",
+controls <- c(
              # "WTCHG_538916_217108_AND_WTCHG_538916_220144",
             #  "WTCHG_538916_217108_AND_WTCHG_538916_220144",
               "WTCHG_538916_221156",
@@ -143,7 +149,7 @@ controls <- c("WTCHG_538916_221156",
               "NA15-SRR5627142",
               "NA15-SRR5627142")
 
-names <- c("ZHA_hP9V5 vs ZHA",
+names <- c(
            #"ZHA vs In",
            #"ZHA_hP9V5 vs In",
            "Zcwpw1 with hPrdm9 vs w\\o", #"ZHA_hP9V5 vs ZHA",
@@ -155,10 +161,10 @@ names <- c("ZHA_hP9V5 vs ZHA",
            "Untransfected H3K4",
            "Untransfected H3K36")
 
-plotHeatmap("SingleBasePeaks.WTCHG_538916_223180_vs_WTCHG_538916_221156.p0.000001.sep250.ALL_Q00", samples, controls, names, "hZcwCTvsST")
-plotHeatmap("SingleBasePeaks.WTCHG_538916_221156_vs_WTCHG_538916_217108.p0.000001.sep250.ALL_Q00", samples, controls, names, "hZcwSTvsIn")
-plotHeatmap("SingleBasePeaks.NA15-SRR5627146_AND_NA15-SRR5627147_vs_NA15-SRR5627143.p0.000001.sep250.ALL_MotifCenteredStranded_Q00", samples, controls, names, "HP9C")
-plotHeatmap("SingleBasePeaks.NA15-SRR5627138_AND_NA15-SRR5627139_vs_NA15-SRR5627140.p0.000001.sep250.ALL_MotifCenteredStranded_Q00", samples, controls, names, "HP9N")
+plotHeatmap("SingleBasePeaks.WTCHG_538916_223180_vs_WTCHG_538916_221156.p0.000001.sep250.ALL_Q00", 1, samples, controls, names, "hZcwCTvsST")
+plotHeatmap("SingleBasePeaks.WTCHG_538916_221156_vs_WTCHG_538916_217108.p0.000001.sep250.ALL_Q00", 1, samples, controls, names, "hZcwSTvsIn")
+plotHeatmap("SingleBasePeaks.NA15-SRR5627146_AND_NA15-SRR5627147_vs_NA15-SRR5627143.p0.000001.sep250.ALL_MotifCenteredStranded_Q00", 5, samples, controls, names, "HP9C")
+plotHeatmap("SingleBasePeaks.NA15-SRR5627138_AND_NA15-SRR5627139_vs_NA15-SRR5627140.p0.000001.sep250.ALL_MotifCenteredStranded_Q00", 5, samples, controls, names, "HP9N")
 
-plotHeatmap("SingleBasePeaks.NA15-SRR5627145_AND_NA15-SRR5627144_vs_NA15-SRR5627143.p0.000001.sep250.ALL_Q00", samples, controls, names, "CHP9C")
+plotHeatmap("SingleBasePeaks.NA15-SRR5627145_AND_NA15-SRR5627144_vs_NA15-SRR5627143.p0.000001.sep250.ALL_Q00", 6, samples, controls, names, "CHP9C")
 
