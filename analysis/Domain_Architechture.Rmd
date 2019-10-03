@@ -119,40 +119,59 @@ dev.off()
 
 ```
 
-add conservation
+# Conservation
 
 ```{r}
+# Old Alignment
 
-cons <- seqinr::read.fasta("~/Dropbox/Downloads/Human_ZCWPW1_orthologues.fa", as.string=T)
-ids <- names(cons)
-cons <- as.character(cons)
-
-mat <- sapply(cons, function(x) strsplit(x, "")[[1]])
-dimnames(mat) <- NULL
-colnames(mat) <- ids
-
-consensus <- sapply(1:ncol(t(mat)), function(x) tail(names(sort(table(mat[x,]))), 1))
-mat2 <- cbind(mat, consensus)
-ident <- apply(mat2, 1, function(x) mean(x[-ncol(mat2)]==x[ncol(mat2)]))
-
-human_aa <- mat[,"ENSP00000381109_Hsap/1-648"] != "-"
-
-jalview <- data.table(t(fread("~/Dropbox/Downloads/Zcwpw1_Jalview.txt")[,-1]))
-names(jalview) <- c("Conservation","Quality","Occupancy","Consensus","Logo","SMERFS")
-jalview$Conservation <- as.numeric(jalview$Conservation)
-jalview$Quality <- as.numeric(jalview$Quality)
-jalview$Occupancy <- as.numeric(jalview$Occupancy)
-jalview$Consensus <- as.numeric(jalview$Consensus)
-jalview$SMERFS <- as.numeric(jalview$SMERFS)
-jalview <- jalview[!is.na(Conservation)]
-jalview$JSD <- fread("~/Dropbox/Downloads/JSD.txt")$V2
+# cons <- seqinr::read.fasta("~/Dropbox/Downloads/Human_ZCWPW1_orthologues.fa", as.string=T)
+# ids <- names(cons)
+# cons <- as.character(cons)
+# 
+# mat <- sapply(cons, function(x) strsplit(x, "")[[1]])
+# dimnames(mat) <- NULL
+# colnames(mat) <- ids
+# 
+# consensus <- sapply(1:ncol(t(mat)), function(x) tail(names(sort(table(mat[x,]))), 1))
+# mat2 <- cbind(mat, consensus)
+# ident <- apply(mat2, 1, function(x) mean(x[-ncol(mat2)]==x[ncol(mat2)]))
+# 
+# human_aa <- mat[,"ENSP00000381109_Hsap/1-648"] != "-"
+# 
+# jalview <- data.table(t(fread("~/Dropbox/Downloads/Zcwpw1_Jalview.txt")[,-1]))
+# names(jalview) <- c("Conservation","Quality","Occupancy","Consensus","Logo","SMERFS")
+# jalview$Conservation <- as.numeric(jalview$Conservation)
+# jalview$Quality <- as.numeric(jalview$Quality)
+# jalview$Occupancy <- as.numeric(jalview$Occupancy)
+# jalview$Consensus <- as.numeric(jalview$Consensus)
+# jalview$SMERFS <- as.numeric(jalview$SMERFS)
+# jalview <- jalview[!is.na(Conservation)]
+# jalview$JSD <- fread("~/Dropbox/Downloads/JSD.txt")$V2
 
 #consurf <- fread("~/Dropbox/Downloads/consurf.grades", skip = 12)
+```
 
-cons <- ggplot(jalview[human_aa], aes(1:sum(human_aa),scale(JSD))) + geom_col(width=1, fill="black") + theme_minimal() + xlab("Amino acid number") + ylab("Jensen-Shannon\n divergence (normalised)")
+
+Using Simon's alignment
+
+```{r}
+# load("../../ZCWPW1/fordanielalignment.out")
+# saveRDS(ouralignmat,"data/Simons_Zcwpw1_alignment.rds")
+
+ouralignmat <- readRDS("../data/Simons_Zcwpw1_alignment.rds")
+ouralignmat[is.na(ouralignmat)] <- "-"
+seqs <- apply(ouralignmat, 1, function(x) paste0(x, collapse=""))
+MotifFinder::export_FASTA(seqs, "data/simons_alignment.fa")
+
+# from http://compbio.cs.princeton.edu/conservation/
+JSD <- fread("../data/JSD_simons_alignment.txt")
+setnames(JSD, c("id", "JSD", "seq"))
+
+#jalview[human_aa]
+cons <- ggplot(JSD, aes(1:sum(human_aa),scale(JSD))) + geom_col(width=1, fill="black") + theme_minimal() + xlab("Amino acid number") + ylab("Jensen-Shannon\n divergence (normalised)")
 
 pdf("../results/Zcwpw1_domain_architechture_cons.pdf", width = 10, height = 8)
-cowplot::plot_grid(p + theme(legend.position = "none"), cons, ncol=1, align = "v",axis = "lrtb", rel_heights = c(2,1), labels = "AUTO")
+cowplot::plot_grid(p2, cons, ncol=1, align = "v",axis = "lrtb", rel_heights = c(2,1), labels = "AUTO")
 dev.off()
 
 ```
