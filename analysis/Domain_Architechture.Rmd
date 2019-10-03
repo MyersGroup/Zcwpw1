@@ -56,17 +56,31 @@ p <- draw_domains(p, rel_data, type="COILED")
 p <- p + scale_y_continuous(breaks=seq_along(unique(rel_data$entryName)), labels = c("Human","Mouse")) + xlim(0,NA)
 p <- p + theme_bw(base_size = 20) + # white background
     theme(panel.grid.minor=element_blank(), 
-        panel.grid.major=element_blank()) +
-    theme(axis.ticks = element_blank(), 
-        ) + #axis.text.y = element_blank()
-    theme(panel.border = element_blank()) +
+          panel.grid.major=element_blank(),
+          axis.ticks = element_blank(),
+          axis.text.x = element_blank(),
+          axis.title.x = element_blank(),
+          panel.border = element_blank()) +
   scale_fill_brewer(palette = "Set1")
 
+p
+
+# add exact AA positions
+p2 <- p +
+  geom_text(aes(x = begin, y = order+0.30, label = begin),
+               data=data.table(rel_data)[type %in% c("DOMAIN","ZN_FING","COILED","DOMAIN2")]) +
+  geom_text(aes(x = end, y = order-0.30, label = end),
+               data=data.table(rel_data)[type %in% c("CHAIN","DOMAIN","ZN_FING","COILED","DOMAIN2")]) +
+  theme(legend.position = "none")
+
 pdf("../results/Zcwpw1_domain_architechture.pdf", width = 10, height = 5)
-p + theme(legend.position = "none")
+p2
 dev.off()
+```
 
 
+# PRDM9
+```{r, fig.width=10}
 rel_json <- drawProteins::get_features("Q9NQV7 Q96EQ9")
 rel_data <- drawProteins::feature_to_dataframe(rel_json)
 
