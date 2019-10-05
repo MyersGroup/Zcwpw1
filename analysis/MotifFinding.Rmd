@@ -280,6 +280,17 @@ pdf(width=10, height=5, file="motifs/Altemose_Prdm9.pdf")
     print(ggseqlogo::ggseqlogo(tmp[,pos[i]:(pos[i+1]-1)]))
   }
 dev.off()
+
+pos <- cumsum(c(1,znew[[2]]))
+  for(i in 1:7){
+    tmp2 <- list()
+    tmp2$scoremat <- znew$mot[pos[i]:(pos[i+1]-1),]
+    tmp3 <- t(exp(tmp2$scoremat))
+    rownames(tmp3) <- c("A", "C", "G", "T")
+    print(ggseqlogo::ggseqlogo(tmp3))
+    export_PWM(tmp2, paste0("Altemose_P9",i), paste0("motifs/Altemose_P9_",i,".meme"))
+  }
+dev.off()
 ```
 
 # Locate P9 Motifs at Zcw sites
