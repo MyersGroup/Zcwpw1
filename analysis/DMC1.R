@@ -1,7 +1,7 @@
-setwd("C://Users//myers.WHGC//Dropbox//ZCWPW1")
 
-this=read.table("ssDNA_ZCWPW1_HOM_290519_rep1_type1_filtered_only_rmdup.chr1.3prime.bedgraph",as.is=T)
-that=read.table("ssDNA_ZCWPW1_HOM_290519_rep1_type1_filtered_only_rmdup.chr1.5prime.bedgraph",as.is=T)
+
+this=read.table("../data/dmc1/ssDNA_ZCWPW1_HOM_290519_rep1_type1_filtered_only_rmdup.chrALL.3prime.bedgraph",as.is=T)
+that=read.table("../data/dmc1/ssDNA_ZCWPW1_HOM_290519_rep1_type1_filtered_only_rmdup.chrALL.5prime.bedgraph",as.is=T)
 
 this=this[this[,1] %in% paste("chr",c(1:19,"X","Y"),sep=""),]
 that=that[that[,1] %in% paste("chr",c(1:19,"X","Y"),sep=""),]
@@ -10,7 +10,7 @@ that=that[that[,1] %in% paste("chr",c(1:19,"X","Y"),sep=""),]
 ##that=that[that[,3]-that[,2]>40 & that[,3]-that[,2]<=100,]
 
 
-b6=read.table("b6.txt",as.is=T,header=T)
+b6=read.table("../data/dmc1/b6.txt",as.is=T,header=T)
 
 ####overlap
 
@@ -36,10 +36,10 @@ for(j in 1:length(poshot)){
 			indicesl=floor(temp[,1]/20)+1
 			indicesr=floor(temp[,2]/20)+1
 			indicesl[indicesl<=0]=1
-			
+
 			indicesr[(indicesr>500)]=500
-			for(k in 1:nrow(temp)) curtotals[indicesl[k]:indicesr[k]]=curtotals[indicesl[k]:indicesr[k]]+1	
-			}	
+			for(k in 1:nrow(temp)) curtotals[indicesl[k]:indicesr[k]]=curtotals[indicesl[k]:indicesr[k]]+1
+			}
 		}
 totals[hh,]=curtotals
 hh=hh+1
@@ -67,10 +67,10 @@ for(j in 1:length(poshot)){
 			indicesl=floor(temp[,1]/20)+1
 			indicesr=floor(temp[,2]/20)+1
 			indicesl[indicesl<=0]=1
-			
+
 			indicesr[(indicesr>500)]=500
-			for(k in 1:nrow(temp)) curtotals[indicesl[k]:indicesr[k]]=curtotals[indicesl[k]:indicesr[k]]+1	
-			}	
+			for(k in 1:nrow(temp)) curtotals[indicesl[k]:indicesr[k]]=curtotals[indicesl[k]:indicesr[k]]+1
+			}
 		}
 totals[hh,]=curtotals
 hh=hh+1
@@ -80,7 +80,7 @@ totals5prime=totals
 plot(colSums(totals3prime),type="l",col=2)
 lines(colSums(totals5prime),col=4)
 abline(v=250,lty="dotted")
-dev.copy2pdf(file="HOM_type1_strand_separated.pdf",width=6,height=4)
+dev.copy2pdf(file="../results/simon/HOM_type1_strand_separated.pdf",width=6,height=4)
 
 
 ####HET
@@ -119,10 +119,10 @@ for(j in 1:length(poshot)){
 			indicesl=floor(temp[,1]/20)+1
 			indicesr=floor(temp[,2]/20)+1
 			indicesl[indicesl<=0]=1
-			
+
 			indicesr[(indicesr>500)]=500
-			for(k in 1:nrow(temp)) curtotals[indicesl[k]:indicesr[k]]=curtotals[indicesl[k]:indicesr[k]]+1	
-			}	
+			for(k in 1:nrow(temp)) curtotals[indicesl[k]:indicesr[k]]=curtotals[indicesl[k]:indicesr[k]]+1
+			}
 		}
 totals[hh,]=curtotals
 hh=hh+1
@@ -150,10 +150,10 @@ for(j in 1:length(poshot)){
 			indicesl=floor(temp[,1]/20)+1
 			indicesr=floor(temp[,2]/20)+1
 			indicesl[indicesl<=0]=1
-			
+
 			indicesr[(indicesr>500)]=500
-			for(k in 1:nrow(temp)) curtotals[indicesl[k]:indicesr[k]]=curtotals[indicesl[k]:indicesr[k]]+1	
-			}	
+			for(k in 1:nrow(temp)) curtotals[indicesl[k]:indicesr[k]]=curtotals[indicesl[k]:indicesr[k]]+1
+			}
 		}
 totals[hh,]=curtotals
 hh=hh+1
@@ -192,7 +192,7 @@ tempcounts=1:length(poshot)*0
 for(j in 1:length(poshot)){
 			cond=ourreads[,2]>=poshot[j]-1250 & ourreads[,1]<=poshot[j]+1250
 			tempcounts[j]=sum(cond)
-					
+
 }
 
 counts[b6[,1]==hh]=tempcounts
@@ -216,7 +216,7 @@ tempcounts=1:length(poshot)*0
 for(j in 1:length(poshot)){
 			cond=ourreads[,2]>=poshot[j]-1250 & ourreads[,1]<=poshot[j]+1250
 			tempcounts[j]=sum(cond)
-					
+
 }
 
 counts[b6[,1]==hh]=tempcounts
@@ -250,9 +250,9 @@ mm[i,2]=mean(datacheck[cond,2]+datacheck[cond,3])
 
 plot(mm[,1],mm[,2],pch=19,cex=1,xlab="Heat in WT B6 (DMC1)",ylab="Heat in ZCWPW1 KO (DMC1)")
 points(mm[1:20,3],mm[1:20,4],col=2,pch=19,cex=0.5)
-dev.copy2pdf(file="DMC1comparisonWTvsZCWPW1KO_X_chrom_red.pdf",width=8,height=8)
+dev.copy2pdf(file="../results/simon/DMC1comparisonWTvsZCWPW1KO_X_chrom_red.pdf",width=8,height=8)
 
-load("b6full.out")
+load("../data/dmc1/b6full.out")
 datacheck=cbind(b6full[,"SPO11"],counts3prime,counts5prime)
 ######reads vs. heat
 
@@ -361,19 +361,19 @@ points(mm[,refcol],mm[,2],pch=19,cex=1,xlab=paste("Heat in WT B6 (",colnames(mm)
 points(mm[1:20,refcol+7],mm[1:20,2+7],col=2,pch=19,cex=0.5)
 
 
-dev.copy2pdf(file="SPO11comparisonWTvsZCWPW1KO_X_chrom_red.pdf",width=8,height=4)
+dev.copy2pdf(file="../results/simon/SPO11comparisonWTvsZCWPW1KO_X_chrom_red.pdf",width=8,height=4)
 
 ####red is chromosome X; plot is based on 1000 bootstrapped hotspots from B6. DMC1-mapped hotspots are binned by their SPO11 activity and then we compare estimated DMC1 heats.
 
 ####Note that the left plot is clearly curved, suggesting slower DSB repair for weaker hotspots. The X-chromosome is hugely elevated  suggesting persistent unrepaired DSBs there, as can be observed cytogenetically.
 
-#####On the right a straight line apart from theg final X-chromosome point implying DMC1 removal no longer ?occurs? before arrest. And coupling between PRDM9 binding and DMC1 persistence now disappears. 
+#####On the right a straight line apart from theg final X-chromosome point implying DMC1 removal no longer ?occurs? before arrest. And coupling between PRDM9 binding and DMC1 persistence now disappears.
 
 #####any other clusters?
 
 temp=rbind(this,that)
 temp=temp[order(temp[,1],temp[,2]),]
- 
+
 ####clusters
 
 clustersize=5000
@@ -411,10 +411,10 @@ hh=hh+1
 
 #######newdata plots
 
-setwd("C:/Users/myers.WHGC/Dropbox/ZCWPW1")
-zcwfc=read.table("ForceCallFinal.DMC1.from.ZCWPW1_KO.into.B6_composite_500_2000.txt",header=F)
+#setwd("C:/Users/myers.WHGC/Dropbox/ZCWPW1")
+zcwfc=read.table("../data/dmc1/ForceCallFinal.DMC1.from.ZCWPW1_KO.into.B6_composite_500_2000.txt",header=F)
 zcwfc[1:5,]
-b6=read.table("B6_composite.txt",header=T)
+b6=read.table("../data/dmc1/B6_composite.txt",header=T)
 
 #####modestly hot hotspots, and autosomal, controlled by B6 with at least some evidence in the KO
 
@@ -431,11 +431,11 @@ b6[,"enrichment"]=b6[,"enrichment"]/mean(b6[zcwfc[,1]<=19,"enrichment"])
 cond=zcwfc[,1]<=19&b6[,"hshared"]==0 & b6[,"allele"]=="B6" & zcwfc[,"Heat"]>0 & b6[,"SPO11"]>0 & b6[,"DMC1"]>0 & b6[,"enrichment"]>0.5
 
 
-www=b6[,"DMC1"]/b6[,"SPO11"] 
+www=b6[,"DMC1"]/b6[,"SPO11"]
 plot(b6[cond,c("enrichment")],log2(www[cond]),xlab="Relative H3K4me3",ylab="DMC1 to SPO11 log-ratio (WT)",pch=19,cex=0.1,col="grey",ylim=c(-3,4),xlim=c(0,6))
 
 
-www2=zcwfc[,"Heat"]/b6[,"SPO11"] 
+www2=zcwfc[,"Heat"]/b6[,"SPO11"]
 plot(b6[cond,c("enrichment")],log2(www2[cond]),xlab="Relative H3K4me3",ylab="DMC1 to SPO11 log-ratio (WT)",pch=19,cex=0.1,col="grey",ylim=c(-3,4),xlim=c(0,6))
 
 #####quantiles
@@ -446,7 +446,7 @@ vals2=vals
 vals3=vals
 for(i in 1:nrow(vals)) {
 
-ourrows=which(cond & b6[,"enrichment"]>=bins[i] & b6[,"enrichment"]<bins[i+1]) 
+ourrows=which(cond & b6[,"enrichment"]>=bins[i] & b6[,"enrichment"]<bins[i+1])
 
 vals[i,2]=mean(log2(www[ourrows]))
 vals2[i,2]=mean(log2(www2[ourrows]))
@@ -485,17 +485,17 @@ plot(b6[cond,c("enrichment")],log2(www2[cond]),xlab="Relative H3K4me3",ylab="DMC
 points(vals2[,1],vals2[,2],pch=19)
 segments(x0=vals2[,1],x1=vals2[,1],y0=vals2[,3],y1=vals2[,4])
 
-dev.copy2pdf(file="log2ratiodmc1vsspo11wtandnull.pdf",width=10,height=5)
+dev.copy2pdf(file="../results/simon/log2ratiodmc1vsspo11wtandnull.pdf",width=10,height=5)
 
 par(mfrow=c(1,1))
 plot(b6[cond,c("enrichment")],log2(www[cond]/www2[cond]),xlab="Relative H3K4me3",ylab="DMC1 log2-ratio (WT vs ZCWPW1-null)",pch=19,cex=0.1,col="grey",ylim=c(-3,4),xlim=c(0,6))
 points(vals3[,1],vals3[,2],pch=19,type="b")
 segments(x0=vals3[,1],x1=vals3[,1],y0=vals3[,3],y1=vals3[,4])
 
-dev.copy2pdf(file="log2ratiodmc1wtvsnull.pdf",width=5,height=5)
+dev.copy2pdf(file="../results/simon/log2ratiodmc1wtvsnull.pdf",width=5,height=5)
 
 #####4.9-fold decrease in relative heat for strongest vs. weakest binding sites, for DMC1 vs. KO. (so in KO 4.9-fold hotter)
- 
+
 ####2^(1.4088991--0.8867859) 4.909871
 
 
@@ -504,11 +504,11 @@ dev.copy2pdf(file="log2ratiodmc1wtvsnull.pdf",width=5,height=5)
 cond=zcwfc[,1]==20 &b6[,"hshared"]==0 & b6[,"allele"]=="B6" & zcwfc[,"Heat"]>0 & b6[,"SPO11"]>0 & b6[,"DMC1"]>0 & b6[,"enrichment"]>0.5
 
 
-www=b6[,"DMC1"]/b6[,"SPO11"] 
+www=b6[,"DMC1"]/b6[,"SPO11"]
 plot(b6[cond,c("enrichment")],log2(www[cond]),xlab="Relative H3K4me3",ylab="DMC1 to SPO11 log2-ratio (WT)",pch=19,cex=0.1,col="grey",ylim=c(-3,4),xlim=c(0,6))
 
 
-www2=zcwfc[,"Heat"]/b6[,"SPO11"] 
+www2=zcwfc[,"Heat"]/b6[,"SPO11"]
 plot(b6[cond,c("enrichment")],log2(www2[cond]),xlab="Relative H3K4me3",ylab="DMC1 to SPO11 log2-ratio (WT)",pch=19,cex=0.1,col="grey",ylim=c(-3,4),xlim=c(0,6))
 
 #####quantiles
@@ -519,7 +519,7 @@ vals2=vals
 vals3=vals
 for(i in 1:nrow(vals)) {
 
-ourrows=which(cond & b6[,"enrichment"]>=bins[i] & b6[,"enrichment"]<bins[i+1]) 
+ourrows=which(cond & b6[,"enrichment"]>=bins[i] & b6[,"enrichment"]<bins[i+1])
 
 vals[i,2]=mean(log2(www[ourrows]))
 vals2[i,2]=mean(log2(www2[ourrows]))
@@ -558,14 +558,14 @@ plot(b6[cond,c("enrichment")],log2(www2[cond]),xlab="Relative H3K4me3",ylab="DMC
 points(vals2[,1],vals2[,2],pch=19)
 segments(x0=vals2[,1],x1=vals2[,1],y0=vals2[,3],y1=vals2[,4])
 
-dev.copy2pdf(file="chrXlog2ratiodmc1vsspo11wtandnull.pdf",width=10,height=5)
+dev.copy2pdf(file="../results/simon/chrXlog2ratiodmc1vsspo11wtandnull.pdf",width=10,height=5)
 
 par(mfrow=c(1,1))
 plot(b6[cond,c("enrichment")],log2(www[cond]/www2[cond]),xlab="Relative H3K4me3",ylab="DMC1 log2-ratio (WT vs ZCWPW1-null)",pch=19,cex=0.1,col="grey",ylim=c(-3,4),xlim=c(0,6))
 points(vals3[,1],vals3[,2],pch=19,type="b")
 segments(x0=vals3[,1],x1=vals3[,1],y0=vals3[,3],y1=vals3[,4])
 
-dev.copy2pdf(file="chrXlog2ratiodmc1wtvsnull.pdf",width=5,height=5)
+dev.copy2pdf(file="../results/simon/chrXlog2ratiodmc1wtvsnull.pdf",width=5,height=5)
 
 
 ########chrX and autosomes Spo11 heats
@@ -578,11 +578,11 @@ plot(b6[cond,"SPO11"],www[cond],xlab="Relative SPO11",ylab="DMC1 (WT)",pch=19,ce
 
 
 www2=zcwfc[,"Heat"]
- 
+
 plot(b6[cond,"SPO11"],www2[cond],xlab="Relative SPO11",ylab="DMC1 (ZCWPW1-null)",pch=19,cex=0.1,col="grey")
 
 www3=b6[,"SPO11"]
- 
+
 www4=b6[,"enrichment"]
 www4=www3
 ###www4=www
@@ -601,10 +601,10 @@ vals2x=vals
 vals3x=vals
 for(i in 1:nrow(vals)) {
 
-ourrows=which(cond & www4>=bins[i] & www4<bins[i+1]) 
+ourrows=which(cond & www4>=bins[i] & www4<bins[i+1])
 
 if(i<length(bins2))
-ourrows2=which(cond2 & www4>=bins2[i] & www4<bins2[i+1]) 
+ourrows2=which(cond2 & www4>=bins2[i] & www4<bins2[i+1])
 
 vals[i,2]=mean((www[ourrows]))
 vals2[i,2]=mean((www2[ourrows]))
@@ -677,7 +677,7 @@ segments(x0=vals2[,1],x1=vals2[,1],y0=vals2[,3],y1=vals2[,4])
 points(valsx[,1],vals2x[,2],pch=19,col=4)
 segments(x0=vals2x[,1],x1=vals2x[,1],y0=vals2x[,3],y1=vals2x[,4],col=4)
 
-dev.copy2pdf(file="xydmc1vsspo11wtandnull.pdf",width=10,height=5)
+dev.copy2pdf(file="../results/simon/xydmc1vsspo11wtandnull.pdf",width=10,height=5)
 
 
 plot(www3[cond],(www2[cond]),xlab="SPO11",ylab="DMC1 (ZCWPW1-null)",pch=19,cex=0.1,col=colormap[color[cond]])
