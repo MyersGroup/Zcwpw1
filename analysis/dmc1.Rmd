@@ -3,7 +3,161 @@ title: "DMC1 Chipseq"
 output: html_notebook
 ---
 
+Using data prepared by simon, replotting in ggplot2 with minor modifications
+
+```{r}
+load("../../../ZCWPW1 project/Paper/thingsforDaniel.out")
+
+
+plot(www3[cond2],(www[cond2]),xlab="SPO11",ylab="DMC1 (WT)",pch=19,cex=0.1,col=5,ylim=c(0,15))
+points(www3[cond],(www[cond]),xlab="SPO11",ylab="DMC1 (WT)",pch=19,cex=0.1,col=colormap[color[cond]])
+
+points(vals[,1],vals[,2],pch=19)
+segments(x0=vals[,1],x1=vals[,1],y0=vals[,3],y1=vals[,4])
+points(valsx[,1],valsx[,2],pch=19,col=4)
+segments(x0=valsx[,1],x1=valsx[,1],y0=valsx[,3],y1=valsx[,4],col=4)
+
+library(ggplot2)
+library(data.table)
+
+X <- data.table(SPO11=www3[cond2],
+           DMC1=www[cond2],
+           Chr="X",
+           Heat=NA,
+           Genotype="WT")
+
+Xmean <- data.table(valsx)
+setnames(Xmean, c("SPO11","DMC1","SPO11_min","SPO11_max"))
+Xmean$Chr <- "X"
+Xmean$Genotype <- "WT"
+
+A <- data.table(SPO11=www3[cond],
+           DMC1=www[cond],
+           Chr="Autosome",
+           Heat=color[cond],
+           Genotype="WT")
+
+Amean <- data.table(vals)
+setnames(Amean, c("SPO11","DMC1","SPO11_min","SPO11_max"))
+Amean$Chr <- "Autosome"
+Amean$Genotype <- "WT"
+
+
+########## KO
+
+XKO <- data.table(SPO11=www3[cond2],
+           DMC1=www2[cond2],
+           Chr="X",
+           Heat=NA,
+           Genotype="KO")
+
+XmeanKO <- data.table(vals2x)
+setnames(XmeanKO, c("SPO11","DMC1","SPO11_min","SPO11_max"))
+XmeanKO$Chr <- "X"
+XmeanKO$Genotype <- "KO"
+
+AKO <- data.table(SPO11=www3[cond],
+           DMC1=www2[cond],
+           Chr="Autosome",
+           Heat=color[cond],
+           Genotype="WT")
+
+AmeanKO <- data.table(vals2)
+setnames(AmeanKO, c("SPO11","DMC1","SPO11_min","SPO11_max"))
+AmeanKO$Chr <- "Autosome"
+AmeanKO$Genotype <- "KO"
+
+p <- ggplot(rbind(A,X), aes(SPO11, DMC1)) +
+  geom_point(aes(colour=Heat), size=0.75, stroke=0) +
+  coord_cartesian(xlim = c(0,12), ylim=c(0,15))+
+  #geom_smooth(data = A, method="lm") +
+  #geom_smooth(data = X, method="gam") +
+  #scale_x_sqrt() + scale_y_sqrt() +
+  scale_x_continuous(breaks = c(0,4,8,12))+
+  scale_colour_gradientn(colours=colormap, na.value = "blue", name="H3K4me3")+
+  #scale_color_viridis_c(na.value = "blue", direction = 1, option = "A") +
+  #facet_zoom(xy=SPO11<2 & DMC1<2, zoom.size = 1) +
+  geom_pointrange(data=Amean[DMC1<11 & SPO11<12], aes(ymin=SPO11_min, ymax=SPO11_max), size=0.25) +
+  geom_pointrange(data=Xmean[DMC1<11 & SPO11<12], aes(ymin=SPO11_min, ymax=SPO11_max), size=0.25, colour="blue") +
+  #geom_abline(colour="blue", slope=1.02556, intercept = 0.10841) +
+  geom_abline(colour="darkgreen") +
+  #geom_abline(colour="black", slope=1.00752, intercept = 0.09511, linetype="dashed") +
+  theme(legend.position = "left") +
+  ylab("DMC1 (WT)") +
+  xlab("SPO11 (WT)")+
+  theme(panel.background = element_rect(fill = 'grey85'))
+p
+#lm_ko <- lm(DMC1 ~ SPO11, AKO)
+
+pko <- ggplot(rbind(AKO,XKO), aes(SPO11, DMC1)) +
+    geom_point(aes(colour=Heat), size=0.75, stroke=0) +
+    scale_colour_gradientn(colours=colormap, na.value = "blue")+
+    coord_cartesian(xlim = c(0,12), ylim=c(0,15))+
+  scale_x_continuous(breaks = c(0,4,8,12))+
+    #geom_smooth(data = AKO, method = "lm") +
+    geom_pointrange(data=AmeanKO, aes(ymin=SPO11_min, ymax=SPO11_max), size=0.2) +
+    #geom_line(data=AmeanKO, size=0.1) +
+    geom_pointrange(data=XmeanKO, aes(ymin=SPO11_min, ymax=SPO11_max), size=0.2, colour="blue")+
+#facet_zoom(xy=SPO11<2 & DMC1<2, zoom.size = 1) +
+#geom_smooth(data = AKO, method="gam", formula = y ~ s(x) ) +
+#geom_smooth(data = AKO, method = "lm") +
+#geom_smooth(data = XKO, method="gam", formula = y ~ s(x, k=8), bs = "ad") 
+#scale_x_sqrt() + scale_y_sqrt() +
+  #geom_abline(colour="black", slope=1.00752, intercept = 0.09511, linetype="dashed") +
+  geom_abline(colour="darkgreen") +
+  theme(panel.background = element_rect(fill = 'grey85'))+
+  theme(legend.position = "none") +
+  ylab(expression(paste("DMC1 (",italic("Zcwpw1")^"-/-",")"))) +
+  xlab("SPO11 (WT)")
+  
+pko
+  
+dmc1_curveline <-  cowplot::plot_grid(p,
+                     pko,
+                     nrow=1,
+                     rel_widths = c(5.15,4))
+dmc1_curveline
+saveRDS(dmc1_curveline,"../results/dmc1_curveline.rds")
+
+```
+
+```{r}
+# cowplot::plot_grid(p + scale_color_viridis_c(option="A", na.value = "blue", name="H3K4me3"),
+#                    pko + scale_color_viridis_c(option="A", na.value = "blue"),
+#                    nrow=1,
+#                    rel_widths = c(5,4))
+```
+
+
+```{r}
+dmc1_ssds <- readRDS("../results/DMC1_SSDS_plot.rds")
+
+pdf("../results/DMC1.pdf")
+cowplot::plot_grid(dmc1_ssds,
+                   dmc1_curveline,
+                   nrow=2,
+                   labels="AUTO", rel_heights = c(5,4))
+dev.off()
+
+```
+
+
+```{r}
+ggplot(rbind(AKO,XKO), aes(SPO11, DMC1)) +
+  #geom_point(aes(colour=Heat), size=1, stroke=0) +
+  scale_color_viridis_c(na.value = "green", direction = 1, option = "A") +
+  facet_zoom(xy=SPO11<2 & DMC1<2, zoom.size = 1) +
+  geom_smooth(data = AKO, colour="Blue") +
+  geom_smooth(data = A, colour=scales::muted("blue")) +
+  geom_smooth(data = XKO, colour="Red") +
+  geom_smooth(data = X, colour=scales::muted("red")) +
+  geom_abline(colour="blue", slope=1.02556, intercept = 0.10841)
+```
+
+
 # DMC1 Vs Spo11 in WT and KO
+
+Reprocessing of DMC1 SSDS data
 
 ```{r, fig.width=6}
 B6 <- fread("../data/dmc1/B6_composite.txt")
@@ -75,7 +229,7 @@ perhotspot[chr=="X", Chromosome := "X"]
 
 # Dmc1
 setorder(perhotspot, dmc1_orig_heat)
-perhotspot[chr!="X", bin:=cut(1:nrow(perhotspot[chr!="X"]), 50)]# <- 
+perhotspot[chr!="X", bin:=cut(1:nrow(perhotspot[chr!="X"]), 50)] # <- 
 perhotspot[chr=="X"]$bin <- cut(1:nrow(perhotspot[chr=="X"]), 20)
 
 a <- ggplot(perhotspot[hshared==0,.(Zcw=mean(N),dmc1=mean(dmc1_orig_heat)),by=c("bin","isX")], aes(dmc1, Zcw, colour=isX)) + geom_point()
