@@ -41,9 +41,9 @@ tmp[, MeanCoverage := MeanCoverage - background, by=c("Strand","Mouse")]
 
 tmp[, MeanCoverage := MeanCoverage / sum(MeanCoverage), by=c("Strand","Mouse")]
 
-pdf("DMC1_SSDS.pdf", height = 5, width = 8)
-ggplot(tmp[Position>(-2000)], aes(Position, MeanCoverage, colour=Mouse, alpha=Strand)) + #group=Strand,
-  geom_line(size=0.35) +
+
+p <- ggplot(tmp[Position>(-2000)], aes(Position, MeanCoverage, colour=Mouse, alpha=Strand)) + #group=Strand,
+  geom_line(size=0.45) +
   facet_wrap(~Genotype, nrow=1) +
   scale_color_brewer(palette = "Set1") +
   xlab("Position from center (bp)") +
@@ -52,5 +52,11 @@ ggplot(tmp[Position>(-2000)], aes(Position, MeanCoverage, colour=Mouse, alpha=St
         panel.border = element_rect(color = "grey40", fill = NA, size = 0.5),
         strip.background = element_rect(color = "grey40", size = 0.5)) +
   scale_alpha_manual(values=c(1,0.5)) +
-  ylab("Normalised Mean Coverage")
+  ylab("Normalised Mean DMC1 Coverage")
+
+saveRDS(p, "DMC1_SSDS_plot.rds")
+
+pdf("DMC1_SSDS.pdf", height = 5, width = 8)
+p
 dev.off()
+
