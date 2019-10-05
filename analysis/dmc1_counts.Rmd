@@ -105,7 +105,7 @@ dmc1_counts$Genotype <- factor(dmc1_counts$Genotype, levels = c("Wild Type","Wil
 
 p <- ggplot(dmc1_counts, aes(Stage, `DMC1 foci`, colour=Genotype)) + 
   geom_point(size=0.5, position = position_jitterdodge()) + 
-  scale_color_brewer(palette = "Set1") + 
+  scale_color_brewer(palette = "Set1", labels = c("Wild Type",expression(italic("Zcwpw1")^"-/-"),expression(italic("Prdm9")^"-/-"))) + 
   theme_minimal() + 
   geom_boxplot(alpha=0) +
   theme(legend.position = "bottom")
@@ -138,7 +138,7 @@ p + geom_signif(y_position=c(80, 290, 325, 220, 230),
               annotation=c("0.5",fs("2.0e-3"),fs("6.0e-10"),fs("1.2e-06"),fs("3.3e-52")),
               tip_length=0.01, col="black", parse=TRUE) + ylim(0,330)
 
-ggsave("../results/dmc1_counts.pdf", width = 9, height = 5)
+ggsave("../results/dmc1_counts.pdf", width = 7, height = 5)
 ```
 
 
