@@ -392,6 +392,7 @@ create_set_matrix <- function(peaks, k=100, returnpeaks=FALSE){
   peaks$NonAlu_score <- foverlaps(peaks,repeats[!grep("Alu",Name)], mult="first")$Score
   peaks$CpGI <- foverlaps(peaks,CGI, mult="first")$V6
   peaks$H1C_H4K20 <- foverlaps(peaks,H1C_H4K20, mult="first")$V5
+  peaks$setdb1_5 <- foverlaps(peaks,setdb1_5, mult="first")$V7
   
   
   peaks_QC <- peaks[cov_input>5][chr!="chrX"]
@@ -414,6 +415,7 @@ create_set_matrix <- function(peaks, k=100, returnpeaks=FALSE){
     "NonAlu"=!is.na(NonAlu_score),
     "CpGI"=!is.na(CpGI),
     "H1C_H4K20"=!is.na(H1C_H4K20),
+    "Setdb1_5"=!is.na(setdb1_5),
     "total_peaks"=nrow(peaks_QC), #(as.numeric(decile)/k)*nrow(peaks_QC)
     "decile"=as.numeric(decile))]#[!is.na(decile)]*1
   
@@ -441,8 +443,8 @@ set_matrix_comb <- rbind(set_matrix_zcw_peaks, set_matrix_zcw_wP9_peaks_cin, set
 
 proportions <- set_matrix_comb[,.("Not Zcw Alone" = sum(Zcw_Alone==0) / .N,
                              "Zcw Alone, Not hP9, + ut_H3K4" = sum(Zcw_Alone==1 & hP9_Cterm==0 & H3K4me3_UT==1) / .N,
-                             "Zcw Alone, Not hP9, + Not ut_H3K4 + NotAlu + not H1C_H4K20" = sum(Zcw_Alone==1 & hP9_Cterm==0 & H3K4me3_UT==0 & Alu==0 & H1C_H4K20==0) / .N,
-                             "Zcw Alone, Not hP9, + Not ut_H3K4 + NotAlu + H1C_H4K20" = sum(Zcw_Alone==1 & hP9_Cterm==0 & H3K4me3_UT==0 & Alu==0 & H1C_H4K20==1) / .N,
+                             "Zcw Alone, Not hP9, + Not ut_H3K4 + NotAlu + not NonAluRep" = sum(Zcw_Alone==1 & hP9_Cterm==0 & H3K4me3_UT==0 & Alu==0 & NonAlu==0) / .N,
+                             "Zcw Alone, Not hP9, + Not ut_H3K4 + NotAlu + NonAluRep" = sum(Zcw_Alone==1 & hP9_Cterm==0 & H3K4me3_UT==0 & Alu==0 & NonAlu==1) / .N,
                              "Zcw Alone, Not hP9, + Not ut_H3K4 + Alu" = sum(Zcw_Alone==1 & hP9_Cterm==0 & H3K4me3_UT==0& Alu==1) / .N,
                              "Zcw Alone, + hP9, + p9_H3K4" = sum(Zcw_Alone==1 & hP9_Cterm==1 & H3K4me3_P9==1) / .N,
                              "Zcw Alone, + hP9, + Not p9_H3K4" = sum(Zcw_Alone==1 & hP9_Cterm==1 & H3K4me3_P9==0) / .N
@@ -486,6 +488,25 @@ UpSetR::upset(set_matrix_zcw_peaks[decile==100][,1:11]*1, nsets = 11)
 #UpSetR::upset(set_matrix[,c("Zcw_Alone", "hP9_Cterm","Dmc1","decile"),with=F][decile==50])
 ```
 
+which repeat most enriched at top
+
+```{r}
+tmp <- foverlaps(zcw_wP9_peaks_cin,repeats[!grep("Alu",Name)], mult="first")
+
+tmp[ , decile := cut(i.enrichment,
+                  breaks = quantile(i.enrichment, 
+                                    probs = seq(0, 1, by = 1/k)),
+                  labels = 1:k,
+                  include.lowest=T)]
+
+ggplot(merge(tmp[decile==1][,.N,by=Name], tmp[decile==100][,.N,by=Name], by="Name"), aes(N.x,N.y)) + geom_point() + scale_x_log10() + scale_y_log10() + geom_abline()
+
+ggplot(merge(tmp[decile==1][,.N,by=Name], tmp[decile==100][,.N,by=Name], by="Name"), aes(N.x+25,N.y+25)) + geom_point() + scale_x_log10() + scale_y_log10() + geom_abline()
+
+fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[grep("G-rich",Name)], x1="Zcw UT", y1="G-rich", shift=1e8) + scale_y_continuous()
+```
+
+
 ## Overlap Hunting
 
 ```{r}
@@ -513,14 +534,72 @@ fwrite(zcw_peaks_cin[cov_input>5][chr!="chrX"][order(-enrichment)][set_matrix_zc
 
 ```{r}
 
-ctcf <- loadBed("~/Dropbox/Downloads/ENCFF314ZAL.bed")
-Trim28 <- loadBed("~/Dropbox/Downloads/ENCFF860DHS.bed")
-h3k9 <- loadBed("~/Dropbox/Downloads/ENCFF342JBJ.bed")
-h3K27ac <- loadBed("~/Dropbox/Downloads/ENCFF451UZW.bed")
-h3k4me1 <- loadBed("~/Dropbox/Downloads/ENCFF483QXH.bed")
+#wget https://www.encodeproject.org/files/ENCFF101AKQ/@@download/ENCFF101AKQ.bed.gz
+#wget https://www.encodeproject.org/files/ENCFF690WNQ/@@download/ENCFF690WNQ.bed.gz
 
-system("cut -f 1-3 ~/Dropbox/Downloads/ENCFF001VRG.bed > ~/Dropbox/Downloads/ENCFF001VRG.bed3")
-setdb1 <- loadBed("~/Dropbox/Downloads/ENCFF001VRG_hg38.bed3")
+ctcf <- loadBed("~/Dropbox/Downloads/ENCODE_beds/ENCFF314ZAL.bed")
+ctcf_2 <- loadBed("~/Dropbox/Downloads/ENCFF338RAX.bed") # bed narrowPeak	peaks and background as input for IDR	1, 2
+
+# https://www.encodeproject.org/experiments/ENCSR000EUZ/ SE36nt HEK293T
+Trim28 <- loadBed("~/Dropbox/Downloads/ENCODE_beds/ENCFF860DHS.bed") #, 29k peaks
+Trim28_2 <- loadBed("~/Dropbox/Downloads/ENCFF959SPJ.bed") #300k
+#bed narrowPeak	peaks and background as input for IDR	1, 2
+
+#https://www.encodeproject.org/experiments/ENCSR474CVP/ PE100bp K562
+Trim28_3 <- loadBed("~/Dropbox/Downloads/ENCFF131RPK.bed") # 300k
+
+#https://www.encodeproject.org/experiments/ENCSR876GXA/ ZBTB33
+zbtb33 <- loadBed("~/Dropbox/Downloads/ENCFF108BVL.bed")
+
+#https://www.encodeproject.org/experiments/ENCSR142YYA/ EWSR1
+ewsr1 <- loadBed("~/Dropbox/Downloads/ENCFF418KWK.bed")
+
+h3K27ac <- loadBed("~/Dropbox/Downloads/ENCODE_beds/ENCFF451UZW.bed")
+h3K27ac_2 <- loadBed("~/Dropbox/Downloads/ENCFF464QPC.bed")
+
+# https://www.encodeproject.org/experiments/ENCSR000AKQ/, h3K27me3
+h3K27me3 <- loadBed("~/Dropbox/Downloads/ENCFF700RBU.bed")
+
+#https://www.encodeproject.org/experiments/ENCSR000FCG/
+h3k4me1 <- loadBed("~/Dropbox/Downloads/ENCODE_beds/ENCFF483QXH.bed")
+
+# https://www.encodeproject.org/experiments/ENCSR396QWK/ FLAG MBD
+# HepG2 genetically modified using CRISPR, SE50nt
+mbd1 <- loadBed("~/Dropbox/Downloads/ENCFF446OZF.bed")
+
+# https://www.encodeproject.org/experiments/ENCSR221GAN/ K562 MBD2
+mbd2 <- loadBed("~/Dropbox/Downloads/ENCFF786NME.bed")
+
+# https://www.encodeproject.org/experiments/ENCSR000EVX/ ZNF274
+znf274 <- loadBed("~/Dropbox/Downloads/ENCFF478NGK.bed")
+
+#https://www.encodeproject.org/experiments/ENCSR987PBI/ DNMT1 K562
+dnmt1 <- loadBed("~/Dropbox/Downloads/ENCFF129ADK.bed") # 300k peaks
+
+# https://www.encodeproject.org/experiments/ENCSR156CWW/ dnmt3b in HepG2 FLAG tagged, SE52bp
+dnmt3b <- loadBed("~/Dropbox/Downloads/ENCFF204MYY.bed") # 300k peaks
+
+# https://www.encodeproject.org/experiments/ENCSR000BNK/
+ctcfl <- loadBed("~/Dropbox/Downloads/ENCFF678TFE.bed") #CTCFL ChIP-seq protocol v041610.1 on human K562 
+ctcfl_2 <- loadBed("~/Dropbox/Downloads/ENCFF081QMM.bed") #CTCFL bed narrowPeak	peaks and background as input for IDR	1, 2
+
+# hg19
+# system("cut -f 1-3 ~/Dropbox/Downloads/ENCODE_beds/ENCFF001VRG.bed > ~/Dropbox/Downloads/ENCODE_beds/ENCFF001VRG.bed3")
+# setdb1 <- loadBed("~/Dropbox/Downloads/ENCODE_beds/ENCFF001VRG_hg38.bed3")
+
+# hg38
+# https://www.encodeproject.org/experiments/ENCSR000AUT/ SE36nt
+setdb1_2 <- loadBed("~/Dropbox/Downloads/ENCFF101AKQ.bed") # ENCSR000AUT/ K562 300k peaks, peaks and background as input for IDR	1
+
+# https://www.encodeproject.org/experiments/ENCSR000EWI/ SE32nt
+setdb1_3 <- loadBed("~/Dropbox/Downloads/ENCFF611CFB.bed") # ENCSR000EWI/ K562 300k peaks, peaks and background as input for IDR	1, 2
+
+h3k9 <- loadBed("~/Dropbox/Downloads/ENCODE_beds/ENCFF342JBJ.bed")
+H3K9me3 <- loadBed("~/Dropbox/Downloads/ENCFF538EDC.bed") # K562, 92k peaks, bed narrowPeak	peaks	1
+H3K9me3_2 <- loadBed("~/Dropbox/Downloads/ENCFF422AIH.bed") # HEK293, 54k peaks,  bed narrowPeak	peaks	2
+
+
+setdb1_3$enrichment <- setdb1_3$V7
 
 
 CGI <- fread("~/Dropbox/Downloads/cpgIslandExtUnmasked.txt") #CpG
@@ -529,28 +608,71 @@ CGI <- prejoin(CGI, ext = 250)
 
 system("cut -f 2-4 cpgIslandExtUnmasked.txt > cpgIslandExtUnmasked.bed")
 
-ctcfl <- loadBed("~/Dropbox/Downloads/ENCFF678TFE.bed") #CTCFL ChIP-seq protocol v041610.1 on human K562 https://www.encodeproject.org/experiments/ENCSR000BNK/
+# CpG Binding Proteins MGI
+# http://www.informatics.jax.org/marker/summary?nomen=&cm=&coordinate=&coordUnit=bp&startMarker=&endMarker=&go=&goVocab=goFunctionTerm&goVocab=goProcessTerm&goVocab=goComponentTerm&interpro=IPR001739+OR+IPR022056+OR+IPR025884+OR+IPR032343&phenotype=
 
 
-fraction_overlapN2(zcw_peaks_cin[cov_input>5], ctcf, "ZcwST", "ctcf", shift=1e8, n=100)
 
-fraction_overlapN2(zcw_peaks_cin[cov_input>5], Trim28, "ZcwST", "Trim28", shift=1e8, n=100)
+fraction_overlapN2(zcw_peaks_cin[cov_input>5], zbtb33, "Zcwpw1", "Zbtb33", shift=1e8, n=100) # up to 25, - 12.5
+fraction_overlapN2(zcw_peaks_cin[cov_input>5], ewsr1, "Zcwpw1", "ewsr1", shift=1e8, n=100) # depleted down to 6%
 
-fraction_overlapN2(zcw_peaks_cin[cov_input>5], h3k9, "ZcwST", "h3k9", shift=1e8, n=100)
+fraction_overlapN2(zcw_peaks_cin[cov_input>5], h3K27ac, "Zcwpw1", "h3K27ac", shift=1e8, n=100)
+fraction_overlapN2(zcw_peaks_cin[cov_input>5], h3K27ac_2, "Zcwpw1", "h3K27ac", shift=1e8, n=100) # 70k peaks, up to ~15%
 
-fraction_overlapN2(zcw_peaks_cin[cov_input>5], CGI, "ZcwST", "CpG Islands", shift=1e8, n=100)
+fraction_overlapN2(zcw_peaks_cin[cov_input>5], h3K27me3, "Zcwpw1", "h3K27me3", shift=1e8, n=100) # up to %25 then dips
+fraction_overlapN2(zcw_peaks_cin[cov_input>5], mbd1, "Zcwpw1", "mbd1", shift=1e8, n=100) # up to ~30%
+fraction_overlapN2(zcw_peaks_cin[cov_input>5], mbd2, "Zcwpw1", "mbd2", shift=1e8, n=50) + theme(legend.position = "bottom") # up to ~40%!
+fraction_overlapN2(zcw_peaks_cin[cov_input>5], znf274, "Zcwpw1", "znf274", shift=1e8, n=100) # very flat!
+fraction_overlapN2(zcw_peaks_cin[cov_input>5], dnmt1, "Zcwpw1", "dnmt1", shift=1e8, n=100) # to ~20%, (flat, PE100bp)
+fraction_overlapN2(zcw_peaks_cin[cov_input>5], dnmt3b, "Zcwpw1", "dnmt3b", shift=1e8, n=100) #
 
-fraction_overlapN2(zcw_peaks_cin[cov_input>5], h3K27ac, "ZcwST", "h3K27ac", shift=1e8, n=100)
+fraction_overlapN2(zcw_peaks_cin[cov_input>5], h3k9, "Zcwpw1", "h3k9", shift=1e8, n=100)
+fraction_overlapN2(zcw_peaks_cin[cov_input>5], H3K9me3, "Zcwpw1", "H3K9me3", shift=1e8, n=100) # depleted!
+fraction_overlapN2(zcw_peaks_cin[cov_input>5], H3K9me3_2, "Zcwpw1", "H3K9me3_2", shift=1e8, n=100) # also depleted!
+fraction_overlapN2(zcw_peaks_cin[cov_input>5], H3K9me3_2, "Zcwpw1", "H3K9me3", shift=1e8, n=25) + scale_y_continuous() + theme(legend.position = "bottom")
 
-fraction_overlapN2(zcw_peaks_cin[cov_input>5], h3k4me1, "ZcwST", "h3K4me1", shift=1e8, n=100)
+fraction_overlapN2(zcw_peaks_cin[cov_input>5], setdb1_2, "Zcwpw1", "setdb1", shift=1e8, n=100) + theme(legend.position = "bottom")
+fraction_overlapN2(zcw_peaks_cin[cov_input>5], setdb1_3, "Zcwpw1", "setdb1", shift=1e8, n=100) + theme(legend.position = "bottom")
+fraction_overlapN2(setdb1_2, zcw_peaks_cin, "setdb1_2", "Zcwpw1", shift=1e8, n=100) + theme(legend.position = "bottom")
+fraction_overlapN2(setdb1_3, zcw_peaks_cin, "setdb1_3", "Zcwpw1", shift=1e8, n=100) + theme(legend.position = "bottom")
 
-fraction_overlapN2(zcw_peaks_cin[cov_input>5], setdb1, "ZcwST", "setdb1", shift=1e8, n=100)
+fraction_overlapN2(zcw_peaks_cin[cov_input>5], ctcfl, "Zcwpw1", "Ctcfl in K562", shift=1e8, n=100)
+fraction_overlapN2(zcw_peaks_cin[cov_input>5], ctcfl_2, "Zcwpw1", "ctcfl_2", shift=1e8, n=100) # up to ~35%, 300k peaks
 
-fraction_overlapN2(zcw_peaks_cin[cov_input>5], ctcfl, "ZcwST", "Ctcfl in K562", shift=1e8, n=100)
+fraction_overlapN2(zcw_peaks_cin[cov_input>5], ctcf, "Zcwpw1", "ctcf", shift=1e8, n=100)
+fraction_overlapN2(zcw_peaks_cin[cov_input>5], ctcf_2, "Zcwpw1", "ctcf", shift=1e8, n=100) # up to 37.5, 300k peaks
+
+fraction_overlapN2(zcw_peaks_cin[cov_input>5], Trim28, "Zcwpw1", "Trim28", shift=1e8, n=100)
+fraction_overlapN2(zcw_peaks_cin[cov_input>5], Trim28, "Zcwpw1", "Trim28", shift=1e8, n=25) + scale_y_continuous()
+fraction_overlapN2(zcw_peaks_cin[cov_input>5], Trim28_2, "Zcwpw1", "Trim28", shift=1e8, n=50)+ theme(legend.position = "bottom") # SE36nt
+fraction_overlapN2(zcw_peaks_cin[cov_input>5], Trim28_3, "Zcwpw1", "Trim28", shift=1e8, n=50)+ theme(legend.position = "bottom") # better at lower enrich (Alu), PE100bp
+
+
+fraction_overlapN2(zcw_peaks_cin[cov_input>5], CGI, "Zcwpw1", "CpG Islands", shift=1e8, n=100)
+fraction_overlapN2(zcw_peaks_cin[cov_input>5], h3k4me1, "Zcwpw1", "h3K4me1", shift=1e8, n=100) # 100k peaks, barely visible enrich
+
 
 
 
 ```
+
+# Mappability Masked
+
+```{r}
+
+zcw_peaks_cin_m24 <- fread("~/Downloads/Zcwpw1_peak_cin_24bpmappable.bed")
+names(zcw_peaks_cin_m24) <- names(zcw_peaks_cin)[1:11]
+zcw_peaks_cin_m24 <- prejoin(zcw_peaks_cin_m24)
+
+fraction_overlapN2(zcw_peaks_cin[cov_input>5], setdb1_3, "Zcwpw1", "setdb1", shift=1e8, n=50) + theme(legend.position = "bottom")
+fraction_overlapN2(zcw_peaks_cin_m24[cov_input>5], setdb1_3, "Zcwpw1", "setdb1", shift=1e8, n=50) + theme(legend.position = "bottom")
+
+setdb1_3$enrichment <- setdb1_3$V7
+
+fraction_overlapN2(setdb1_3, zcw_peaks_cin, "Setdb1", "Zcwpw1", shift=1e8, n=50) + theme(legend.position = "bottom")
+fraction_overlapN2(setdb1_3, zcw_peaks_cin_m24, "Setdb1", "Zcwpw1", shift=1e8, n=50) + theme(legend.position = "bottom")
+```
+
 
 # H4K20
 
@@ -558,7 +680,8 @@ fraction_overlapN2(zcw_peaks_cin[cov_input>5], ctcfl, "ZcwST", "Ctcfl in K562", 
 
 IPSC_H4K20 <- loadBed("~/Dropbox/Downloads/ENCFF295WQL.bed")  #    Homo sapiens GM23338 originated from GM23248 https://www.encodeproject.org/experiments/ENCSR293NAJ/
 
-H1C_H4K20 <- loadBed("~/Dropbox/Downloads/ENCFF665UWA.bed") #     Homo sapiens H1 https://www.encodeproject.org/experiments/ENCSR728SZE/
+H1C_H4K20 <- loadBed("~/Dropbox/Downloads/ENCODE_beds/ENCFF665UWA.bed") #     Homo sapiens H1 https://www.encodeproject.org/experiments/ENCSR728SZE/
+
 H1C_H4K20_rep <- loadBed("~/Dropbox/Downloads/ENCFF439CWL.bed") #     Homo sapiens H1 https://www.encodeproject.org/experiments/ENCSR728SZE/
 
 H9C_H4K20 <- loadBed("~/Dropbox/Downloads/ENCFF280SGN.bed") #    Homo sapiens hepatocyte originated from H9 https://www.encodeproject.org/experiments/ENCSR289TGF/
@@ -575,7 +698,8 @@ KMS11_H4K20 <- loadBed("~/Dropbox/Downloads/ENCFF720TFF.bed")  #     Homo sapien
 H1NC_H4K20 <- loadBed("~/Dropbox/Downloads/ENCFF108PRX.bed") #Homo sapiens neural cell originated from H1 https://www.encodeproject.org/experiments/ENCSR958ZMM/
 
 
-fraction_overlapN2(zcw_peaks_cin[cov_input>5], H1C_H4K20, "ZcwST", "H1C_H4K20", shift=1e8, n=100) # 12 to 50%
+fraction_overlapN2(zcw_peaks_cin[cov_input>5], H1C_H4K20, "Zcwpw1", "H1C_H4K20", shift=1e8, n=100) # 12 to 50%
+fraction_overlapN2(zcw_peaks_cin[cov_input>5], H1C_H4K20, "Zcwpw1", "H1C_H4K20", shift=1e8, n=50) + theme(legend.position = "bottom")
 fraction_overlapN2(zcw_peaks_cin[cov_input>5], H1C_H4K20_rep, "ZcwST", "H1C_H4K20_rep", shift=1e8, n=100) # 5 to 30%
 
 fraction_overlapN2(zcw_peaks_cin[cov_input>5], IMR90_H4K20, "ZcwST", "H9CSMO_H4K20", shift=1e8, n=100) # 10% to 37% enriched
