@@ -639,6 +639,13 @@ wget https://www.pmgenomics.ca/hoffmanlab/proj/bismap/trackhub/hg38/k24.Umap.Mul
 ./bigWigToBedGraph k24.Umap.MultiTrackMappability.bw k24.Umap.MultiTrackMappability.bedGraph
 awk '$4 > 0.75' k24.Umap.MultiTrackMappability.bedGraph | LC_ALL=C sort -k1,1 -k2,2n -S5G --parallel=5 | bedtools merge -i stdin > 24.Umap.MultiTrackMappability_Keep.bed
 
+sort -k1,1 ../hg38_sizes_23.chrom > ../hg38_sizes_23_alphasort.chrom
+
+awk '$1!="chrY"' 24.Umap.MultiTrackMappability_Keep.bed | bedtools complement -i stdin -g ../hg38_sizes_23_alphasort.chrom > 24.Umap.MultiTrackMappability_Exclude.bed
+
+bedtools slop -i mappability/24.Umap.MultiTrackMappability_Exclude.bed -g hg38_sizes_23_alphasort.chrom -b 10 | bedtools subtract -A -a peaks/SingleBasePeaks.WTCHG_538916_221156_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144.p0.000001.sep250.ALL.bed -b stdin > Zcwpw1_peak_cin_24bpmappable.bed
+
+
 bwtool extract bed ch6_sample.bed k24.Umap.MultiTrackMappability.bw k24.Umap.MultiTrackMappability_bwtool.bed
 
 bedtools merge -d 10 -i 24.Umap.MultiTrackMappability.bed > 24.Umap.MultiTrackMappability_d10.bed
