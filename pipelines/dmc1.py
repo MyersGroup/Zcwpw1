@@ -94,6 +94,7 @@ rule beds:
   shell:
     """
     awk -v OFS='\t' '$10=sprintf("%.0f",$10) {{if($1 != "20" && $5=="0" && $4=="B6") print $1,$10,$10,"0","0","+";}}'  {input.b6} > {output.b6}
+    awk -v OFS='\t' '$10=sprintf("%.0f",$10) {{if($1 != "20" && $5=="0" && $4=="B6") print $0;}}'  B6_composite.txt > B6_composite_filtered.bed
     awk -v OFS='\t' '{{if($1 != "20") print $1,$2,$2,"0","0","+";}}'  {input.ko} | tail -n +2 > {output.ko}
     """
 
