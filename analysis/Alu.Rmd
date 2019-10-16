@@ -72,6 +72,65 @@ fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[grep("\\(",Name)], x1="Z
 # fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[Name=="THE1B"], x1="Zcw UT", y1="Repeats", shift=1e8) # not
 ```
 
+```{r}
+fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[grep("LTR",Name)], x1="Zcw UT", y1="LTR Repeats", shift=1e8) + scale_y_continuous()
+
+fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[Name=="MIRb"], x1="Zcw UT", y1="LTR Repeats", shift=1e8) + scale_y_continuous()
+
+fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[Name=="MIR"], x1="Zcw UT", y1="LTR Repeats", shift=1e8) + scale_y_continuous()
+
+fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[Name=="L2a"], x1="Zcw UT", y1="LTR Repeats", shift=1e8) + scale_y_continuous()
+
+fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[Name=="MIRc"], x1="Zcw UT", y1="LTR Repeats", shift=1e8) + scale_y_continuous()
+
+fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[Name=="MIR3"], x1="Zcw UT", y1="LTR Repeats", shift=1e8) + scale_y_continuous()
+
+fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[Name=="A-rich"], x1="Zcw UT", y1="LTR Repeats", shift=1e8) + scale_y_continuous()
+
+fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[Name=="MER5A"], x1="Zcw UT", y1="LTR Repeats", shift=1e8) + scale_y_continuous()
+
+fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[Name=="FLAM_C"], x1="Zcw UT", y1="LTR Repeats", shift=1e8) + scale_y_continuous() # enriched at low
+
+
+fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[grep("HAL1b",Name)], x1="Zcw UT", y1="LTR Repeats", shift=1e8) + scale_y_continuous()
+```
+
+
+```{r}
+repeats[grep("THE1.-int",Name)]
+repeats[, length := CI_stop-CI_start]
+repeats$enrichment <- as.numeric(repeats$Score)
+repeats$enrichment <- as.numeric(repeats$length)
+
+plot(sort(repeats[grep("THE1.-int",Name)]$length))
+fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[grep("THE1.-int",Name)], x1="Zcw UT", y1="THE1X-int", shift=1e8)
+fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[grep("THE1.-int",Name)], x1="Zcwpw1", y1="THE1X-int", shift=1e8) + scale_y_continuous() + theme(legend.position = "bottom")
+
+repeats$enrichment <- as.numeric(repeats$length)
+fraction_overlapN2(repeats[grep("THE1.-int",Name)], zcw_peaks_cin, x1="THE1X-int", y1="Zcwpw1", shift=1e8) + scale_y_continuous() + scale_x_continuous() + theme(legend.position = "bottom") + xlab("THE1X-int length")
+
+fraction_overlapN2(repeats[grep("MIR",Name)], zcw_peaks_cin, x1="MIR", y1="Zcwpw1", shift=1e8) + scale_y_continuous() + scale_x_continuous() + theme(legend.position = "bottom") + xlab("MIR length")
+
+
+fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[grep("MIR",Name)], x1="Zcwpw1 UT", y1="MIR Repeats", shift=1e8) + scale_y_continuous()
+
+fraction_overlapN2(repeats[grep("MIR",Name)], zcw_peaks_cin, x1="MIR", y1="Zcw UT", shift=1e8) + scale_y_continuous() + scale_x_continuous()
+```
+
+```{r}
+# Hells
+
+wget ftp://ftp.ncbi.nlm.nih.gov/geo/samples/GSM835nnn/GSM835828/suppl/GSM835828%5Fwt%5Fhells%2Ebed%2Egz
+wget ftp://ftp.ncbi.nlm.nih.gov/geo/samples/GSM835nnn/GSM835828/suppl/GSM835828%5Fwt%5Fhells%5Fpeaks%2Ebed%2Egz
+
+wget https://raw.githubusercontent.com/arq5x/bedtools/master/genomes/mouse.mm9.genome
+zcat GSM835828_wt_hells.bed.gz | sort -k 1,1 > GSM835828_wt_hells.sorted.bed
+bedtools genomecov -bg -i GSM835828_wt_hells.sorted.bed -g mouse.mm9.genome > GSM835828_wt_hells.bedGraph
+
+scp wells@stats2:saxony/zcwpw1/GSM835828_wt_hells.bedGraph .
+```
+
+
 Non Alu repeats are not enriched relative to expected based on randomised positions.
 
 ```{r}
