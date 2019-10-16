@@ -143,7 +143,7 @@ repeats[grep("Alu",Name)][,.N,by=Name][order(-N)][1:50]
 ```{r}
 system("bedtools getfasta -s -fi motifs/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa -bed Repeat_MaskerSorted_Alu_QC.bed -name > AluRepeats.fa")
 
-AluRepeats <- seqinr::read.fasta("~/Downloads/AluRepeats.fa", forceDNAtolower = FALSE, as.string = TRUE)
+AluRepeats <- seqinr::read.fasta("../data/AluRepeats.fa", forceDNAtolower = FALSE, as.string = TRUE)
 AluRepeats <- unlist(AluRepeats)
 
 repeatsAlu <- repeats[Name!="Alu"][grep("Alu",Name)][CI_stop-CI_start>250 & CI_stop-CI_start<350]
@@ -158,15 +158,16 @@ repeatsAlu$CG_count <- sapply(CG_locations, length)
 
 # location & frequency hist
 hist(unlist(CG_locations[repeatsAlu$length==299]), breaks=1000)
-hist(CG_count, breaks=50)
+hist(repeatsAlu$CG_count, breaks=50)
 
 # % of Alu
 repeatsAlu$enrichment <- repeatsAlu$CG_count
-p <- fraction_overlapN2(repeatsAlu, zcw_peaks_cin, x1="Alu Repeats by CpG Count (Not ", y1="Zcw UT", shift=1e9) + 
+
+AluEnrich <- fraction_overlapN2(repeatsAlu, zcw_peaks_cin, x1="Alu Repeats by CpG Count (Not ", y1="Zcw UT", shift=1e9) + 
   scale_x_continuous() +
   xlim(0,25) + # min of 200 data points required
   xlab("CpG Count") + 
-  ylab("Fraction of Alu Repeats overlaping Zcwpw1 peaks (no Prdm9)") +
+  ylab("Fraction of Alu Repeats overlaping\n Zcwpw1 peaks (no Prdm9)") +
   theme(legend.position = "bottom")
 
 
@@ -187,10 +188,12 @@ pi <- tmp2 +
   xlab("Zcwpw1 Enrichment (no Prdm9)") +
   ylab("Fraction of Zcwpw1 peaks that overlap Alu repeats")
 
-pmain <- plot_grid(pi + theme(legend.position = "none"), p + theme(legend.position = "none"), labels = "AUTO")
+pmain <- plot_grid(pi + theme(legend.position = "none"), AluEnrich + theme(legend.position = "none"), labels = "AUTO")
+
+alu_enrich_plot <- plot_grid(pmain, get_legend(AluEnrich), ncol=1, rel_heights = c(1, 0.07))
 
 pdf("../results/Alu_by_CpG.pdf", width = 10, height = 5.5)
-plot_grid(pmain, get_legend(p), ncol=1, rel_heights = c(1, 0.07))
+alu_enrich_plot
 dev.off()
 
 # % of Zcw
@@ -370,6 +373,8 @@ nchar(strsplit(toString(subject(tmp)), ", ")[[1]])
 
 # CpG in general
 
+Does CpG presence/number affect mean enrichment for non Alus?
+
 ```{r}
 
 # # all CpG in Chr1
@@ -384,14 +389,19 @@ nchar(strsplit(toString(subject(tmp)), ", ")[[1]])
 cut -f 1-3 CpG_hg38.bed > CpG_hg38_cut.bed
 
 # count CpG at each peak (Chr1)
-tail -n +2 peaks/SingleBasePeaks.WTCHG_538916_221156_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144.p0.000001.sep250.ALL.bed |
-bedtools slop -i stdin -g ../single-cell/sequencing/metadata/hg38_sizes.chrom -b 150 | grep -P "chr1\t" |
-bedtools intersect -a stdin -b CpG_chr1.bed -c > peaks/SingleBasePeaks.WTCHG_538916_221156_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144.p0.000001.sep250.ALL_wCpGcount_chr1.bed
+# tail -n +2 peaks/SingleBasePeaks.WTCHG_538916_221156_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144.p0.000001.sep250.ALL.bed |
+# bedtools slop -i stdin -g ../single-cell/sequencing/metadata/hg38_sizes.chrom -b 150 | grep -P "chr1\t" |
+# bedtools intersect -a stdin -b CpG_chr1.bed -c > peaks/SingleBasePeaks.WTCHG_538916_221156_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144.p0.000001.sep250.ALL_wCpGcount_chr1.bed
 
 # count CpG at each peak Whole genome
 tail -n +2 peaks/SingleBasePeaks.WTCHG_538916_221156_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144.p0.000001.sep250.ALL.bed |
 bedtools slop -i stdin -g ../single-cell/sequencing/metadata/hg38_sizes.chrom -b 150 |
 bedtools intersect -a stdin -b CpG_hg38.bed -c > peaks/SingleBasePeaks.WTCHG_538916_221156_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144.p0.000001.sep250.ALL_wCpGcount.bed
+
+# and for CVC peaks
+tail -n +2 peaks/SingleBasePeaks.WTCHG_538916_223180_vs_WTCHG_538916_221156.p0.000001.sep250.ALL.bed |
+bedtools slop -i stdin -g ../single-cell/sequencing/metadata/hg38_sizes.chrom -b 150 |
+bedtools intersect -a stdin -b CpG_hg38.bed -c > peaks/SingleBasePeaks.WTCHG_538916_223180_vs_WTCHG_538916_221156.p0.000001.sep250.ALL_wCpGcount.bed
 
 
 # 115320 peaks, each 300bp
@@ -400,10 +410,10 @@ bedtools intersect -a stdin -b CpG_hg38.bed -c > peaks/SingleBasePeaks.WTCHG_538
 # 2316765 / (248956422/300) = 2.79 CpG per 300bp
 # but clustering
 # try randomisation instead
-head -1 ../single-cell/sequencing/metadata/hg38_sizes.chrom > chr1_size.bed
-bedtools random -n 115320 -l 300 -g chr1_size.bed -seed 71346 | sort -k1,1 -k2,2n > chr1_random.bed
-
-bedtools intersect -a chr1_random.bed -b CpG_chr1.bed -c > chr1_random_CpGcount.bed
+# head -1 ../single-cell/sequencing/metadata/hg38_sizes.chrom > chr1_size.bed
+# bedtools random -n 115320 -l 300 -g chr1_size.bed -seed 71346 | sort -k1,1 -k2,2n > chr1_random.bed
+# 
+# bedtools intersect -a chr1_random.bed -b CpG_chr1.bed -c > chr1_random_CpGcount.bed
 
 # whole genome
 head -23 ../single-cell/sequencing/metadata/hg38_sizes.chrom > hg38_sizes23.bed
@@ -413,10 +423,13 @@ bedtools intersect -a peaks/Zcw_random.bed -b CpG_hg38.bed -c > Zcw_random_CpGco
 
 
 
-chr1_rand_cpg <- fread("../data/peaks/Zcw_random_CpGcount.bed") #"~/Downloads/chr1_random_CpGcount.bed")
-# mean(chr1_rand_cpg$V7) = 2.817 - close!
-setnames(chr1_rand_cpg, c("chr","CI_start_ext","CI_stop_ext","x","width","strand","CpGcount"))
+rand_cpg <- fread("../data/peaks/Zcw_random_CpGcount.bed") #"~/Downloads/chr1_random_CpGcount.bed")
+# mean(rand_cpg$V7) = 2.817 - close!
+setnames(rand_cpg, c("chr","CI_start_ext","CI_stop_ext","x","width","strand","CpGcount"))
 
+zcw_at_rand_cpg <- fread("../data/peaks/ForceCalledPeaks_WTCHG_538916_221156_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144_AT_Zcw_random.bed.bed")
+
+rand_cpg <- merge(rand_cpg,zcw_at_rand_cpg, by.x=c("chr","CI_start_ext"), by.y=c("chr","center_start"))
 
 zcw_peaks_cin_cpg <- fread("../data/peaks/SingleBasePeaks.WTCHG_538916_221156_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144.p0.000001.sep250.ALL_wCpGcount.bed")
 names(zcw_peaks_cin_cpg)[1:11] <- c("chr", "center_start", "center_stop", "CI_start", "CI_stop", "cov_r1", "cov_r2", "cov_input", "enrichment", "likelihood", "pvalue")
@@ -424,13 +437,17 @@ names(zcw_peaks_cin_cpg)[12] <- "CpGcount"
 zcw_peaks_cin_cpg <- prejoin(zcw_peaks_cin_cpg, width=0)
 cor(zcw_peaks_cin_cpg$enrichment, zcw_peaks_cin_cpg$CpGcount)
 
+zcw_wP9_vs_chip_Z_cpg <- fread("../data/peaks/SingleBasePeaks.WTCHG_538916_223180_vs_WTCHG_538916_221156.p0.000001.sep250.ALL_wCpGcount.bed")
+names(zcw_wP9_vs_chip_Z_cpg)[1:12] <- c("chr", "center_start", "center_stop", "CI_start", "CI_stop", "cov_r1", "cov_r2", "cov_input", "enrichment", "likelihood", "pvalue","CpGcount")
+zcw_wP9_vs_chip_Z_cpg <- prejoin(zcw_wP9_vs_chip_Z_cpg, width=0)
+
 
 zcw_peaks_cin_cpg_alu <- foverlaps(zcw_peaks_cin_cpg, repeatsAlu, mult = "first")
 zcw_peaks_cin_cpg_repeats <- foverlaps(zcw_peaks_cin_cpg, repeats, mult = "first")
-chr1_rand_cpg_alu <- foverlaps(chr1_rand_cpg, repeatsAlu, mult = "first")
+rand_cpg_alu <- foverlaps(rand_cpg, repeatsAlu, mult = "first")
 
 # non Alus
-cpg_table <- rbind(data.table(table(chr1_rand_cpg_alu[is.na(Name)]$CpG), type="Randomised Peaks"),
+cpg_table <- rbind(data.table(table(rand_cpg_alu[is.na(Name)]$CpG), type="Randomised Peaks"),
       data.table(table(zcw_peaks_cin_cpg_alu[is.na(Name)]$CpGcount), type="Observed Peaks"))
 
 ggplot(cpg_table, aes(as.numeric(V1), N, fill=type)) +
@@ -440,7 +457,7 @@ ggplot(cpg_table, aes(as.numeric(V1), N, fill=type)) +
   labs(x="Count of CpGs under peak +/-150", y="Frequency")
 
 # Alus
-cpg_table <- rbind(data.table(table(chr1_rand_cpg_alu[!is.na(Name)]$CpG), type="Randomised Peaks"),
+cpg_table <- rbind(data.table(table(rand_cpg_alu[!is.na(Name)]$CpG), type="Randomised Peaks"),
       data.table(table(zcw_peaks_cin_cpg_alu[!is.na(Name)]$CpGcount), type="Observed Peaks"))
 
 ggplot(cpg_table, aes(as.numeric(V1), N, fill=type)) +
@@ -458,7 +475,7 @@ plot(zcw_peaks_cin_cpg[cov_input>5]$CpGcount, zcw_peaks_cin_cpg[cov_input>5]$enr
 
 # overall
 tmp <- zcw_peaks_cin_cpg[cov_input>5][,.(MeanEnrich=mean(enrichment),.N),by=CpGcount][order(CpGcount)]
-qplot(tmp$CpGcount, tmp$MeanEnrich)
+qplot(tmp$CpGcount, tmp$MeanEnrich) # has an uptick at the start (due to diff composition of Alu's)
 
 #zcw_peaks_cin_cpg_repeats[Repeat == "L1M", .N, by=Name][order(-N)]
 
@@ -501,7 +518,7 @@ zcw_peaks_cin_cpg_repeats[grep("^L1P",Name), Repeat := "L1P"]
 
 tmp <- zcw_peaks_cin_cpg_repeats[cov_input>5][,.(MeanEnrich=mean(i.enrichment),.N, sd=sd(i.enrichment)),by=c("CpGcount","Repeat")][order(CpGcount)]
 
-p1 <- ggplot(tmp, aes(CpGcount, MeanEnrich, colour=Repeat, size=N)) +
+CpGgeneral <- ggplot(tmp, aes(CpGcount, MeanEnrich, colour=Repeat, size=N)) +
   geom_point() +
   scale_color_brewer(palette = "Set1") +
   xlim(0,20) +
@@ -513,13 +530,13 @@ p1 <- ggplot(tmp, aes(CpGcount, MeanEnrich, colour=Repeat, size=N)) +
   xlab("Count of CpGs under peak +/-150")
 
 pdf("../results/CpG_general.pdf", width=10)
-p1
+CpGgeneral
 dev.off()
 
-tmp <- cbind(data.table(table(chr1_rand_cpg_alu[!is.na(Name)]$CpG), type="Randomised Peaks"),
+tmp <- cbind(data.table(table(rand_cpg_alu[!is.na(Name)]$CpG), type="Randomised Peaks"),
       data.table(table(zcw_peaks_cin_cpg_alu[!is.na(Name)]$CpGcount), type="Observed Peaks"))
 tmp <- tmp[1:25]
-tmp2 <- cbind(data.table(table(chr1_rand_cpg_alu[is.na(Name)]$CpG), type="Randomised Peaks"),
+tmp2 <- cbind(data.table(table(rand_cpg_alu[is.na(Name)]$CpG), type="Randomised Peaks"),
       data.table(table(zcw_peaks_cin_cpg_alu[is.na(Name)]$CpGcount), type="Observed Peaks"))
 tmp2 <- tmp2[1:25]
 tmp$isAlu <- T
@@ -532,7 +549,7 @@ ggplot(tmp, aes(CpGCount, NObs/NRand, colour=isAlu)) + geom_point()
 
 p2 <- ggplot(tmp, aes(CpGCount, NObs/NRand, colour=isAlu)) + geom_point() + scale_y_log10() + ylab("Observed Peaks : Randomised Peaks") + scale_color_brewer(palette = "Set1") + theme(legend.position = "bottom")
 
-pdf("../results/Cpg_general.pdf")
+pdf("../results/Cpg_general2.pdf")
 p1
 p2
 dev.off()
