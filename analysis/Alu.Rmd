@@ -540,6 +540,107 @@ dev.off()
 ```
 
 
+# Proportion of Zcw peaks by CpG count
+
+
+```{r}
+zcw_peaks_cin_cpg2 <- zcw_wP9_vs_chip_Z_cpg[cov_input>5]
+
+CpG_Proportions + xlab("CVC Zcwpw1 Enrichment")
+
+hist(zcw_wP9_vs_chip_Z_cpg[cov_input>5]$CpGcount, breaks=1000, xlim=c(-1,30))
+hist(rand_cpg[cov_input>5]$CpGcount, breaks=1000, xlim=c(-1,30))
+```
+
+
+```{r}
+
+zcw_peaks_cin_cpg2 <- zcw_peaks_cin_cpg[cov_input>5]
+setorder(zcw_peaks_cin_cpg2, enrichment)
+
+zcw_peaks_cin_cpg2$bin <- cut(1:nrow(zcw_peaks_cin_cpg2), 35)
+
+binned_cpg_prop <- zcw_peaks_cin_cpg2[,.(enrichment=mean(enrichment),
+                                        CpG_0=mean(CpGcount==0),
+                     CpG_1=mean(CpGcount==1),
+                     CpG_2_3=mean(CpGcount>=2 & CpGcount<=3),
+                     CpG_4_6=mean(CpGcount>=4 & CpGcount<=6),
+                     CpG_7_9=mean(CpGcount>=7 & CpGcount<=9),
+                     CpG_10_12=mean(CpGcount>=10 & CpGcount<=12),
+                     CpG_13gt=mean(CpGcount>=13)),
+                  by=bin]
+
+binned_cpg_prop <- melt(binned_cpg_prop, id.vars=c("bin","enrichment"))
+
+cpg_prop_rand <- rand_cpg[cov_input>5,.(
+                 CpG_0=mean(CpGcount==0),
+                     CpG_1=mean(CpGcount==1),
+                     CpG_2_3=mean(CpGcount>=2 & CpGcount<=3),
+                     CpG_4_6=mean(CpGcount>=4 & CpGcount<=6),
+                     CpG_7_9=mean(CpGcount>=7 & CpGcount<=9),
+                     CpG_10_12=mean(CpGcount>=10 & CpGcount<=12),
+                     CpG_13gt=mean(CpGcount>=13))]
+
+cpg_prop_rand <- melt(cpg_prop_rand)
+cpg_prop_rand$enrichment=-0.5
+cpg_prop_rand$bin="Random"
+
+# ggplot(binned_cpg_prop, aes(bin, -value, fill=variable)) +
+#   geom_col(width=1) +
+#   scale_fill_brewer()
+
+tmp <- rbind(binned_cpg_prop, cpg_prop_rand)
+
+tmp$CpG <- gsub("CpG_","",tmp$variable)
+tmp$CpG <- gsub("_"," to ",tmp$CpG)
+tmp$CpG <- gsub("gt"," >=",tmp$CpG)
+tmp$CpG <- factor(tmp$variable, levels = tmp$variable, labels=tmp$CpG)
+
+# reorder so 0 at bottom
+tmp$CpG <- forcats::fct_rev(tmp$CpG)
+
+# if the width is too big, the right column overlaps the left
+# meaning the center of the col is no longer the mean enrichment
+tmp[,diffnext := c(diff(enrichment),0.5), by=CpG]
+tmp[,diffprev := c(0.5,diff(enrichment)), by=CpG]
+tmp[diffnext<0, diffnext := 1]
+tmp[diffprev<0, diffprev := 1]
+tmp[,maxwidth := min(c(diffnext,diffprev)), by=c("bin","enrichment")]
+
+CpG_Proportions <- ggplot(tmp, aes(enrichment, value, fill=CpG)) +
+  geom_col(aes(width=maxwidth)) +
+  scale_fill_brewer() +
+  scale_x_continuous(labels=c("Random \n Peaks",0:5), breaks=c(-0.5,0:5)) +
+  scale_fill_brewer(direction = -1, palette = "RdBu") +
+  ylab("Proportion of Zcwpw1 Peaks") +
+  xlab("Enrichment of Zcwpw1") +
+  labs(fill="Number\nof CpGs")
+
+ggsave("../results/CpG_Proportions.pdf", CpG_Proportions, width = 7, height = 5)
+
+# to help with choosing bins
+hist(zcw_peaks_cin_cpg$CpGcount, breaks=300, xlim=c(-1,20))
+
+```
+
+```{r}
+ggplot(data.table(a=c(1,1,2,2),b=c(0.1,0.9,0.5,0.5),c=c(1,2,1,2)), aes(a,b, fill=c)) + geom_col()
+ggplot(data.table(a=c(1,1,2,2),b=c(0.1,0.9,0.5,0.5),c=c(1,2,1,2)), aes(a,b, fill=c)) + geom_col(width=1)
+ggplot(data.table(a=c(1,1,2,2),b=c(0.1,0.9,0.5,0.5),c=c(1,2,1,2)), aes(a,b, fill=c)) + geom_col(width=2)
+ggplot(data.table(a=c(1,1,2,2),b=c(0.1,0.9,0.5,0.5),c=c(1,2,1,2)), aes(a,b, fill=c)) + geom_col(aes(width=a))
+```
+
+```{r}
+#CpG_bottom <- plot_grid(CpGgeneral, CpG_Proportions, labels=c("C","D"), rel_widths = c(6,5))
+
+CpGWindows <- readRDS("../../../../Downloads/NormalPeaks300bp.rds")
+
+pdf("../results/CpG_plot.pdf", height = 10, width = 10)
+plot_grid(pi, CpGWindows, AluEnrich, CpG_Proportions + theme_minimal(), nrow=2, rel_widths = c(2,3), labels = c("B","D","C","E"))
+dev.off()
+```
+
+
 ```{r}
 # format for IGV
 tail -n +2 SingleBasePeaks.WTCHG_538916_223180_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144.p0.000001.sep250.ALL.bed | cut -f 1-3 > SingleBasePeaks.WTCHG_538916_223180_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144.p0.000001.sep250.ALL_headless.bed
