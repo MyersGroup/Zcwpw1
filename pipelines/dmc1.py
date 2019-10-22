@@ -68,14 +68,17 @@ rule averageProfile:
     ko="KO.bed"
   output:
     b6="{sample}_{strand}prime_atB6.tsv",
+    b6m="{sample}_{strand}prime_atB6.bwm",
     ko="{sample}_{strand}prime_atKO.tsv"
   params:
     a=5000,
-    b=2000
+    b=5000
   shell:
     """
     bwtool aggregate {params.a}:{params.b} {input.b6} {input.sample} {output.b6} -fill=0
     bwtool aggregate {params.a}:{params.b} {input.ko} {input.sample} {output.ko} -fill=0
+    
+    bwtool matrix -fill=0 -decimals=1 -tiled-averages=5 {params.a}:{params.b} {input.b6} {input.sample} {output.b6m}
     """
 
 

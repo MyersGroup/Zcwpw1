@@ -15,7 +15,7 @@ readdmc1 <- function(filename){
   if(grepl("atKO",filename)){
     sample$Genotype <- "B6 Prdm9 KO DMC1 regions"
   }else{
-    sample$Genotype <- "B6 Wild Type DMC1 regions"
+    sample$Genotype <- "B6 WT DMC1 regions"
   }
 
   if(grepl("Brick2012",filename)){
@@ -28,11 +28,11 @@ readdmc1 <- function(filename){
 }
 
 tmp <-
-  list.files(pattern = "*prime_at*") %>%
+  list.files(pattern = "prime_at.*tsv") %>%
   map_df(~readdmc1(.))
 
 names(tmp)[1:2] <- c("Position","MeanCoverage")
-tmp[, Genotype := factor(Genotype, levels=c("B6 Wild Type DMC1 regions","B6 Prdm9 KO DMC1 regions"))]
+tmp[, Genotype := factor(Genotype, levels=c("B6 WT DMC1 regions","B6 Prdm9 KO DMC1 regions"))]
 
 tmp[Position<(-3000), background := mean(MeanCoverage), by=c("Strand","Mouse")]
 tmp[, background := mean(background, na.rm = T), by=c("Strand","Mouse")]
@@ -42,10 +42,10 @@ tmp[, MeanCoverage := MeanCoverage - background, by=c("Strand","Mouse")]
 tmp[, MeanCoverage := MeanCoverage / sum(MeanCoverage), by=c("Strand","Mouse")]
 
 
-p <- ggplot(tmp[Position>(-2000)], aes(Position, MeanCoverage, colour=Mouse, alpha=Strand)) + #group=Strand,
+p <- ggplot(tmp[abs(Position)<2000], aes(Position, MeanCoverage, colour=Mouse, alpha=Strand)) + #group=Strand,
   geom_line(size=0.45) +
   facet_wrap(~Genotype, nrow=1) +
-  scale_color_brewer(palette = "Set1") +
+  scale_color_brewer(palette = "Set1", labels = c("WT",expression(italic("Zcwpw1")^"-/-"))) +
   xlab("Position from center (bp)") +
   theme_minimal() +
   theme(legend.position = "bottom",
