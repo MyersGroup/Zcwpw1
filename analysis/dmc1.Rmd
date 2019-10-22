@@ -131,13 +131,36 @@ saveRDS(dmc1_curveline,"../results/dmc1_curveline.rds")
 
 ```{r}
 dmc1_ssds <- readRDS("../results/DMC1_SSDS_plot.rds")
+dmc1_curveline <- readRDS("../results/dmc1_curveline.rds")
+dmc1_stratified <- readRDS("../results/DMC_stratified.rds")
 
-pdf("../results/DMC1.pdf")
+
+pdf("../results/DMC1_B.pdf", width = 7, height = 7*1.5)
 cowplot::plot_grid(dmc1_ssds,
                    dmc1_curveline,
-                   nrow=2,
-                   labels="AUTO", rel_heights = c(5,4))
+                   dmc1_stratified + theme(legend.position = "right"),
+                   nrow=3,
+                   labels="AUTO", rel_heights = c(5,4,4))
 dev.off()
+
+
+dmc1_stratified2 <- dmc1_stratified +
+  gghighlight(keep_scales = T) +
+  facet_wrap(~Genotype)+
+  scale_linetype_manual(values=c(1,1), guide=FALSE) +
+  scale_color_manual(values=c("#e41a1c","#377eb8","black"), name="H3K4me3") + 
+  theme(legend.position="bottom",
+        panel.border = element_rect(color = "grey40", fill = NA, size = 0.5),
+        strip.background = element_rect(color = "grey40", size = 0.5))
+
+pdf("../results/DMC1_C.pdf", width = 7, height = 7*1.5)
+cowplot::plot_grid(dmc1_ssds,
+                   dmc1_stratified2,
+                   dmc1_curveline,
+                   nrow=3,
+                   labels="AUTO", rel_heights = c(5,5,4))
+dev.off()
+
 
 ```
 
