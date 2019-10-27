@@ -3,91 +3,7 @@ title: "FC 100bp Windows"
 output: html_notebook
 ---
 
-Count CpG & CpG Islands per 100bp window
-
-
 ```{r}
-##### CpG per 100bp
-
-bedtools intersect -a forcepeaks/genome.windows.100wide.100slide.bed -b CpG_hg38_cut.bed -c > CpG_hg38_100bpwindows.bed
-
-##### CpG Islands per 100bp
-
-wget http://hgdownload.soe.ucsc.edu/goldenPath/hg38/database/cpgIslandExtUnmasked.txt.gz
-gzip -d cpgIslandExtUnmasked.txt.gz
-cut -f 2-4 cpgIslandExtUnmasked.txt > cpgIslandExtUnmasked.bed
-
-bedtools intersect -a forcepeaks/genome.windows.100wide.100slide.bed -b cpgIslandExtUnmasked.bed -f 0.1 -c > cpgIslandExtUnmasked_100bpwindows.bed
-
-bedtools intersect -a forcepeaks/genome.windows.100wide.100slide.bed -b cpgIslandExtUnmasked.bed -f 1 -c > cpgIslandExtUnmasked_100bpwindows_f1.bed
-
-
-##### DeNovo Motif
-
-# count seqkit located motifs by 100bp
-bedtools intersect -a forcepeaks/genome.windows.100wide.100slide.bed -b motif_locs_M7.bed -c > motif_locs_M7_100bpwindows.bed
-bedtools intersect -a forcepeaks/genome.windows.100wide.100slide.bed -b motif_locs_CHB6.bed -c > motif_locs_CHB6_100bpwindows.bed
-
-# count fimo located motifs by 100bp
-awk '$5>13' fimo_M4_WG.tsv | cut -f 1-3 | tail -n +2 | 
-bedtools intersect -a forcepeaks/genome.windows.100wide.100slide.bed -b stdin -c > fimo_M4_WG_100bpwindows.bed
-
-
-
-###### Bisulphite sequencing data
-
-#https://journals.plos.org/plosbiology/article?id=10.1371/journal.pbio.1000533
-#https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSM1254259
-wget ftp://ftp.ncbi.nlm.nih.gov/geo/samples/GSM1254nnn/GSM1254259/suppl/GSM1254259%5FHEK293%2DCT%2Ecout%2Etxt%2Egz
-
-# only CpG meth
-zcat GSM1254259_HEK293-CT.cout.txt.gz | awk ' $4 == "CG"' > GSM1254259_HEK293-CT.CpG.txt
-
-# sum two strands for each CpG (so ignoring asymetric site)
-awk -v OFS='\t' '
-  NR%2 { split($0, a) ; next }
-  {print a[1], a[2], $2, a[7]+$7, a[8]+$8, (a[6]+$6)/2}
-' GSM1254259_HEK293-CT.CpG.txt > GSM1254259_HEK293-CT.CpG_Sum.txt
-
-# remove high copynumber cpgs
-awk '$6<1.5' GSM1254259_HEK293-CT.CpG_Sum.txt | cut -f 1-5 > GSM1254259_HEK293-CT.CpG_Sum_lowCN.txt
-
-# hg19 to hg38
-liftOver GSM1254259_HEK293-CT.CpG_Sum_lowCN.txt hg19ToHg38.over.chain.gz GSM1254259_HEK293-CT.CpG.hg38.bed GSM1254259_HEK293-CT.CpG.nonhg38.bed
-
-# Careful, liftover creates overlaping (duplicate CpG locations)
-
-# sort
-sort -k1,1 -k2,2n GSM1254259_HEK293-CT.CpG.hg38.bed > GSM1254259_HEK293-CT.CpG.hg38.sort.bed
-sort -k1,1 -k2,2n forcepeaks/genome.windows.100wide.100slide.bed > forcepeaks/genome.windows.100wide.100slide.namesort.bed
-
-# sum for each cpg Island
-bedtools map -c 4,5 -o sum -null 0 -a cpgIslandExtUnmasked.bed -b GSM1254259_HEK293-CT.CpG.hg38.sort.bed > cpgIsland_Meth.bed
-
-# sum for each 100bp
-bedtools map -c 4,5 -o sum -null 0 -a forcepeaks/genome.windows.100wide.100slide.namesort.bed -b GSM1254259_HEK293-CT.CpG.hg38.sort.bed > cpg_Meth_100bpwindows.bed
-
-awk -v OFS='\t' '{print $1,$2,$3,($4+1)/($4+$5+2)}' GSM1254259_HEK293-CT.CpG.hg38.sort.bed > GSM1254259_HEK293-CT.CpG.hg38.sort.mean.bed
-
-# for IGV figure
-awk '$1=="chr1" && $2>53800000 && $2<54000000' GSM1254259_HEK293-CT.CpG.hg38.sort.mean.bed > GSM1254259_HEK293-CT.CpG.hg38.sort.mean.chr1.bed
-
-bedGraphToBigWig GSM1254259_HEK293-CT.CpG.hg38.sort.mean.chr1.bed ../single-cell/sequencing/metadata/hg38_sizes.chrom GSM1254259_HEK293-CT.CpG.hg38.sort.mean.chr1.bigWig
-
-# issue due to counting CpG as 1 position, but in meth counting it as 2bp long due to reverse strand, can have CpG==0 region with meth reads...
-#awk '$1=="chr1"  && $2>2442000' GSM1254259_HEK293-CT.CpG.hg38.sort.bed | head
-#cpg_Meth_100bp[chr=="chr1" & center_start==2442100]
-```
-
-```{r}
-#Repeat_MaskerSorted_Alu.bed
-
-bedtools intersect -a forcepeaks/genome.windows.100wide.100slide.bed -b repeats/Repeat_MaskerSorted_Alu_QC.bed -f 0.1 -c > repeats/Repeat_MaskerSorted_Alu_QC_100bp.bed
-
-bedtools intersect -a forcepeaks/genome.windows.100wide.100slide.bed -b repeats/Repeat_MaskerSorted_Alu_QC.bed -f 1 -c > repeats/Repeat_MaskerSorted_Alu_QC_100bp_f0.5.bed
-
-
-bedtools intersect -a forcepeaks/genome.windows.100wide.100slide.bed -b repeats/Repeat_MaskerSorted_NotAlu.bed -f 0.1 -c > repeats/Repeat_MaskerSorted_NotAlu_100bp.bed
 
 Alu100bp <- fread("repeats/Repeat_MaskerSorted_Alu_QC_100bp.bed")
 setnames(Alu100bp, c("chr","center_start","center_stop","Alu"))
@@ -107,18 +23,9 @@ forcecalled <- merge(forcecalled, NotAlu100bp)
 
 ###### Zcw peaks
 
-bedtools intersect -a forcepeaks/genome.windows.100wide.100slide.bed -b peaks/SingleBasePeaks.WTCHG_538916_221156_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144.p0.000001.sep250.ALL.bed -c > peaks/SingleBasePeaks.WTCHG_538916_221156_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144.p0.000001.sep250.ALL.100bpWindows.bed
 
 zcw_peak <- fread("peaks/SingleBasePeaks.WTCHG_538916_221156_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144.p0.000001.sep250.ALL.100bpWindows.bed")
 setnames(zcw_peak, c("chr","center_start","center_stop","ZcwPeak"))
-
-# bedtools shuffle -chrom -seed 71346 -noOverlapping -i peaks/SingleBasePeaks.WTCHG_538916_221156_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144.p0.000001.sep250.ALL.100bpWindows.bed -g hg38_sizes23.bed > peaks/Zcw_shuffle.bed
-# ERROR ../single-cell/sequencing/metadata/hg38_sizes.chrom
-
-awk -v OFS='\t' '{print $1, $2, $2+1}' peaks/Zcw_random.bed > peaks/Zcw_random_1bp.bed
-
-bedtools intersect -a forcepeaks/genome.windows.100wide.100slide.bed -b peaks/Zcw_random_1bp.bed -c > peaks/Zcw_random_1bp.100bpWindows.bed
-
 
 
 zcw_peak_rand <- fread("peaks/Zcw_random_1bp.100bpWindows.bed")
@@ -126,31 +33,6 @@ setnames(zcw_peak_rand, c("chr","center_start","center_stop","ZcwPeakRand"))
 
 ```
 
-
-
-# test MDB4 & SETDB1
-```{r}
-
-conda install -c bioconda ucsc-bigwigtowig
-https://github.com/ENCODE-DCC/kentUtils/blob/v302.1.0/bin/linux.x86_64/bigWigToWig
-wget http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/bigWigToWig
-
-wget https://www.encodeproject.org/files/ENCFF000ZTL/@@download/ENCFF000ZTL.bigWig
-./bigWigToWig -chrom=chr7 -start=139000000 -end=139600000 ENCFF000ZTL.bigWig ENCFF000ZTL.Wig
-liftOver ENCFF000ZTL.Wig hg19ToHg38.over.chain.gz ENCFF000ZTL_hg38.Wig ENCFF000ZTL_Nonhg38.Wig
-./wigToBigWig ENCFF000ZTL_hg38.Wig ../single-cell/sequencing/metadata/hg38_sizes.chrom ENCFF000ZTL_hg38.BigWig
-
-
-wget ftp://ftp.ncbi.nlm.nih.gov/geo/samples/GSM1010nnn/GSM1010740/suppl/GSM1010740%5Fhg19%5FwgEncodeHaibTfbsHepg2Mbd4sc271530V0422111PkRep1%2EbroadPeak%2Egz
-
-zcat GSM1010740_hg19_wgEncodeHaibTfbsHepg2Mbd4sc271530V0422111PkRep1.broadPeak.gz | cut -f 1-3 > MBD4.bed
-liftOver MBD4.bed hg19ToHg38.over.chain.gz MBD4_hg38.bed MBD4_nothg38.bed
-
-wget ftp://ftp.ncbi.nlm.nih.gov/geo/samples/GSM1010nnn/GSM1010740/suppl/GSM1010740%5Fhg19%5FwgEncodeHaibTfbsHepg2Mbd4sc271530V0422111RawRep1%2EbigWig
-./bigWigToWig -chrom=chr7 -start=139000000 -end=139600000 GSM1010740_hg19_wgEncodeHaibTfbsHepg2Mbd4sc271530V0422111RawRep1.bigWig MDB4.Wig
-liftOver MDB4.Wig hg19ToHg38.over.chain.gz MDB4_hg38.Wig MDB4_nonhg38.Wig
-./wigToBigWig MDB4_hg38.Wig ../single-cell/sequencing/metadata/hg38_sizes.chrom MDB4_hg38.BigWig
-```
 
 
 ```{r}

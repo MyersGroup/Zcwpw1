@@ -308,31 +308,12 @@ h3k36me3_P9vsUT_peaks <- prejoin(h3k36me3_P9vsUT_peaks)
 wget ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE59nnn/GSE59836/suppl/GSE59836%5FPeak%5Fdata%5FSupplementary%5FFile%5F1%2Etxt%2Egz
 gunzip GSE59836_Peak_data_Supplementary_File_1.txt.gz
 
-# subset to only AorB allele peaks observed in all samples & compute average strength
-awk -v OFS='\t' '{ if ($16 == 1 && ($3-$2)<3000 && $1!="chrY" && $1!="chrX") { print $1, $2, $3, ($4+$5)/2, ($6+$7)/4 } }' GSE59836_Peak_data_Supplementary_File_1.txt \ > Pratto_human_DSB_Aintersect_autosomal_hg19.bed
-# 18342
-# 18326
 ```
 
 ```{r}
 dmc1 <- fread("../data/pratto_dmc1/Pratto_human_DSB_Aintersect_autosomal_hg38.bed")
 setnames(dmc1, c("chr","CI_start","CI_stop","enrichment","enrichmentAB"))
 dmc1 <- prejoin(dmc1)
-
-# awk -v OFS='\t' '{ if ($11 == 1 && ($3-$2)<3000 && $1!="chrY" && $1!="chrX") { print $1, $2, $3, ($4+$5)/2, ($6+$7)/4 } }' GSE59836_Peak_data_Supplementary_File_1.txt \ > Pratto_human_DSB_AB_autosomal_hg19.bed
-# wc -l Pratto_human_DSB_AB_autosomal_hg19.bed
-# #20336
-# 
-# awk -v OFS='\t' '{ if ($9 == 1 && $10 == 1 && ($3-$2)<3000 && $1!="chrY" && $1!="chrX") { print $1, $2, $3, ($4+$5)/2, ($6+$7)/4 } }' GSE59836_Peak_data_Supplementary_File_1.txt \ > Pratto_human_DSB_AA_autosomal_hg19.bed
-# #21699
-# 
-# dmc1_AB <- fread("~/Downloads/Pratto_human_DSB_AB_autosomal_hg38.bed")
-# setnames(dmc1_AB, c("chr","CI_start_ext","CI_stop_ext","enrichment","enrichmentAB"))
-# setkey(dmc1_AB, chr, CI_start_ext, CI_stop_ext)
-# 
-# dmc1_AA <- fread("~/Downloads/Pratto_human_DSB_AA_autosomal_hg38.bed")
-# setnames(dmc1_AA, c("chr","CI_start_ext","CI_stop_ext","enrichment","enrichmentAB"))
-# setkey(dmc1_AA, chr, CI_start_ext, CI_stop_ext)
 ```
 
 
@@ -534,8 +515,6 @@ fwrite(zcw_peaks_cin[cov_input>5][chr!="chrX"][order(-enrichment)][set_matrix_zc
 
 ```{r}
 
-#wget https://www.encodeproject.org/files/ENCFF101AKQ/@@download/ENCFF101AKQ.bed.gz
-#wget https://www.encodeproject.org/files/ENCFF690WNQ/@@download/ENCFF690WNQ.bed.gz
 
 ctcf <- loadBed("~/Dropbox/Downloads/ENCODE_beds/ENCFF314ZAL.bed")
 ctcf_2 <- loadBed("~/Dropbox/Downloads/ENCFF338RAX.bed") # bed narrowPeak	peaks and background as input for IDR	1, 2
@@ -605,8 +584,6 @@ setdb1_3$enrichment <- setdb1_3$V7
 CGI <- fread("~/Dropbox/Downloads/cpgIslandExtUnmasked.txt") #CpG
 names(CGI)[2:4] <- c("chr","CI_start","CI_stop")
 CGI <- prejoin(CGI, ext = 250)
-
-system("cut -f 2-4 cpgIslandExtUnmasked.txt > cpgIslandExtUnmasked.bed")
 
 # CpG Binding Proteins MGI
 # http://www.informatics.jax.org/marker/summary?nomen=&cm=&coordinate=&coordUnit=bp&startMarker=&endMarker=&go=&goVocab=goFunctionTerm&goVocab=goProcessTerm&goVocab=goComponentTerm&interpro=IPR001739+OR+IPR022056+OR+IPR025884+OR+IPR032343&phenotype=
