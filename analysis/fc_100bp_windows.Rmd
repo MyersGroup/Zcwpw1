@@ -10,20 +10,19 @@ setnames(Alu100bp, c("chr","center_start","center_stop","Alu"))
 
 forcecalled <- merge(forcecalled, Alu100bp)
 
-Alu100bp_f0.5 <- fread("repeats/Repeat_MaskerSorted_Alu_QC_100bp_f0.5.bed")
+Alu100bp_f0.5 <- fread("repeats/Repeat_MaskerSorted_Alu_QC_100bp_f0.5.bed") # 0.5 actually 1.0, meaning Alu must overlap full 100bp
 setnames(Alu100bp_f0.5, c("chr","center_start","center_stop","Aluf1"))
 
 forcecalled <- merge(forcecalled, Alu100bp_f0.5)
 
-
+# Non Alu Repeats
 NotAlu100bp <- fread("repeats/Repeat_MaskerSorted_NotAlu_100bp.bed")
 setnames(NotAlu100bp, c("chr","center_start","center_stop","NotAlu"))
 
 forcecalled <- merge(forcecalled, NotAlu100bp)
 
+
 ###### Zcw peaks
-
-
 zcw_peak <- fread("peaks/SingleBasePeaks.WTCHG_538916_221156_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144.p0.000001.sep250.ALL.100bpWindows.bed")
 setnames(zcw_peak, c("chr","center_start","center_stop","ZcwPeak"))
 
@@ -36,7 +35,7 @@ setnames(zcw_peak_rand, c("chr","center_start","center_stop","ZcwPeakRand"))
 
 
 ```{r}
-cpgImeth <- fread("cpgIsland_Meth.bed")
+cpgImeth <- fread("CpG/cpgIsland_Meth.bed")
 setnames(cpgImeth, c("chr","center_start","center_stop","meth","unmeth"))
 cpgImeth[, len := center_stop-center_start]
 cpgImeth[, meth_prop := (meth+3) / (meth + unmeth + 6)]
@@ -89,7 +88,7 @@ cgi[zcw.cov_input>=5, mean(zcw.enrichment), by=c("isMethylated","isH3K4")]
 
 
 
-pdf("CGI_meth.pdf")
+pdf("CpG/CGI_meth.pdf")
 ggplot(cgi[meth+unmeth > 10 & cov_input>=5 & zcw.cov_input>=5], aes(enrichment+0.01, meth_prop, colour=sqrt(zcw.enrichment))) +
   geom_point(stroke=0, size=0.5) + scale_x_log10() +
   scale_colour_viridis_c()
@@ -142,9 +141,9 @@ library(cowplot)
 #just using Chromosome 1, as many data points
 #grep -P 'chr1\\t|chr\\t' 
 
-CpG_100bp <- fread("CpG_hg38_100bpwindows.bed")
+CpG_100bp <- fread("CpG/CpG_hg38_100bpwindows.bed")
 
-M7 <- fread("motif_locs_M7_100bpwindows.bed")
+M7 <- fread("motifs/motif_locs_M7_100bpwindows.bed")
 
 
 h3k4me3_UT_100bp <- fread("peaks/ForceCalledPeaks_NA15-SRR5627150_vs_NA15-SRR5627142_AT_genome.windows.100wide.100slide.bed.bed")
@@ -240,18 +239,18 @@ sum(forcecalled$center_start!=h3k36me3_hP9_100bp$center_start)
 
 forcecalled$CpG_Island_any <- forcecalled$CpG_Island
 
-CpG_Island_100bp <- fread("cpgIslandExtUnmasked_100bpwindows.bed")
+CpG_Island_100bp <- fread("CpG/cpgIslandExtUnmasked_100bpwindows.bed")
 setnames(CpG_Island_100bp, c("chr","center_start","center_stop","CpG_Island"))
 forcecalled <- merge(forcecalled, CpG_Island_100bp)
 
-CpG_Island_100bp <- fread("cpgIslandExtUnmasked_100bpwindows_f1.bed")
+CpG_Island_100bp <- fread("CpG/cpgIslandExtUnmasked_100bpwindows_f1.bed")
 setnames(CpG_Island_100bp, c("chr","center_start","center_stop","CpG_Island_f1"))
 forcecalled <- merge(forcecalled, CpG_Island_100bp)
 
 
 ## Meth
 
-cpg_Meth_100bp <- fread("cpg_Meth_100bpwindows.bed")
+cpg_Meth_100bp <- fread("CpG/cpg_Meth_100bpwindows.bed")
 setnames(cpg_Meth_100bp, c("chr","center_start","center_stop","meth","unmeth"))
 
 setkey(forcecalled, chr, center_start, center_stop)
@@ -264,7 +263,7 @@ forcecalled <- merge(forcecalled, cpg_Meth_100bp)
 forcecalled[, prop_meth := (meth+3) / (meth + unmeth + 6)]
 
 
-fimo <- fread("fimo_M4_WG_100bpwindows.bed")
+fimo <- fread("motifs/fimo_M4_WG_100bpwindows.bed")
 setnames(fimo, c("chr","center_start","center_stop","M4"))
 setkey(fimo, chr,center_start,center_stop)
 forcecalledM4 <- merge(fimo, forcecalled)
@@ -275,7 +274,7 @@ max(forcecalledM4$M4)
 
 forcecalledM4[M4==117]
 
-seqkit <- fread("motif_locs_CHB6_100bpwindows.bed")
+seqkit <- fread("motifs/motif_locs_CHB6_100bpwindows.bed")
 setnames(seqkit, c("chr","center_start","center_stop","M4"))
 setkey(seqkit, chr,center_start,center_stop)
 forcecalledCHG <- merge(seqkit, forcecalled)
@@ -400,7 +399,7 @@ p <- ggplot(pPeak_CpG[CpG<20 & methStatus!="Unk"], aes(CpG, PeakProb, colour=Typ
 p
 dev.off()
 
-saveRDS(p,"NormalPeaks300bp.rds")
+saveRDS(p,"CpG/NormalPeaks300bp.rds")
 
 
 
@@ -533,7 +532,7 @@ ggplot(tmp, aes(enrichment, value, fill=CpG)) +
   xlab("Enrichment of Zcwpw1") +
   labs(fill="Number\nof CpGs")
 
-ggsave("CpG_Proportions_windows.pdf", width = 7, height = 5)
+ggsave("CpG/CpG_Proportions_windows.pdf", width = 7, height = 5)
 
 ggplot(binned_cpg_prop, aes(bin, -value, fill=variable)) +
   geom_col(width=1) +
@@ -1138,14 +1137,14 @@ p
 dev.off()
 
 forcecalledk[zcw_cov_input>5 & (meth + unmeth>10)][CpG_Island==0][prop_meth<0.1][order(-zcw_enrichment)]
-
- chr1    195096200   195096300 
-
- # region for screenshot
- chr1:42,317,006-42,480,721
- chr1:53,882,156-53,949,798
-
-  
+# 
+#  chr1    195096200   195096300 
+# 
+#  # region for screenshot
+#  chr1:42,317,006-42,480,721
+#  chr1:53,882,156-53,949,798
+# 
+#   
  
 ############## Create Enrichment BigWig for IGV
 con1=gzfile("peaks/enrichments/SingleBaseEnrichment.SingleBasePeaks.WTCHG_538916_221156_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144.p0.000001.sep250.ALL.bed.chr1.binary.r",open="rb")
@@ -1160,9 +1159,9 @@ con1=gzfile("peaks/enrichments/SingleBaseEnrichment.SingleBasePeaks.WTCHG_538916
 	setcolorder(tmp, c("V1","V2","V4","V3"))
 	
 	fwrite(tmp, "enrich_WTCHG_538916_221156_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144.bedGraph", sep="\t", col.names=F, quote = F)
- 
+
 	bedGraphToBigWig enrich_WTCHG_538916_221156_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144.bedGraph ../single-cell/sequencing/metadata/hg38_sizes.chrom enrich_WTCHG_538916_221156_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144.bigWig
-	
+
 	# result is quite spikey, (from low input)
 
 	
