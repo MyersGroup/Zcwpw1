@@ -164,17 +164,71 @@ Using Simon's alignment
 ouralignmat <- readRDS("../data/Simons_Zcwpw1_alignment.rds")
 ouralignmat[is.na(ouralignmat)] <- "-"
 seqs <- apply(ouralignmat, 1, function(x) paste0(x, collapse=""))
-MotifFinder::export_FASTA(seqs, "data/simons_alignment.fa")
+MotifFinder::export_FASTA(seqs, "../data/simons_alignment.fa")
 
 # from http://compbio.cs.princeton.edu/conservation/
 JSD <- fread("../data/JSD_simons_alignment.txt")
 setnames(JSD, c("id", "JSD", "seq"))
 
 #jalview[human_aa]
-cons <- ggplot(JSD, aes(1:sum(human_aa),scale(JSD))) + geom_col(width=1, fill="black") + theme_minimal() + xlab("Amino acid number") + ylab("Jensen-Shannon\n divergence (normalised)")
+cons <- ggplot(JSD[JSD>0.1], aes(id,scale(JSD))) + geom_col(width=1, fill="black") + theme_minimal() + xlab("Amino acid number") + ylab("Jensen-Shannon\n divergence (normalised)")
 
 pdf("../results/Zcwpw1_domain_architechture_cons.pdf", width = 10, height = 8)
 cowplot::plot_grid(p2, cons, ncol=1, align = "v",axis = "lrtb", rel_heights = c(2,1), labels = "AUTO")
 dev.off()
 
 ```
+
+# Isoforms
+
+Could have just copied the 8 numbers...
+
+```{r}
+
+# this data from ensembl website
+transcript_annos <- structure(list(ensembl_id = c("ZCWPW1-208", "ZCWPW1-205", "ZCWPW1-202", 
+"ZCWPW1-201", "ZCWPW1-207", "ZCWPW1-203", "ZCWPW1-206"), transcript_id = c("ENST00000490721.5", 
+"ENST00000472716.1", "ENST00000398027.6", "ENST00000360951.8", 
+"ENST00000490089.1", "ENST00000464510.5", "ENST00000479315.1"
+), type = c("Protein coding", "Protein coding", "Protein coding", 
+"Protein coding", "Retained intron", "Retained intron", "Retained intron"
+), annotations = c("TSL:1GENCODE basicAPPRIS ALT2", "CDS 3 incompleteTSL:4\nZCWPW1-204\tENST00000471336.1\tProtein coding\tCDS 5 incompleteTSL:5", 
+"TSL:1GENCODE basicAPPRIS P3", "TSL:2GENCODE basicAPPRIS ALT2", 
+"TSL:1", "TSL:2", "TSL:3")), class = "data.frame", row.names = c(NA, 
+-7L))
+
+gtex_samples <- fread("GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt")
+isoforms <- fread("zcwpw1_isoforms.tsv")
+isoforms <- melt(isoforms, id.vars=c("transcript_id","gene_id"), variable.name="SAMPID", value.name="expression", variable.factor=F)
+isoforms <- merge(gtex_samples[,.(SMTS,SAMPID)], isoforms, by="SAMPID")
+isoforms[SMTS=="Testis", median(expression),by=transcript_id][order(-V1)]
+
+tmp <- isoforms[SMTS=="Testis", .(read_count=median(expression)),by=transcript_id]
+
+ts_order <- c("ENST00000398027.6",
+"ENST00000490089.1",
+'ENST00000479315.1',
+"ENST00000490721.5",
+"ENST00000472716.1",
+"ENST00000464510.5",
+"ENST00000471336.1",
+"ENST00000360951.8")
+
+tmp[, transcript_id := factor(transcript_id, levels=rev(ts_order))]
+
+pdf(width = 4, height = 3)
+ggplot(tmp,
+       aes(transcript_id, read_count)) +
+  geom_col() +
+  coord_flip() +
+  scale_y_continuous(position = "right") +
+  labs(y="Median TPM", x="Transcript") +
+  theme_classic()
+dev.off()
+
+isoforms[SMTS=="Testis", mean(expression),by=transcript_id][transcript_annos, by=transcript_id]
+
+
+
+```
+
