@@ -6,7 +6,7 @@ output: html_notebook
 Over half of all ZcwST peaks overlap Alu, overrepresented in low enrichment peaks. L1 also shows a pattern of being depleted at high enrichment peaks. Other repeats don't overlap a large fraction of preaks.
 
 ```{r}
-repeats <- fread("~/Dropbox/Downloads/Repeat_MaskerSorted.bed")
+repeats <- fread("../data/repeats/Repeat_MaskerSorted.bed")
 
 setnames(repeats, c("chr","CI_start","CI_stop","Name","Score","Strand"))
 
@@ -534,10 +534,10 @@ ggplot(data.table(a=c(1,1,2,2),b=c(0.1,0.9,0.5,0.5),c=c(1,2,1,2)), aes(a,b, fill
 ```{r}
 #CpG_bottom <- plot_grid(CpGgeneral, CpG_Proportions, labels=c("C","D"), rel_widths = c(6,5))
 
-CpGWindows <- readRDS("../../../../Downloads/NormalPeaks300bp.rds")
+CpGWindows <- readRDS("~/Downloads/NormalPeaks300bp.rds")
 
 pdf("../results/CpG_plot.pdf", height = 10, width = 10)
-plot_grid(pi, CpGWindows, AluEnrich, CpG_Proportions + theme_minimal(), nrow=2, rel_widths = c(2,3), labels = c("B","D","C","E"))
+plot_grid(pi, CpGWindows, AluEnrich, CpG_Proportions + theme_minimal(), nrow=2, rel_widths = c(2,3), labels = c("A","C","B","D"))
 dev.off()
 ```
 
@@ -553,43 +553,34 @@ tail -n +2 ../results/peaks/SingleBasePeaks.SRA_Altemose2015_SRR5627148_vs_SRA_A
 tail -n +2 ../results/peaks/SingleBasePeaks.SRA_Altemose2015_SRR5627152_AND_SRR5627153_vs_SRA_Altemose2015_SRR5627143.p0.000001.sep250.ALL.bed | cut -f 1-3 > ../results/peaks/SingleBasePeaks.SRA_Altemose2015_SRR5627152_AND_SRR5627153_vs_SRA_Altemose2015_SRR5627143.p0.000001.sep250.ALL_headless.bed
 
 #http://genome.ucsc.edu/cgi-bin/hgTables?db=hg38&hgta_group=hub_213889&hgta_track=hub_213889_Umap_24_quantitative&hgta_table=hub_213889_Umap.24.quantitative&hgta_doSchema=describe+table+schema
-
-
-plot(density(repeats[Name!="Alu"][grep("Alu",Name)][,CI_stop-CI_start]))
-abline(v=250, col="red")
-abline(v=350, col="red")
-
-
-
-
-
-
-tmp <- fread("grep -v '#' Alu_meta299.txt")
-tmpIn <- fread("grep -v '#' Alu_meta_In299.txt")
-
-a <- fread("MAPeakCaller/Fragment_Position_WTCHG_538916_221156.total")
-b <- fread("MAPeakCaller/Fragment_Position_WTCHG_538916_217108.total")
-
-plot(tmp$V2 / (a$V1/1e6), type="l")
-lines(tmpIn$V2 / (b$V1/1e6), col="blue")
-abline(v=300, col="red")
-abline(v=300+150, col="red", lty=2)
-abline(v=600, col="red")
-dev.off()
-
-plot((tmp$V2 / tmpIn$V2) * (b$V1/a$V1), type="l")
-abline(v=300, col="red")
-abline(v=300+150, col="red", lty=2)
-abline(v=600, col="red")
-dev.off()
-
-
 ```
 
 
+#What's enriched at Alus
+
+```{bash}
+tmp <- fread("grep -v '#' repeats/Alu_meta299.txt")
+tmpIn <- fread("grep -v '#' repeats/Alu_meta_In299.txt")
+
+AluK36 <- fread("grep -v '#' repeats/Alu_UT_H3K36me3.txt")
+AluK4 <- fread("grep -v '#' repeats/Alu_UT_H3K4me3.txt")
+tmpIn <- fread("grep -v '#' repeats/Alu_UT_input.txt")
 
 
-# Remove more alignments from BWA MEM tags
-```{r}
+a <- fread("FragPos/Fragment_Position_WTCHG_538916_221156.total")
+b <- fread("FragPos/Fragment_Position_WTCHG_538916_217108.total")
+
+AluK36_tot <- fread("FragPos/Fragment_Position_NA15-SRR5627148.total")
+AluK4_tot <- fread("FragPos/Fragment_Position_NA15-SRR5627150_AND_NA15-SRR5627151.total") # approx
+Alu_UTin_tot <- fread("FragPos/Fragment_Position_NA15-SRR5627142.total")
+
+
+# K36 slightly enriched
+plot((AluK36$V2 / tmpIn$V2) * (Alu_UTin_tot$V1 / AluK36_tot$V1), type="l", )
+dev.off()
+
+# K4 depleted
+plot((AluK4$V2 / tmpIn$V2) * (Alu_UTin_tot$V1 / AluK4_tot$V1), type="l")
+dev.off()
 ```
 
