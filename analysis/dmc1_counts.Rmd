@@ -46,14 +46,21 @@ dmc1_counts_WT$Genotype <- "Wild Type"
 # Load P9 KO counts
 # # # # # # # # # # # #
 
-dmc1_counts_P9 <- readxl::read_excel("../data/zcw_dmc1.xlsx", sheet = "Prdm9 KO")
+dmc1_counts_P9 <- readxl::read_excel("../data/zcw_dmc1.xlsx", sheet = "Prdm9 KO", skip=1)
 
-dmc1_counts_P9$...4 <- colnames(dmc1_counts_P9)[1]
+# # add mouse ID column
+# dmc1_counts_P9$...4 <- colnames(dmc1_counts_P9)[1]
+# 
+# colnames(dmc1_counts_P9) <- unlist(dmc1_counts_P9[1,])
+# colnames(dmc1_counts_P9)[c(4)] <- "Mouse"
 
-colnames(dmc1_counts_P9) <- unlist(dmc1_counts_P9[1,])
-colnames(dmc1_counts_P9)[c(4)] <- "Mouse"
-
+dmc1_counts_P9$Mouse <- "TGFJ 27.1B (6 Aug 2019)"
 dmc1_counts_P9$Genotype <- "Prdm9 -/-"
+
+
+dmc1_counts_P9B <- readxl::read_excel("../data/Second prdm9 KO DMC1 foci.xlsx", skip = 1)
+dmc1_counts_P9B$Mouse <- "TGFJ 26.2C (11Oct 2019)"
+dmc1_counts_P9B$Genotype <- "Prdm9 -/-"
 
 # # # # # # # # # # # #
 # Unrelated WT counts
@@ -84,6 +91,7 @@ dmc1_counts_UWT$Genotype <- "Wild Type (unrelated)"
 dmc1_counts <- rbind(dmc1_counts_KO,
                      #dmc1_counts_WT,
                      dmc1_counts_P9,
+                     dmc1_counts_P9B,
                      dmc1_counts_UWT)
 
 dmc1_counts <- dmc1_counts[!(toupper(dmc1_counts$Image)=="IMAGE"),]
@@ -113,6 +121,9 @@ p <- ggplot(dmc1_counts, aes(Stage, `DMC1 foci`, colour=Genotype)) +
 
 # check by mouse
 ggplot(dmc1_counts, aes(Stage, `DMC1 foci`, colour=Mouse)) + geom_jitter() + facet_wrap(~Genotype)
+
+ggplot(data.table(dmc1_counts)[Genotype=="Prdm9 -/-"], aes(Stage, `DMC1 foci`, colour=Mouse, group=Mouse)) + 
+  geom_jitter(position = position_jitterdodge())
 
 # add pvalues
 for(stage in c("Late L","Early Z","Z","Late Z","P")){
