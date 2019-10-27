@@ -13,7 +13,10 @@ rel_data <- drawProteins::feature_to_dataframe(rel_json)
 
 rel_data[which(rel_data$type=="COILED"),]$description <- "Coiled Coil"
 
-rel_data <- rbind(rel_data, data.frame(type="DOMAIN2", description="SCP-1 ?", begin=76, end=228, length=228-76+1, accession="Q6IR42", entryName="ZCPW1_MOUSE", taxid=10090, order=1))
+rel_data <- rbind(rel_data,
+                  data.frame(type="DOMAIN2", description="SCP-1 ?", begin=76, end=228, length=228-76+1, accession="Q6IR42", entryName="ZCPW1_MOUSE", taxid=10090, order=1),
+                  data.frame(type="DOMAIN2", description="MBD ?", begin=462, end=541, length=541-462+1, accession="Q6IR42", entryName="ZCPW1_MOUSE", taxid=10090, order=1),
+                  data.frame(type="DOMAIN2", description="MBD ?", begin=471, end=573, length=573-471+1, accession="Q9H0M4", entryName="ZCPW1_HUMAN", taxid=9606, order=2))
 rownames(rel_data[nrow(rel_data),]) <- "featuresTemp.23"
 draw_domains2 <- function(p,
                         data = data,
