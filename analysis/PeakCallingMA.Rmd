@@ -95,54 +95,6 @@ h3k36me3_P9vsUT_peaks <- fread("../data/peaks/SingleBasePeaks.SRA_Altemose2015_S
 ```
 
 
-# Mark TSS
-
-```{r}
-load_tss <- function(file="../data/hg38.wgEncodeGencodeCompV28.bed", flank=400){
-encode_tss <- fread(file)
-names(encode_tss) <- gsub("hg38.wgEncodeGencodeCompV28.|hg38.wgEncodeGencodeAttrsV28.","",names(encode_tss))
-
-encode_tss[strand=='+', CI_start_ext := txStart - flank]
-encode_tss[strand=='+', CI_stop_ext := txStart + flank]
-encode_tss[strand=='-', CI_start_ext := txEnd - flank]
-encode_tss[strand=='-', CI_stop_ext := txEnd + flank]
-setnames(encode_tss,'chrom','chr')
-setnames(encode_tss,'#name','tss')
-
-encode_tss <- encode_tss[,.(chr, CI_start_ext, CI_stop_ext,tss)]
-setkey(encode_tss, chr, CI_start_ext, CI_stop_ext)
-return(encode_tss)
-}
-
-encode_tss <- load_tss(flank=1000)
-
-HP9combo_peaks$tss <- foverlaps(HP9combo_peaks, encode_tss, mult = 'first')$tss
-HP9N_peaks$tss <- foverlaps(HP9N_peaks, encode_tss, mult = 'first')$tss
-
-CP9combo_peaks$tss <- foverlaps(CP9combo_peaks, encode_tss, mult = 'first')$tss
-
-
-zcw_wP9_vs_chip_Z$tss <- foverlaps(zcw_wP9_vs_chip_Z, encode_tss, mult = 'first')$tss
-zcw_wP9_peaks_cin$tss <- foverlaps(zcw_wP9_peaks_cin, encode_tss, mult = 'first')$tss
-zcw_peaks$tss <- foverlaps(zcw_peaks, encode_tss, mult = 'first')$tss
-
-```
-
-
-
-```{r}
-# Export beds
-# Now done with snakemake pipeline
-# fwrite(zcw_wP9_vs_chip_Z[cov_input>5][order(enrichment)][,.(chr, center_start, center_stop, enrichment)], "../data/zcw_wP9_vs_chip_Z.bed", col.names = FALSE, sep = "\t")
-# 
-# 
-# fwrite(HP9combo_peaks[cov_input>5][!is.na(tss)][order(enrichment)][,.(chr, center_start, center_stop, enrichment)], "../data/HP9combo_peaks_Promoters.bed", col.names = FALSE, sep = "\t")
-# fwrite(HP9combo_peaks[cov_input>5][is.na(tss)][order(enrichment)][,.(chr, center_start, center_stop, enrichment)], "../data/HP9combo_peaks_NonPromoters.bed", col.names = FALSE, sep = "\t")
-# 
-# fwrite(CP9combo_peaks[cov_input>5][!is.na(tss)][order(enrichment)][,.(chr, center_start, center_stop, enrichment)], "../data/CP9combo_peaks_Promoters.bed", col.names = FALSE, sep = "\t")
-# fwrite(CP9combo_peaks[cov_input>5][is.na(tss)][order(enrichment)][,.(chr, center_start, center_stop, enrichment)], "../data/CP9combo_peaks_NonPromoters.bed", col.names = FALSE, sep = "\t")
-
-```
 
 ## Number of peaks
 
@@ -212,6 +164,8 @@ nrow(h3k36me3_P9vsUT_peaks))
 ggplot(data.table(number_of_peaks, experiment), aes(experiment, number_of_peaks)) + geom_col() + coord_flip()
 ```
 
+Enrichment value distributions
+
 ```{r}
 ggplot(cbind(zcw_peaks, exp='Zcw'), aes(enrichment))+
   geom_density() +
@@ -231,6 +185,8 @@ ggplot(cbind(zcw_peaks, exp='Zcw'), aes(enrichment))+
   scale_color_brewer(type="qual", palette = "Set1") + facet_wrap("~exp")
 ```
 
+Cov input distributions
+
 ```{r}
 
 ggplot(cbind(zcw_peaks, exp='Zcw'), aes(cov_input))+
@@ -248,6 +204,8 @@ ggplot(cbind(zcw_peaks, exp='Zcw'), aes(cov_input))+
     geom_histogram(bins=100, data=cbind(h3k36me3_P9_peaks[cov_input>=0], exp='h3k36me3_P9')) + 
     scale_color_brewer(type="qual", palette = "Set1") + facet_wrap("~exp", scale="free_y")
 ```
+
+replicate 1 read count distributions
 
 ```{r}
 ggplot(cbind(zcw_peaks, exp='Zcw'), aes(cov_r1))+
@@ -302,13 +260,42 @@ h3k36me3_P9vsUT_peaks <- prejoin(h3k36me3_P9vsUT_peaks)
 
 ```
 
-# DMC1 peaks
+
+# Mark TSS
 
 ```{r}
-wget ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE59nnn/GSE59836/suppl/GSE59836%5FPeak%5Fdata%5FSupplementary%5FFile%5F1%2Etxt%2Egz
-gunzip GSE59836_Peak_data_Supplementary_File_1.txt.gz
+load_tss <- function(file="../data/hg38.wgEncodeGencodeCompV28.bed", flank=400){
+encode_tss <- fread(file)
+names(encode_tss) <- gsub("hg38.wgEncodeGencodeCompV28.|hg38.wgEncodeGencodeAttrsV28.","",names(encode_tss))
+
+encode_tss[strand=='+', CI_start_ext := txStart - flank]
+encode_tss[strand=='+', CI_stop_ext := txStart + flank]
+encode_tss[strand=='-', CI_start_ext := txEnd - flank]
+encode_tss[strand=='-', CI_stop_ext := txEnd + flank]
+setnames(encode_tss,'chrom','chr')
+setnames(encode_tss,'#name','tss')
+
+encode_tss <- encode_tss[,.(chr, CI_start_ext, CI_stop_ext,tss)]
+setkey(encode_tss, chr, CI_start_ext, CI_stop_ext)
+return(encode_tss)
+}
+
+encode_tss <- load_tss(flank=1000)
+
+HP9combo_peaks$tss <- foverlaps(HP9combo_peaks, encode_tss, mult = 'first')$tss
+HP9N_peaks$tss <- foverlaps(HP9N_peaks, encode_tss, mult = 'first')$tss
+
+CP9combo_peaks$tss <- foverlaps(CP9combo_peaks, encode_tss, mult = 'first')$tss
+
+
+zcw_wP9_vs_chip_Z$tss <- foverlaps(zcw_wP9_vs_chip_Z, encode_tss, mult = 'first')$tss
+zcw_wP9_peaks_cin$tss <- foverlaps(zcw_wP9_peaks_cin, encode_tss, mult = 'first')$tss
+zcw_peaks$tss <- foverlaps(zcw_peaks, encode_tss, mult = 'first')$tss
 
 ```
+
+
+# DMC1 peaks
 
 ```{r}
 dmc1 <- fread("../data/pratto_dmc1/Pratto_human_DSB_Aintersect_autosomal_hg38.bed")
@@ -327,33 +314,33 @@ dmc1 <- prejoin(dmc1)
 ```
 
 ```{r}
-
-nrow(HP9combo_peaks)
-sum(!is.na(HP9combo_peaks$DMC1_enrichment))
-sum(!is.na(HP9combo_peaks$zcw_CVC_enrichment))
-sum(!is.na(HP9combo_peaks$zcw_wP9_enrichment))
-sum(!is.na(HP9combo_peaks$zcw_enrichment))
-
-print("HP9N")
-nrow(HP9N_peaks)
-sum(!is.na(HP9N_peaks$DMC1_enrichment))
-sum(!is.na(HP9N_peaks$zcw_CVC_enrichment))
-sum(!is.na(HP9N_peaks$zcw_wP9_enrichment))
-sum(!is.na(HP9N_peaks$zcw_enrichment))
-
-print("zcw_CVC")
-nrow(zcw_wP9_vs_chip_Z)
-sum(!is.na(zcw_wP9_vs_chip_Z$DMC1_enrichment))
-sum(!is.na(zcw_wP9_vs_chip_Z$HP9N_enrichment))
-sum(!is.na(zcw_wP9_vs_chip_Z$HP9combo_enrichment))
-
-print("DMC1")
-nrow(dmc1)
-sum(!is.na(dmc1$HP9combo_peaks_enrichment))
-sum(!is.na(dmc1$HP9N_peaks_enrichment))
-sum(!is.na(dmc1$zcw_enrichment))
-sum(!is.na(dmc1$zcw_wP9_enrichment))
-sum(!is.na(dmc1$Zcw_CVC_enrichment))
+# 
+# nrow(HP9combo_peaks)
+# sum(!is.na(HP9combo_peaks$DMC1_enrichment))
+# sum(!is.na(HP9combo_peaks$zcw_CVC_enrichment))
+# sum(!is.na(HP9combo_peaks$zcw_wP9_enrichment))
+# sum(!is.na(HP9combo_peaks$zcw_enrichment))
+# 
+# print("HP9N")
+# nrow(HP9N_peaks)
+# sum(!is.na(HP9N_peaks$DMC1_enrichment))
+# sum(!is.na(HP9N_peaks$zcw_CVC_enrichment))
+# sum(!is.na(HP9N_peaks$zcw_wP9_enrichment))
+# sum(!is.na(HP9N_peaks$zcw_enrichment))
+# 
+# print("zcw_CVC")
+# nrow(zcw_wP9_vs_chip_Z)
+# sum(!is.na(zcw_wP9_vs_chip_Z$DMC1_enrichment))
+# sum(!is.na(zcw_wP9_vs_chip_Z$HP9N_enrichment))
+# sum(!is.na(zcw_wP9_vs_chip_Z$HP9combo_enrichment))
+# 
+# print("DMC1")
+# nrow(dmc1)
+# sum(!is.na(dmc1$HP9combo_peaks_enrichment))
+# sum(!is.na(dmc1$HP9N_peaks_enrichment))
+# sum(!is.na(dmc1$zcw_enrichment))
+# sum(!is.na(dmc1$zcw_wP9_enrichment))
+# sum(!is.na(dmc1$Zcw_CVC_enrichment))
 
 ```
 
@@ -488,16 +475,15 @@ fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[grep("G-rich",Name)], x1
 ```
 
 
-## Overlap Hunting
+## Export unexplained peaks
 
 ```{r}
 
-chr17 76735902 76737548
-
-set_matrix_zcw_peaks2 <- create_set_matrix(zcw_peaks_cin, k=1, returnpeaks = T)
-
-set_matrix_zcw_peaks2[chr=="chr17" && CI_start>76735902 && CI_stop<76737548]
-set_matrix_zcw_peaks2[chr=="chr1" && CI_start>248711913 && CI_stop<248711956]
+# chr17 76735902 76737548
+# set_matrix_zcw_peaks2 <- create_set_matrix(zcw_peaks_cin, k=1, returnpeaks = T)
+# 
+# set_matrix_zcw_peaks2[chr=="chr17" && CI_start>76735902 && CI_stop<76737548]
+# set_matrix_zcw_peaks2[chr=="chr1" && CI_start>248711913 && CI_stop<248711956]
  
 set_matrix_zcw_peaks3 <- create_set_matrix(zcw_peaks_cin, k=1)
 
@@ -513,75 +499,77 @@ fwrite(zcw_peaks_cin[cov_input>5][chr!="chrX"][order(-enrichment)][set_matrix_zc
 
 ```
 
+## Overlap Hunting
+
 ```{r}
 
 
-ctcf <- loadBed("~/Dropbox/Downloads/ENCODE_beds/ENCFF314ZAL.bed")
-ctcf_2 <- loadBed("~/Dropbox/Downloads/ENCFF338RAX.bed") # bed narrowPeak	peaks and background as input for IDR	1, 2
+ctcf <- loadBed("../data/ENCODE_beds/ENCFF314ZAL.bed")
+ctcf_2 <- loadBed("../data/ENCODE_beds/ENCFF338RAX.bed") # bed narrowPeak	peaks and background as input for IDR	1, 2
 
 # https://www.encodeproject.org/experiments/ENCSR000EUZ/ SE36nt HEK293T
-Trim28 <- loadBed("~/Dropbox/Downloads/ENCODE_beds/ENCFF860DHS.bed") #, 29k peaks
-Trim28_2 <- loadBed("~/Dropbox/Downloads/ENCFF959SPJ.bed") #300k
+Trim28 <- loadBed("../data/ENCODE_beds/ENCFF860DHS.bed") #, 29k peaks
+Trim28_2 <- loadBed("../data/ENCODE_beds/ENCFF959SPJ.bed") #300k
 #bed narrowPeak	peaks and background as input for IDR	1, 2
 
 #https://www.encodeproject.org/experiments/ENCSR474CVP/ PE100bp K562
-Trim28_3 <- loadBed("~/Dropbox/Downloads/ENCFF131RPK.bed") # 300k
+Trim28_3 <- loadBed("../data/ENCODE_beds/ENCFF131RPK.bed") # 300k
 
 #https://www.encodeproject.org/experiments/ENCSR876GXA/ ZBTB33
-zbtb33 <- loadBed("~/Dropbox/Downloads/ENCFF108BVL.bed")
+zbtb33 <- loadBed("../data/ENCODE_beds/ENCFF108BVL.bed")
 
 #https://www.encodeproject.org/experiments/ENCSR142YYA/ EWSR1
-ewsr1 <- loadBed("~/Dropbox/Downloads/ENCFF418KWK.bed")
+ewsr1 <- loadBed("../data/ENCODE_beds/ENCFF418KWK.bed")
 
-h3K27ac <- loadBed("~/Dropbox/Downloads/ENCODE_beds/ENCFF451UZW.bed")
-h3K27ac_2 <- loadBed("~/Dropbox/Downloads/ENCFF464QPC.bed")
+h3K27ac <- loadBed("../data/ENCODE_beds/ENCFF451UZW.bed")
+h3K27ac_2 <- loadBed("../data/ENCODE_beds/ENCFF464QPC.bed")
 
 # https://www.encodeproject.org/experiments/ENCSR000AKQ/, h3K27me3
-h3K27me3 <- loadBed("~/Dropbox/Downloads/ENCFF700RBU.bed")
+h3K27me3 <- loadBed("../data/ENCODE_beds/ENCFF700RBU.bed")
 
 #https://www.encodeproject.org/experiments/ENCSR000FCG/
-h3k4me1 <- loadBed("~/Dropbox/Downloads/ENCODE_beds/ENCFF483QXH.bed")
+h3k4me1 <- loadBed("../data/ENCODE_beds/ENCODE_beds/ENCFF483QXH.bed")
 
 # https://www.encodeproject.org/experiments/ENCSR396QWK/ FLAG MBD
 # HepG2 genetically modified using CRISPR, SE50nt
-mbd1 <- loadBed("~/Dropbox/Downloads/ENCFF446OZF.bed")
+mbd1 <- loadBed("../data/ENCODE_beds/ENCFF446OZF.bed")
 
 # https://www.encodeproject.org/experiments/ENCSR221GAN/ K562 MBD2
-mbd2 <- loadBed("~/Dropbox/Downloads/ENCFF786NME.bed")
+mbd2 <- loadBed("../data/ENCODE_beds/ENCFF786NME.bed")
 
 # https://www.encodeproject.org/experiments/ENCSR000EVX/ ZNF274
-znf274 <- loadBed("~/Dropbox/Downloads/ENCFF478NGK.bed")
+znf274 <- loadBed("../data/ENCODE_beds/ENCFF478NGK.bed")
 
 #https://www.encodeproject.org/experiments/ENCSR987PBI/ DNMT1 K562
-dnmt1 <- loadBed("~/Dropbox/Downloads/ENCFF129ADK.bed") # 300k peaks
+dnmt1 <- loadBed("../data/ENCODE_beds/ENCFF129ADK.bed") # 300k peaks
 
 # https://www.encodeproject.org/experiments/ENCSR156CWW/ dnmt3b in HepG2 FLAG tagged, SE52bp
-dnmt3b <- loadBed("~/Dropbox/Downloads/ENCFF204MYY.bed") # 300k peaks
+dnmt3b <- loadBed("../data/ENCODE_beds/ENCFF204MYY.bed") # 300k peaks
 
 # https://www.encodeproject.org/experiments/ENCSR000BNK/
-ctcfl <- loadBed("~/Dropbox/Downloads/ENCFF678TFE.bed") #CTCFL ChIP-seq protocol v041610.1 on human K562 
-ctcfl_2 <- loadBed("~/Dropbox/Downloads/ENCFF081QMM.bed") #CTCFL bed narrowPeak	peaks and background as input for IDR	1, 2
+ctcfl <- loadBed("../data/ENCODE_beds/ENCFF678TFE.bed") #CTCFL ChIP-seq protocol v041610.1 on human K562 
+ctcfl_2 <- loadBed("../data/ENCODE_beds/ENCFF081QMM.bed") #CTCFL bed narrowPeak	peaks and background as input for IDR	1, 2
 
 # hg19
-# system("cut -f 1-3 ~/Dropbox/Downloads/ENCODE_beds/ENCFF001VRG.bed > ~/Dropbox/Downloads/ENCODE_beds/ENCFF001VRG.bed3")
-# setdb1 <- loadBed("~/Dropbox/Downloads/ENCODE_beds/ENCFF001VRG_hg38.bed3")
+# system("cut -f 1-3 ../data/ENCODE_beds/ENCODE_beds/ENCFF001VRG.bed > ../data/ENCODE_beds/ENCODE_beds/ENCFF001VRG.bed3")
+# setdb1 <- loadBed("../data/ENCODE_beds/ENCODE_beds/ENCFF001VRG_hg38.bed3")
 
 # hg38
 # https://www.encodeproject.org/experiments/ENCSR000AUT/ SE36nt
-setdb1_2 <- loadBed("~/Dropbox/Downloads/ENCFF101AKQ.bed") # ENCSR000AUT/ K562 300k peaks, peaks and background as input for IDR	1
+setdb1_2 <- loadBed("../data/ENCODE_beds/ENCFF101AKQ.bed") # ENCSR000AUT/ K562 300k peaks, peaks and background as input for IDR	1
 
 # https://www.encodeproject.org/experiments/ENCSR000EWI/ SE32nt
-setdb1_3 <- loadBed("~/Dropbox/Downloads/ENCFF611CFB.bed") # ENCSR000EWI/ K562 300k peaks, peaks and background as input for IDR	1, 2
+setdb1_3 <- loadBed("../data/ENCODE_beds/ENCFF611CFB.bed") # ENCSR000EWI/ K562 300k peaks, peaks and background as input for IDR	1, 2
 
-h3k9 <- loadBed("~/Dropbox/Downloads/ENCODE_beds/ENCFF342JBJ.bed")
-H3K9me3 <- loadBed("~/Dropbox/Downloads/ENCFF538EDC.bed") # K562, 92k peaks, bed narrowPeak	peaks	1
-H3K9me3_2 <- loadBed("~/Dropbox/Downloads/ENCFF422AIH.bed") # HEK293, 54k peaks,  bed narrowPeak	peaks	2
+h3k9 <- loadBed("../data/ENCODE_beds/ENCFF342JBJ.bed")
+H3K9me3 <- loadBed("../data/ENCODE_beds/ENCFF538EDC.bed") # K562, 92k peaks, bed narrowPeak	peaks	1
+H3K9me3_2 <- loadBed("../data/ENCODE_beds/ENCFF422AIH.bed") # HEK293, 54k peaks,  bed narrowPeak	peaks	2
 
 
 setdb1_3$enrichment <- setdb1_3$V7
 
 
-CGI <- fread("~/Dropbox/Downloads/cpgIslandExtUnmasked.txt") #CpG
+CGI <- fread("../data/ENCODE_beds/cpgIslandExtUnmasked.txt") #CpG
 names(CGI)[2:4] <- c("chr","CI_start","CI_stop")
 CGI <- prejoin(CGI, ext = 250)
 
@@ -637,7 +625,7 @@ fraction_overlapN2(zcw_peaks_cin[cov_input>5], h3k4me1, "Zcwpw1", "h3K4me1", shi
 
 ```{r}
 
-zcw_peaks_cin_m24 <- fread("~/Downloads/Zcwpw1_peak_cin_24bpmappable.bed")
+zcw_peaks_cin_m24 <- fread("../data/mappability/Zcwpw1_peak_cin_24bpmappable.bed")
 names(zcw_peaks_cin_m24) <- names(zcw_peaks_cin)[1:11]
 zcw_peaks_cin_m24 <- prejoin(zcw_peaks_cin_m24)
 
@@ -655,24 +643,24 @@ fraction_overlapN2(setdb1_3, zcw_peaks_cin_m24, "Setdb1", "Zcwpw1", shift=1e8, n
 
 ```{r}
 
-IPSC_H4K20 <- loadBed("~/Dropbox/Downloads/ENCFF295WQL.bed")  #    Homo sapiens GM23338 originated from GM23248 https://www.encodeproject.org/experiments/ENCSR293NAJ/
+IPSC_H4K20 <- loadBed("../data/ENCODE_beds/ENCFF295WQL.bed")  #    Homo sapiens GM23338 originated from GM23248 https://www.encodeproject.org/experiments/ENCSR293NAJ/
 
-H1C_H4K20 <- loadBed("~/Dropbox/Downloads/ENCODE_beds/ENCFF665UWA.bed") #     Homo sapiens H1 https://www.encodeproject.org/experiments/ENCSR728SZE/
+H1C_H4K20 <- loadBed("../data/ENCODE_beds/ENCFF665UWA.bed") #     Homo sapiens H1 https://www.encodeproject.org/experiments/ENCSR728SZE/
 
-H1C_H4K20_rep <- loadBed("~/Dropbox/Downloads/ENCFF439CWL.bed") #     Homo sapiens H1 https://www.encodeproject.org/experiments/ENCSR728SZE/
+H1C_H4K20_rep <- loadBed("../data/ENCODE_beds/ENCFF439CWL.bed") #     Homo sapiens H1 https://www.encodeproject.org/experiments/ENCSR728SZE/
 
-H9C_H4K20 <- loadBed("~/Dropbox/Downloads/ENCFF280SGN.bed") #    Homo sapiens hepatocyte originated from H9 https://www.encodeproject.org/experiments/ENCSR289TGF/
-H9CSMO_H4K20 <- loadBed("~/Dropbox/Downloads/ENCFF653UGW.bed") #     Homo sapiens smooth muscle cell originated from H9 https://www.encodeproject.org/experiments/ENCSR189XIE/
-H9CNP_H4K20 <- loadBed("~/Dropbox/Downloads/ENCFF435BYC.bed") # Some,   Homo sapiens neural progenitor cell originated from H9 https://www.encodeproject.org/experiments/ENCSR720ZAX/
+H9C_H4K20 <- loadBed("../data/ENCODE_beds/ENCFF280SGN.bed") #    Homo sapiens hepatocyte originated from H9 https://www.encodeproject.org/experiments/ENCSR289TGF/
+H9CSMO_H4K20 <- loadBed("../data/ENCODE_beds/ENCFF653UGW.bed") #     Homo sapiens smooth muscle cell originated from H9 https://www.encodeproject.org/experiments/ENCSR189XIE/
+H9CNP_H4K20 <- loadBed("../data/ENCODE_beds/ENCFF435BYC.bed") # Some,   Homo sapiens neural progenitor cell originated from H9 https://www.encodeproject.org/experiments/ENCSR720ZAX/
 
-IMR90_H4K20 <- loadBed("~/Dropbox/Downloads/ENCFF567BLE.bed") # up to 37, Homo sapiens IMR-90 https://www.encodeproject.org/experiments/ENCSR804SRO/
+IMR90_H4K20 <- loadBed("../data/ENCODE_beds/ENCFF567BLE.bed") # up to 37, Homo sapiens IMR-90 https://www.encodeproject.org/experiments/ENCSR804SRO/
 
-MCF7_H4K20 <- loadBed("~/Dropbox/Downloads/ENCFF151LTX.bed") #    Homo sapiens MCF-7, https://www.encodeproject.org/experiments/ENCSR639RHG/
-HCT116_H4K20 <- loadBed("~/Dropbox/Downloads/ENCFF403LQH.bed") #     Homo sapiens HCT116 https://www.encodeproject.org/experiments/ENCSR474DOV/
+MCF7_H4K20 <- loadBed("../data/ENCODE_beds/ENCFF151LTX.bed") #    Homo sapiens MCF-7, https://www.encodeproject.org/experiments/ENCSR639RHG/
+HCT116_H4K20 <- loadBed("../data/ENCODE_beds/ENCFF403LQH.bed") #     Homo sapiens HCT116 https://www.encodeproject.org/experiments/ENCSR474DOV/
 
-KMS11_H4K20 <- loadBed("~/Dropbox/Downloads/ENCFF720TFF.bed")  #     Homo sapiens KMS-11 https://www.encodeproject.org/experiments/ENCSR790QWJ/
+KMS11_H4K20 <- loadBed("../data/ENCODE_beds/ENCFF720TFF.bed")  #     Homo sapiens KMS-11 https://www.encodeproject.org/experiments/ENCSR790QWJ/
 
-H1NC_H4K20 <- loadBed("~/Dropbox/Downloads/ENCFF108PRX.bed") #Homo sapiens neural cell originated from H1 https://www.encodeproject.org/experiments/ENCSR958ZMM/
+H1NC_H4K20 <- loadBed("../data/ENCODE_beds/ENCFF108PRX.bed") #Homo sapiens neural cell originated from H1 https://www.encodeproject.org/experiments/ENCSR958ZMM/
 
 
 fraction_overlapN2(zcw_peaks_cin[cov_input>5], H1C_H4K20, "Zcwpw1", "H1C_H4K20", shift=1e8, n=100) # 12 to 50%
@@ -1083,12 +1071,13 @@ mean(dmc1[,CI_stop_ext-CI_start_ext])
 
 # Zcw vs HP9
 
-~20% pre-existing Zcw turn into HP9combo peaks, up to 30% for strongest pre-existing peaks
+~20% pre-existing Zcw turn into HP9combo peaks, up to 40% for strongest pre-existing peaks
 
-Overall 15% of Zcw_wP9 peaks are H9combo peaks, but up to 80% for strongest Zcw_wP9!
+Overall 15% of Zcw_wP9 peaks are H9combo peaks, but up to 90% for strongest Zcw_wP9!
 
 Almost 80% of Zcw_CVC peaks are H9combo peaks
 
+94.2% of the top 3378+3377=6755 peaks overlap H9Combo peaks
 
 ```{r}
 fraction_overlapN2(zcw_peaks[cov_input>8], HP9combo_peaks, x1="Zcw UT", y1="hP9 Cterm combo", shift = 1e8)
@@ -1381,51 +1370,6 @@ fraction_overlap_mean(HP9combo_peaks[!is.na(dist_to_zcwCVC) & !is.na(dist_to_h3k
 
 # Sandbox
 
-```{r}
-ctcf <- fread("~/Downloads/hglft_genome_1dd9_39f220.bed")
-setnames(ctcf,c("chr",'CI_start','CI_stop',"enrichment","B","C"))
-ctcf <- prejoin(ctcf)
-ctcf
-
-zcw_wP9_peaks_JOIN_ctcf <- foverlaps(zcw_wP9_peaks, ctcf, by.x = c("chr","CI_start_ext","CI_stop_ext"))
-fraction_overlap(zcw_wP9_peaks_JOIN_ctcf, x="Zcwpw1", y="CTCF", n = 150)
-
-zcw_wP9_peaks_JOIN_ctcf <- foverlaps(zcw_wP9_peaks, ctcf, by.x = c("chr","CI_start_ext","CI_stop_ext"))
-fraction_overlap(zcw_wP9_peaks_JOIN_ctcf, x="Zcwpw1", y="H3K36me3_P9", n = 400)
-```
-
-```{r}
-readBED <- function(bedfile="~/Downloads/hglft_genome_6542_3a6b10.bed"){
-  ctcf <- fread(bedfile)
-  setnames(ctcf,c("chr",'CI_start','CI_stop',"enrichment","B","C"))
-  ctcf <- prejoin(ctcf)
-  ctcf <- foverlaps(zcw_wP9_peaks, ctcf, by.x = c("chr","CI_start_ext","CI_stop_ext"))
-  return(ctcf)
-}
-
-
-h4k20me1 <- readBED("~/Downloads/h4k20me1_bernstein.bed")
-h3k27ac <- readBED("~/Downloads/h3k27ac_bernstein.bed")
-h3k27me3 <- readBED("~/Downloads/h3k27me3_bernstein.bed")
-
-ctcf <- readBED("~/Downloads/Bernstein_NHEK_CTCF_hg38.bed")
-pol2b <- readBED("~/Downloads/Bernstein_NHEK_Pol2b_hg38.bed")
-h3k4me3_bern <- readBED("~/Downloads/Bernstein_NHEK_H3K4me3_hg38.bed")
-h3k36me3_bern <- readBED("~/Downloads/Bernstein_NHEK_H3K36me3_hg38.bed")
-h3k9me3_broad <- readBED("~/Downloads/Broad_ChipSeq_NHEK_H3K9me3_hg38.bed")
-
-fraction_overlap(h4k20me1, x="Zcwpw1", y="h4k20me1", n = 150)
-fraction_overlap(h3k27ac, x="Zcwpw1", y="h3k27ac", n = 150)
-fraction_overlap(h3k27me3, x="Zcwpw1", y="h3k27me3", n = 150)
-
-fraction_overlap(ctcf, x="Zcwpw1", y="ctcf", n = 150)
-fraction_overlap(pol2b, x="Zcwpw1", y="pol2b", n = 150)
-fraction_overlap(h3k4me3_bern, x="Zcwpw1", y="h3k4me3_bern", n = 150)
-fraction_overlap(h3k36me3_bern, x="Zcwpw1", y="h3k36me3_bern", n = 150)
-fraction_overlap(h3k9me3_broad, x="Zcwpw1", y="h3k9me3_broad", n = 150)
-
-
-```
 
 
 ```{r}
@@ -1481,107 +1425,6 @@ hist(nearest_null, breaks=10000, xlim=c(0,10000), ylim=c(0,100))
 hist(nearest_k36, breaks=10000, xlim=c(0,10000), ylim=c(0,100))
 hist(nearest_null_k36, breaks=10000, xlim=c(0,10000), ylim=c(0,100))
 
-```
-
-
-```{r}
-
-library(ChIPseeker)
-library(TxDb.Hsapiens.UCSC.hg38.knownGene)
-txdb <- TxDb.Hsapiens.UCSC.hg38.knownGene
-library(clusterProfiler)
-
-enriches <- enrichPeakOverlap(queryPeak = zcw_wP9_peaks_GR,
-                  targetPeak    = list(h3k36me3_P9_peaks_GR),
-                  TxDb          = txdb,
-                  pAdjustMethod = "BH",
-                  nShuffle      = 1000,
-                  chainFile     = NULL,
-                  verbose       = FALSE,
-                  pool = FALSE)
-
-
-zcw_wP9_peaks_GR <- makeGRangesFromDataFrame(zcw_wP9_peaks, ignore.strand = T, seqnames.field = "chr", start.field = "CI_start", end.field = "CI_stop", keep.extra.columns = T)
-zcw_wP9_peaks_GR
-
-h3k36me3_P9_peaks_GR <- makeGRangesFromDataFrame(h3k36me3_P9_peaks, ignore.strand = T, seqnames.field = "chr", start.field = "CI_start", end.field = "CI_stop", keep.extra.columns = T)
-
-ctcf <- readPeakFile("~/Downloads/hglft_genome_1dd9_39f220.bed")
-
-hg19 <- getGEOInfo(genome="hg19", simplify=TRUE)
-head(hg19)
-
-data.table(hg19)[grepl("HEK",hg19$title)]
-
-wget ftp://ftp.ncbi.nlm.nih.gov/geo/samples/GSM749nnn/GSM749668/suppl/GSM749668_hg19_wgEncodeUwTfbsHek293CtcfStdHotspotsRep1.broadPeak.gz
-cut -f 1-6 GSM749668_hg19_wgEncodeUwTfbsHek293CtcfStdHotspotsRep1.broadPeak > GSM749668_hg19_wgEncodeUwTfbsHek293CtcfStdHotspotsRep1.bed
-
-wget  ftp://ftp.ncbi.nlm.nih.gov/geo/samples/GSM749nnn/GSM749668/suppl/GSM749668_hg19_wgEncodeUwTfbsHek293CtcfStdPkRep1.narrowPeak.gz
-cut -f 1-6 GSM749668_hg19_wgEncodeUwTfbsHek293CtcfStdPkRep1.narrowPeak > GSM749668_hg19_wgEncodeUwTfbsHek293CtcfStdPkRep1.bed
-
-Broad_ChipSeq_NHEK_H3K79me2
-wget ftp://ftp.ncbi.nlm.nih.gov/geo/samples/GSM1003nnn/GSM1003527/suppl/GSM1003527_hg19_wgEncodeBroadHistoneNhekH3k79me2Pk.broadPeak.gz
-cut -f 1-6 GSM1003527_hg19_wgEncodeBroadHistoneNhekH3k79me2Pk.broadPeak > GSM1003527_hg19_wgEncodeBroadHistoneNhekH3k79me2Pk.bed
-
-Bernstein_NHEK_H3K27me3
-curl ftp://ftp.ncbi.nlm.nih.gov/geo/samples/GSM733nnn/GSM733701/suppl/GSM733701_hg19_wgEncodeBroadHistoneNhekH3k27me3StdPk.broadPeak.gz | zcat | cut -f 1-6 > GSM733701_hg19_wgEncodeBroadHistoneNhekH3k27me3StdPk.bed
-
-#Bernstein_NHEK_H3K27ac
-curl ftp://ftp.ncbi.nlm.nih.gov/geo/samples/GSM733nnn/GSM733674/suppl/GSM733674_hg19_wgEncodeBroadHistoneNhekH3k27acStdPk.broadPeak.gz | zcat | cut -f 1-6 > GSM733674_hg19_wgEncodeBroadHistoneNhekH3k27acStdPk.bed
-
-#Bernstein_NHEK_H4K20me1
-curl ftp://ftp.ncbi.nlm.nih.gov/geo/samples/GSM733nnn/GSM733728/suppl/GSM733728_hg19_wgEncodeBroadHistoneNhekH4k20me1StdPk.broadPeak.gz | zcat | cut -f 1-6 > GSM733728_hg19_wgEncodeBroadHistoneNhekH4k20me1StdPk.bed
-
-#Bernstein_NHEK_CTCF
-curl ftp://ftp.ncbi.nlm.nih.gov/geo/samples/GSM733nnn/GSM733636/suppl/GSM733636_hg19_wgEncodeBroadHistoneNhekCtcfStdPk.broadPeak.gz | zcat | cut -f 1-6 > Bernstein_NHEK_CTCF_hg19.bed
-
-#Bernstein_NHEK_Pol2(b)
-curl ftp://ftp.ncbi.nlm.nih.gov/geo/samples/GSM733nnn/GSM733671/suppl/GSM733671_hg19_wgEncodeBroadHistoneNhekPol2bStdPk.broadPeak.gz  | zcat | cut -f 1-6 > Bernstein_NHEK_Pol2b_hg19.bed
-
-#Bernstein_NHEK_H3K4me3
-curl ftp://ftp.ncbi.nlm.nih.gov/geo/samples/GSM733nnn/GSM733720/suppl/GSM733720_hg19_wgEncodeBroadHistoneNhekH3k4me3StdPk.broadPeak.gz | zcat | cut -f 1-6 > Bernstein_NHEK_H3K4me3_hg19.bed
-
-#Bernstein_NHEK_H3K36me3
-curl ftp://ftp.ncbi.nlm.nih.gov/geo/samples/GSM733nnn/GSM733726/suppl/GSM733726_hg19_wgEncodeBroadHistoneNhekH3k36me3StdPk.broadPeak.gz | zcat | cut -f 1-6 > Bernstein_NHEK_H3K36me3_hg19.bed
-
-#Broad_ChipSeq_NHEK_H3K9me3
-curl ftp://ftp.ncbi.nlm.nih.gov/geo/samples/GSM1003nnn/GSM1003528/suppl/GSM1003528_hg19_wgEncodeBroadHistoneNhekH3k09me3Pk.broadPeak.gz | zcat | cut -f 1-6 > Broad_ChipSeq_NHEK_H3K9me3_hg19.bed
-
-#Bernstein_NHEK_H3K9ac
-curl ftp://ftp.ncbi.nlm.nih.gov/geo/samples/GSM733nnn/GSM733665/suppl/GSM733665_hg19_wgEncodeBroadHistoneNhekH3k9acStdPk.broadPeak.gz | zcat | cut -f 1-6 > Bernstein_NHEK_H3K9ac_hg19.bed
-
-
-enriches <- enrichPeakOverlap(queryPeak = zcw_wP9_peaks_GR,
-                  targetPeak    = "~/Downloads/hglft_genome_1dd9_39f220.bed",
-                  TxDb          = txdb,
-                  pAdjustMethod = "BH",
-                  nShuffle      = 1000,
-                  chainFile     = NULL,
-                  verbose       = FALSE,
-                  pool = FALSE)
-
-enriches
-
-hg38 <- getGEOInfo(genome="hg38", simplify=TRUE)
-head(hg38)
-
-#GSM749668 hek ctcf
-
-downloadGEObedFiles(genome="hg38", destDir="~/chipseeker")
-
-GEO_beds <- list.files("~/chipseeker", full.names = T, pattern = "narrowPeak")
-
-# Takes too long to run!
-# enriches <- enrichPeakOverlap(queryPeak = zcw_wP9_peaks_GR,
-#                   targetPeak    = GEO_beds,
-#                   TxDb          = txdb,
-#                   pAdjustMethod = "BH",
-#                   nShuffle      = 1000,
-#                   chainFile     = NULL,
-#                   verbose       = FALSE,
-#                   pool=FALSE)
-
-enriches
 ```
 
 
