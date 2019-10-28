@@ -45,6 +45,6 @@ Allele_specificity.sh
 metagene_plot.sh
 ```
 
-Other analyses are Rnotebooks, and require the [preprocess.sh](preprocess.sh) script to be run to generate the required files.
+Other analyses are Rnotebooks, and require the [preprocess.sh](analysis/preprocess.sh) script to be run to generate the required files.
 
 
