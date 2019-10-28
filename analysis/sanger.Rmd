@@ -65,8 +65,8 @@ if(fill){
 ```{r}
 library(sangerseqR)
 
-wt <- readsangerseq("../../../ZCWPW1 project/Paper/Figures/WT allele_ZCW_read as is.ab1")
-ko <- readsangerseq("../../../ZCWPW1 project/Paper/Figures/KO allele_ZCW_ read as reverse complement.ab1")
+wt <- readsangerseq("../data/ZCWPW1 project/Paper/Figures/WT allele_ZCW_read as is.ab1")
+ko <- readsangerseq("../data/ZCWPW1 project/Paper/Figures/KO allele_ZCW_ read as reverse complement.ab1")
 
 pdf("../results/sanger_trace.pdf",width = 6, height = 3)
 plot_grid(plot_trace(wt), plot_trace(ko, rev = T), nrow=2)
