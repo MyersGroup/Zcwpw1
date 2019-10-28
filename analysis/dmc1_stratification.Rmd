@@ -1,21 +1,7 @@
 ---
-title: "R Notebook"
+title: "DMC1 Profiles, stratified by heat"
 output: html_notebook
 ---
-
-# SPO11
-
-```{bash}
-
-sed 's/chr//' B6_Spo11.bedgraph > B6_Spo11_clean.bedgraph
-
-zgrep -v '_' B6_Spo11.bedgraph | grep -vP 'M|X|Y' | sed 's/chr//' > B6_Spo11_clean.bedgraph
-
-bedGraphToBigWig B6_Spo11_clean.bedgraph ../../single-cell/sequencing/metadata/mm10_sizes.chrom B6_Spo11.bedgraph.bigWig
-
-bwtool matrix -fill=0 -decimals=1 -tiled-averages=5 5000:5000 B6.bed B6_Spo11.bedgraph.bigWig B6_Spo11_atB6.bwm
-
-```
 
 
 ```{r}
