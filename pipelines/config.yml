@@ -27,7 +27,9 @@ genome:
 #forcecallAT: "NA15-SRR5627138_AND_NA15-SRR5627139_vs_NA15-SRR5627140.flank150"
 #forcecallAT: "qPCR_regions_for_validation.bed"
 #forcecallAT: 'genome.windows.100wide.100slide.bed'
-forcecallAT: "qPCRregions_18-09-19.bed"
+#forcecallAT: "qPCRregions_18-09-19.bed"
+#forcecallAT: "cpgIslandExtUnmasked.bed"
+forcecallAT: "Zcw_random.bed"
 
 ### Profile Plot Parameters
 
