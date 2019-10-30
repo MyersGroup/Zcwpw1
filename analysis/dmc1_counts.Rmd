@@ -152,6 +152,83 @@ p + geom_signif(y_position=c(80, 290, 325, 220, 230),
 ggsave("../results/dmc1_counts.pdf", width = 7, height = 5)
 ```
 
+```{r}
+# # # # # # # # # # # #
+# KO
+# # # # # # # # # # # #
+
+rad51_counts_ZCW <- readxl::read_excel("../data/Rad51.xlsx", sheet = "ZCW KO", skip = 1)
+
+colnames(rad51_counts_ZCW) <- c("Image","Stage","Foci","NA1","NA2","Image","Stage","Foci")
+
+rad51_counts_ZCW <- rbind(rad51_counts_ZCW[,1:3],
+                     rad51_counts_ZCW[,6:8])
+
+rad51_counts_ZCW$Genotype <- "Zcwpw1 KO"
+
+# # # # # # # # # # # #
+# Prdm9KO counts
+# # # # # # # # # # # #
+
+rad51_counts_P9KO <- readxl::read_excel("../data/Rad51.xlsx", sheet = "Prdm9 KO", skip = 1)
+
+colnames(rad51_counts_P9KO) <- c("Image","Stage","Foci")
+
+rad51_counts_P9KO$Genotype <- "Prdm9 KO"
+
+
+# # # # # # # # # # # #
+# WT counts
+# # # # # # # # # # # #
+
+rad51_counts_WT <- readxl::read_excel("../data/Rad51.xlsx", sheet = "Wt unrelated", skip = 1)
+
+colnames(rad51_counts_WT) <- c("Image","Stage","Foci","NA1","NA2","Image","Stage","Foci")
+
+rad51_counts_WT <- rbind(rad51_counts_WT[,1:3],
+                     rad51_counts_WT[,6:8])
+
+rad51_counts_WT$Genotype <- "WT"
+
+
+# # # # # # # # # # # #
+# Plot
+# # # # # # # # # # # #
+
+rad51_counts <- data.table(rbind(rad51_counts_WT, rad51_counts_P9KO, rad51_counts_ZCW))[!is.na(Foci)]
+
+rad51_counts[rad51_counts$Stage=="late Z",]$Stage <- "Late Z"
+rad51_counts[rad51_counts$Stage=="PseudoP",]$Stage <- "(Pseudo)P"
+rad51_counts[rad51_counts$Stage=="P",]$Stage <- "(Pseudo)P"
+
+rad51_counts$Stage <- factor(rad51_counts$Stage, levels = c("L","Late L","Early Z","Z","Late Z","(Pseudo)P","Late P"))
+rad51_counts$Genotype <- factor(rad51_counts$Genotype, levels = c("WT","Zcwpw1 KO","Prdm9 KO"))
+
+for(stage in c("Late L","Early Z","Z","Late Z","(Pseudo)P")){
+print(t.test(data.table(rad51_counts)[Genotype=="Zcwpw1 KO" & Stage ==stage]$Foci,
+       data.table(rad51_counts)[Genotype=="WT" & Stage ==stage]$Foci))
+}
+
+
+p <- ggplot(rad51_counts[Stage!="Late P" & Stage!="L"], aes(Stage, Foci, colour=Genotype)) + 
+  geom_point(size=0.5, position = position_jitterdodge()) + 
+  scale_color_brewer(palette = "Set1", labels = c("Wild Type",expression(italic("Zcwpw1")^"-/-"),expression(italic("Prdm9")^"-/-"))) + 
+  theme_minimal() + 
+  geom_boxplot(alpha=0) +
+  theme(legend.position = "bottom") +
+  ylab("RAD51 Foci Count")
+
+p + geom_signif(y_position=c(110, 210, 270, 130, 100),
+                xmin=c(0.7, 1.7, 2.7, 3.7, 4.7),
+                xmax=c(1, 2, 3, 4, 5),
+              annotation=c("0.12",fs("0.06"),fs("0.04"),fs("0.08"),fs("1.9e-14")),
+              tip_length=0.01, col="black", parse=TRUE) + ylim(0,280)
+
+p
+
+ggsave("../results/rad51_counts.pdf", width = 7, height = 5)
+```
+
 
 
 ```{r}
