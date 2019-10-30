@@ -1199,13 +1199,13 @@ fraction_overlapN2(zcw_wP9_peaks[cov_input>=5], h3k36me3_UT_peaks, x1="Zcw wP9",
 
 ```{r}
 p1 <- fraction_overlapN2(zcw_wP9_peaks[cov_input>=5], h3k4me3_P9_peaks, x1="Zcw wP9", y1="h3k4me3_P9_peaks", shift=1e8, n=100) +
-  ylab("Fraction of Zcwpw1 with Prdm9 peaks \n that overlap H3K4me3 with Prdm9 Peaks") +
-  xlab("Mean Enrichment of Zcwpw1 cotrasnfected with Prdm9") +
+  ylab("Fraction of ZCWPW1 with PRDM9 peaks \n that overlap H3K4me3 with PRDM9 Peaks") +
+  xlab("Mean Enrichment of ZCWPW1 cotransfected with PRDM9") +
   theme(legend.position = "bottom")
 
 p2 <- fraction_overlapN2(zcw_wP9_peaks[cov_input>=5], h3k36me3_P9_peaks, x1="Zcw wP9", y1="h3k36me3_P9_peaks", shift=1e8, n=100) +
-  ylab("Fraction of Zcwpw1 with Prdm9 peaks \n that overlap H3K36me3 with Prdm9 Peaks") +
-  xlab("Mean Enrichment of Zcwpw1 cotrasnfected with Prdm9") +
+  ylab("Fraction of ZCWPW1 with PRDM9 peaks \n that overlap H3K36me3 with PRDM9 Peaks") +
+  xlab("Mean Enrichment of ZCWPW1 cotransfected with PRDM9") +
   scale_y_continuous() +
   theme(legend.position = "bottom")
 
