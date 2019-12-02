@@ -245,6 +245,9 @@ rule randomBED:
     awk '$4 < 2 {{print $0}}' > {output}
     """
 
+# sort -k1,1 -k2,2n random.bed | bedtools merge -i stdin > random_deoverlap.bed
+# does nothing
+
 
 rule bigwigProfile:
   """
@@ -252,7 +255,7 @@ rule bigwigProfile:
   """
   input:
     locations=lambda wc: "bed6/{locations}.bed" if(wc.locations=="top_transcripts_ens") else expand("bed6/{{locations}}_Q0{quantile}.bed", quantile=[0, 1, 2, 3]),
-    random = "random_deoverlap.bed",
+    random = "random.bed",
     sample = "bedgraphs/depth_{sample}.bigWig",
   output:
     "bwprofiles/{sample}_AT_{locations}.profile"
@@ -322,9 +325,9 @@ rule MultiProfilePlot:
     "bwplots/AllSamples_AT_{locations}.pdf"
   params:
     sampleName = " ".join([f"'{name}'" for s,c,name in sample_pairings]),
-    regionsName =  lambda wc: config["regionNames"][wc.locations]
-    width = 17,
-    height = 15,
+    regionsName =  lambda wc: config["regionNames"][wc.locations],
+    width = 20,
+    height = 20,
   shell:
     """
     Rscript pipelines/MultiProfilePlot.R {output} '{params.regionsName}' {params.width} {params.height} {input.samplePair} {params.sampleName}
