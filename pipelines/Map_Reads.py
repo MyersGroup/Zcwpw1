@@ -552,7 +552,7 @@ rule sampleBAM:
   input:
     b="filtered/{sample}.bam",
     idx="filtered/{sample}.bam.bai",
-    reg="chr19_sample.bed"
+    reg="sample_regions/chr19_sample.bed"
   output:
     "sample_regions/sample_{sample}.bam"
   threads:
