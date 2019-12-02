@@ -17,9 +17,9 @@ rule all:
     ["peaks/SingleBasePeaks.{chip}_vs_{control}.p0.000001.sep250.ALL.bed".format(
         chip = chip_id,
         control=control_id) for chip_id, control_id, name in sample_pairings],
-    ["deeptools/bigwigs/{chip}_vs_{control}_CPM_log2.bw".format(
-        chip = chip_id,
-        control=control_id) for chip_id, control_id, name in sample_pairings]
+    #["deeptools/bigwigs/{chip}_vs_{control}_CPM_log2.bw".format(
+    #    chip = chip_id,
+    #    control=control_id) for chip_id, control_id, name in sample_pairings]
     #["deeptools/bigwigs/SBPsample/{chip}_vs_{control}_CPM_log2.bw".format(
     #    chip = chip_id,
     #    control=control_id) for chip_id, control_id in sample_pairings]
@@ -46,6 +46,7 @@ def split_chip_bam(wildcards):
     return(list([f'filtered/{two_samples[0]}.bam',
                 f'filtered/{two_samples[1]}.bam']))
   else:
+    #print(wildcards.chip)
     return(list([f'NA',
                 f'NA']))
 
@@ -152,7 +153,7 @@ rule call_peaks:
 
 rule bamMerge:
   input:
-    chips = split_chip_bam ,
+    chips = split_chip_bam,
   output:
     "filtered/{chip}.bam"
   threads:
