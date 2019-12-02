@@ -1,0 +1,115 @@
+---
+title: "GEO Submission"
+output: html_notebook
+---
+
+
+# Collate files
+Collect relevant files into a staging folder
+```{bash}
+mkdir GEO_submission
+
+mkdir GEO_submission/bed
+# NA peaks
+cp peaks/SingleBasePeaks.NA15-SRR56271* GEO_submission/bed
+cp QCpeaks/SingleBasePeaks.NA15-SRR5627146_AND_NA15-SRR5627147_vs_NA15-SRR5627143.p0.000001.sep250.ALL_MotifCenteredStranded.bed GEO_submission/bed #hP9HA&V5
+
+rm GEO_submission/bed/*flank150*
+rm GEO_submission/bed/*SRR5627138*
+rm GEO_submission/bed/*SRR5627141*
+
+# P1 chips
+cp peaks/SingleBasePeaks.WTCHG_538916*ALL.bed GEO_submission/bed
+
+# Fragment Positions
+mkdir GEO_submission/FragPos
+cp FragPos/Fragment_Position_WTCHG_538916*.bed GEO_submission/FragPos
+
+# forceCallled at 100bp windows
+mkdir GEO_submission/ForceCalled
+
+cp peaks/ForceCalledPeaks_NA15-SRR5627146_AND_NA15-SRR5627147_vs_NA15-SRR5627143_AT_genome.windows.100wide.100slide.bed.bed GEO_submission/ForceCalled #hP9combo
+cp peaks/ForceCalledPeaks_NA15-SRR5627145_AND_NA15-SRR5627144_vs_NA15-SRR5627143_AT_genome.windows.100wide.100slide.bed.bed GEO_submission/ForceCalled #cP9combo
+cp peaks/ForceCalledPeaks_NA15-SRR5627150_vs_NA15-SRR5627142_AT_genome.windows.100wide.100slide.bed.bed GEO_submission/ForceCalled #h3k4me3_UT_100bp
+cp peaks/ForceCalledPeaks_NA15-SRR5627148_vs_NA15-SRR5627142_AT_genome.windows.100wide.100slide.bed.bed GEO_submission/ForceCalled #h3k36me3_UT_100bp
+cp peaks/ForceCalledPeaks_NA15-SRR5627152_AND_NA15-SRR5627153_vs_NA15-SRR5627143_AT_genome.windows.100wide.100slide.bed.bed GEO_submission/ForceCalled #h3k4me3_hP9_100bp
+cp peaks/ForceCalledPeaks_NA15-SRR5627149_vs_NA15-SRR5627143_AT_genome.windows.100wide.100slide.bed.bed GEO_submission/ForceCalled #h3k36me3_hP9_100bp
+
+cp peaks/ForceCalledPeaks_WTCHG_538916_221156_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144_AT_genome.windows.100wide.100slide.bed.bed GEO_submission/ForceCalled #zcw_100bp
+cp peaks/ForceCalledPeaks_WTCHG_538916_223180_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144_AT_genome.windows.100wide.100slide.bed.bed GEO_submission/ForceCalled #zcw_hP9_100bp
+cp peaks/ForceCalledPeaks_WTCHG_538916_224192_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144_AT_genome.windows.100wide.100slide.bed.bed GEO_submission/ForceCalled #zcw_cP9_100bp
+cp peaks/ForceCalledPeaks_WTCHG_538916_223180_vs_WTCHG_538916_221156_AT_genome.windows.100wide.100slide.bed.bed GEO_submission/ForceCalled #zcw_hCVC
+cp peaks/ForceCalledPeaks_WTCHG_538916_224192_vs_WTCHG_538916_221156_AT_genome.windows.100wide.100slide.bed.bed GEO_submission/ForceCalled #zcw_cCVC
+
+cp peaks/ForceCalledPeaks_WTCHG_538916_223180_vs_WTCHG_538916_221156_AT_NA15-SRR5627146_AND_NA15-SRR5627147_vs_NA15-SRR5627143.bed GEO_submission/ForceCalled #Zcw_CVC_AT_hP9combo
+
+# conda install -c conda-forge parallel
+parallel bgzip ::: GEO_submission/FragPos/*
+parallel bgzip ::: GEO_submission/bed/*
+parallel bgzip ::: GEO_submission/ForceCalled/*
+
+# bigwigs
+mkdir GEO_submission/bigWig
+cp bedgraphs/depth_WTCHG_538916*.bigWig GEO_submission/bigWig
+
+# raw data
+mkdir GEO_submission/fastq
+cp raw_data/*/*/WTCHG_538916_*.fastq.gz GEO_submission/fastq
+cp raw_data/*/*/WTCHG_692839_AD027_*.fastq.gz GEO_submission/fastq
+```
+
+# Remap Filenames
+Files have IDs to minimise ambiguity, including in the future, but for public consumption, renaming to understandable file names
+```{bash}
+find GEO_submission/ -type f -name '*' 
+find GEO_submission/ -type f -name '*' -execdir rename -v 's:SRR5627143:Input_humanPRDM9-HA:g' {} \;
+find GEO_submission/ -type f -name '*' -execdir rename -v 's:SRR5627146:ChIPHA_humanPRDM9-HA:g' {} \;
+find GEO_submission/ -type f -name '*' -execdir rename -v 's:SRR5627144:ChIPHA_chimpPRDM9-HA:g' {} \;
+find GEO_submission/ -type f -name '*' -execdir rename -v 's:SRR5627145:ChIPV5_chimpPRDM9-V5:g' {} \;
+find GEO_submission/ -type f -name '*' -execdir rename -v 's:SRR5627147:ChIPV5_humanPRDM9-V5:g' {} \;
+find GEO_submission/ -type f -name '*' -execdir rename -v 's:SRR5627149:ChIPH3K36me3_humanPRDM9-HA:g' {} \;
+find GEO_submission/ -type f -name '*' -execdir rename -v 's:SRR5627152:ChIPH3K4me3_humanPRDM9-HA_Rep1:g' {} \;
+find GEO_submission/ -type f -name '*' -execdir rename -v 's:SRR5627153:ChIPH3K4me3_humanPRDM9-HA_Rep2:g' {} \;
+find GEO_submission/ -type f -name '*' -execdir rename -v 's:SRR5627142:Input_Untransfected:g' {} \;
+find GEO_submission/ -type f -name '*' -execdir rename -v 's:SRR5627150:ChIPH3K4me3_Untransfected_Rep1:g' {} \;
+find GEO_submission/ -type f -name '*' -execdir rename -v 's:SRR5627151:ChIPH3K4me3_Untransfected_Rep2:g' {} \;
+find GEO_submission/ -type f -name '*' -execdir rename -v 's:SRR5627148:ChIH3K36me3_Untransfected:g' {} \;
+find GEO_submission/ -type f -name '*' -execdir rename -v 's:WTCHG_538916_217108:Input_ZCWPW1-HA:g' {} \;
+find GEO_submission/ -type f -name '*' -execdir rename -v 's:WTCHG_538916_221156:ChIPHA_ZCWPW1-HA:g' {} \;
+find GEO_submission/ -type f -name '*' -execdir rename -v 's:WTCHG_538916_220144:Input_ZCWPW1-HA+humanPRDM9-V5:g' {} \;
+find GEO_submission/ -type f -name '*' -execdir rename -v 's:WTCHG_538916_223180:ChIPHA_ZCWPW1-HA+humanPRDM9-V5:g' {} \;
+find GEO_submission/ -type f -name '*' -execdir rename -v 's:WTCHG_538916_224192:ChIPHA_ZCWPW1-HA+chimpPRDM9-V5:g' {} \;
+find GEO_submission/ -type f -name '*' -execdir rename -v 's:WTCHG_692839_AD027:ChIPDMC1_ZCWPW1_HOM_KO:g' {} \;
+find GEO_submission/ -type f -name '*' -execdir rename -v 's:genome.windows.100wide.100slide.bed:100bpWindows:g' {} \;
+```
+
+# Tar files
+Because GEO doesn't provide folder ability for processed files
+They've allready been bgzipped individually (above)
+```{bash}
+tar -cvf GEO_submission/ForceCalledPeaks.tar GEO_submission/ForceCalled
+tar -cvf GEO_submission/FragmentPositions.tar GEO_submission/FragPos
+tar -cvf GEO_submission/SingleBasePeaks.tar GEO_submission/bed
+tar -cvf GEO_submission/bigWigs_bedGraphs.tar GEO_submission/bigWig
+
+# wget http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/bedToBigBed
+# chmod +x ./bedToBigBed
+```
+
+# Upload
+```{bash}
+sftp geoftp@sftp-private.ncbi.nlm.nih.gov
+
+cd uploads/danielwells_kPKtUw46
+
+mkdir new_geo_submission
+cd new_geo_submission
+mkdir fastq
+cd fastq
+
+mput fastq/*
+
+mput *.tar
+
+```
+
