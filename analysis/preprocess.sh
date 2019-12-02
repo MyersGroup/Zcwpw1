@@ -58,10 +58,10 @@ bedtools getfasta -s -fi motifs/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa -
 ####### Check Enrichment at Alus
 ############################
 
-awk '$3-$2 == 299' repeats/Repeat_Masker_Alu.bed  > Repeat_Masker_Alu_299.bed
+awk '$3-$2 == 299' repeats/Repeat_Masker_Alu.bed  > repeats/Repeat_Masker_Alu_299.bed
 
-bwtool aggregate 300:300:300 Repeat_Masker_Alu_299.bed bedgraphs/depth_WTCHG_538916_221156.bigWig Alu_meta299.txt -fill=0
-bwtool aggregate 300:300:300 Repeat_Masker_Alu_299.bed bedgraphs/depth_WTCHG_538916_217108.bigWig Alu_meta_In299.txt -fill=0
+bwtool aggregate 300:300:300 repeats/Repeat_Masker_Alu_299.bed bedgraphs/depth_WTCHG_538916_221156.bigWig repeats/Alu_meta299.txt -fill=0
+bwtool aggregate 300:300:300 repeats/Repeat_Masker_Alu_299.bed bedgraphs/depth_WTCHG_538916_217108.bigWig repeats/Alu_meta_In299.txt -fill=0
 
 bwtool aggregate 300:300:300 repeats/Repeat_Masker_Alu_299.bed bedgraphs/depth_NA15-SRR5627148.bigWig repeats/Alu_UT_H3K36me3.txt -fill=0
 bwtool aggregate 300:300:300 repeats/Repeat_Masker_Alu_299.bed bedgraphs/depth_NA15-SRR5627150.bigWig repeats/Alu_UT_H3K4me3.txt -fill=0
@@ -155,7 +155,8 @@ bedtools intersect -a forcepeaks/genome.windows.100wide.100slide.bed -b CpG/cpgI
 ####################################
 
 #https://journals.plos.org/plosbiology/article?id=10.1371/journal.pbio.1000533
-#https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSM1254259
+#https://www.frontiersin.org/articles/10.3389/fgene.2015.00339/full
+#https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSM1254259 (GSE51867)
 wget -P CpG/ ftp://ftp.ncbi.nlm.nih.gov/geo/samples/GSM1254nnn/GSM1254259/suppl/GSM1254259%5FHEK293%2DCT%2Ecout%2Etxt%2Egz
 
 # only CpG meth
