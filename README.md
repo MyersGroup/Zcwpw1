@@ -1,3 +1,6 @@
+[![bioRxiv](https://img.shields.io/badge/bioRxiv-10.1101%2F821678v1-%23bd2736)](https://doi.org/10.1101/821678)
+[![DOI](https://zenodo.org/badge/158556718.svg)](https://zenodo.org/badge/latestdoi/158556718)
+
 # Zcwpw1 Project
 
 Zcwpw1 is co-expressed with Prdm9 and has domains that bind to both H3K4me3 and H3K36me3 (which are desposited by Prdm9 and required for its role in recombination.)
