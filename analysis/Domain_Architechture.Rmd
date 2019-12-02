@@ -216,7 +216,7 @@ ts_order <- c("ENST00000398027.6",
 
 tmp[, transcript_id := factor(transcript_id, levels=rev(ts_order))]
 
-pdf(width = 4, height = 3)
+pdf("Zcwpw1_Isoforms.pdf",width = 4, height = 3)
 ggplot(tmp,
        aes(transcript_id, read_count)) +
   geom_col() +
