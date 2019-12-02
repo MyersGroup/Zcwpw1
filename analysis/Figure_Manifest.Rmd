@@ -1,0 +1,102 @@
+---
+title: "Figure to Filename Mapping"
+output: html_notebook
+---
+
+Looking for the code for a specific figure?
+Find the original filename below and search the code for that.
+
+#Figure1
+ - Zcwpw1_domain_architechture_cons.pdf
+ 
+#Figure2
+ - NA
+
+#Figure3
+ - sanger_trace.pdf
+ - weight_&_synapsis.pdf
+
+#Figure4
+ - dmc1_counts.pdf
+
+#Figure5
+ - AlleleSpecificityMCT.pdf
+ - NormalisedhP9C_vInOrder_HP9C-locations.pdf (dynamic filename see Heatmaps.R)
+
+#Figure6
+ - H3K4strength_binned_allchr.pdf
+
+#Figure7
+ - DMC1_C.pdf
+
+#Figure8
+ - CpG_plot.pdf
+
+#FigureS1
+ - Zcwpw1_Isoforms.pdf
+
+#FigureS2
+NA
+
+#FigureS3
+NA
+
+#FigureS4
+NA
+
+#FigureS5
+NA
+
+#FigureS6
+ - rad51_counts.pdf
+
+#FigureS7
+NA
+
+#FigureS8
+NA
+
+#FigureS9
+NA
+
+#FigureS10
+ - Zcw_vs_CoTransfection_summary_plot_allchr.pdf
+
+#FigureS11
+NA
+
+#FigureS12
+ - NormalisedhP9C_vInOrder_hZcwCTvsST-locations.pdf (dynamic filename see Heatmaps.R)
+ - NormalisedhP9C_vInOrder_CHP9C-locations.pdf (dynamic filename see Heatmaps.R)
+
+#FigureS13
+ - DMC1_ROC_PR.pdf
+
+#FigureS14
+ - Histone_correlation.pdf
+
+#FigureS15
+ - H3Kme3_vs_Zcw_wP9.pdf
+
+#FigureS16
+ - H3K4strength_allchr.pdf
+
+#FigureS17
+NA
+
+#FigureS18
+NA
+
+#FigureS19
+NA
+
+#FigureS20
+NA
+
+#FigureS21
+ - proportions_plot_v5.pdf
+ 
+#FigureS22
+ - CpG_general.pdf
+
+
