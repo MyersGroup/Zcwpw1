@@ -3,10 +3,22 @@ title: "Domain Architechture"
 output: html_notebook
 ---
 
+```{r}
+knitr::opts_knit$set(base.dir = "results")
+knitr::opts_chunk$set(fig.path = "Domain_Architechture/")
+knitr::opts_chunk$set(dev="pdf")
+knitr::opts_chunk$set(fig.show="hold")
 
-```{r, fig.width=10}
+library(data.table)
+library(ggplot2)
+library(cowplot)
 
-pkgload::load_all("~/Dropbox/Github/drawProteins/")
+#pkgload::load_all("~/Dropbox/Github/drawProteins/")
+remotes::install_github("daniel-wells/drawProteins@custom_features")
+library(drawProteins)
+```
+
+```{r Zcwpw1_domain_architechture, fig.width=11, fig.height=5}
 
 rel_json <- drawProteins::get_features("Q9H0M4 Q6IR42") # H2RBY7 E2RFJ2 F7DK93 A0A3S5ZP38 G1PE65
 rel_data <- drawProteins::feature_to_dataframe(rel_json)
@@ -76,14 +88,14 @@ p2 <- p +
                data=data.table(rel_data)[type %in% c("CHAIN","DOMAIN","ZN_FING","COILED","DOMAIN2")]) +
   theme(legend.position = "none")
 
-pdf("../results/Zcwpw1_domain_architechture.pdf", width = 10, height = 5)
+#pdf("../results/Zcwpw1_domain_architechture.pdf", width = 10, height = 5)
 p2
-dev.off()
+#dev.off()
 ```
 
 
 # PRDM9
-```{r, fig.width=10}
+```{r Prdm9_domain_architechture, fig.width=10, fig.height=5}
 rel_json <- drawProteins::get_features("Q9NQV7 Q96EQ9")
 rel_data <- drawProteins::feature_to_dataframe(rel_json)
 
@@ -103,9 +115,9 @@ p <- p + theme_bw(base_size = 20) + # white background
     theme(panel.border = element_blank()) +
   scale_fill_brewer(palette = "Set1")
 
-pdf("../results/Prdm9_domain_architechture.pdf", width = 10, height = 5)
+#pdf("../results/Prdm9_domain_architechture.pdf", width = 10, height = 5)
 p + theme(legend.position = "bottom") + labs(fill = "Feature")
-dev.off()
+#dev.off()
 
 # 
 # draw_protein <- function(ac="P07683"){
@@ -157,25 +169,25 @@ dev.off()
 
 Using Simon's alignment
 
-```{r}
+```{r Zcwpw1_domain_architechture_cons, fig.width=11, fig.height=8}
 # load("../../ZCWPW1/fordanielalignment.out")
 # saveRDS(ouralignmat,"data/Simons_Zcwpw1_alignment.rds")
 
-ouralignmat <- readRDS("../data/Simons_Zcwpw1_alignment.rds")
+ouralignmat <- readRDS("../data/alignment/Simons_Zcwpw1_alignment.rds")
 ouralignmat[is.na(ouralignmat)] <- "-"
 seqs <- apply(ouralignmat, 1, function(x) paste0(x, collapse=""))
-MotifFinder::export_FASTA(seqs, "../data/simons_alignment.fa")
+MotifFinder::export_FASTA(seqs, "../data/alignment/simons_alignment.fa")
 
 # from http://compbio.cs.princeton.edu/conservation/
-JSD <- fread("../data/JSD_simons_alignment.txt")
+JSD <- fread("../data/alignment/JSD_simons_alignment.txt")
 setnames(JSD, c("id", "JSD", "seq"))
 
 #jalview[human_aa]
 cons <- ggplot(JSD[JSD>0.1], aes(id,scale(JSD))) + geom_col(width=1, fill="black") + theme_minimal() + xlab("Amino acid number") + ylab("Jensen-Shannon\n divergence (normalised)")
 
-pdf("../results/Zcwpw1_domain_architechture_cons.pdf", width = 10, height = 8)
+#pdf("../results/Zcwpw1_domain_architechture_cons.pdf", width = 10, height = 8)
 cowplot::plot_grid(p2, cons, ncol=1, align = "v",axis = "lrtb", rel_heights = c(2,1), labels = "AUTO")
-dev.off()
+#dev.off()
 
 ```
 
@@ -183,7 +195,7 @@ dev.off()
 
 Could have just copied the 8 numbers...
 
-```{r}
+```{r Zcwpw1_Isoforms, fig.width=4, fig.height=3}
 
 # this data from ensembl website
 transcript_annos <- structure(list(ensembl_id = c("ZCWPW1-208", "ZCWPW1-205", "ZCWPW1-202", 
@@ -197,8 +209,8 @@ transcript_annos <- structure(list(ensembl_id = c("ZCWPW1-208", "ZCWPW1-205", "Z
 "TSL:1", "TSL:2", "TSL:3")), class = "data.frame", row.names = c(NA, 
 -7L))
 
-gtex_samples <- fread("GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt")
-isoforms <- fread("zcwpw1_isoforms.tsv")
+gtex_samples <- fread("../data/GTEX/GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt")
+isoforms <- fread("../data/GTEX/zcwpw1_isoforms.tsv")
 isoforms <- melt(isoforms, id.vars=c("transcript_id","gene_id"), variable.name="SAMPID", value.name="expression", variable.factor=F)
 isoforms <- merge(gtex_samples[,.(SMTS,SAMPID)], isoforms, by="SAMPID")
 isoforms[SMTS=="Testis", median(expression),by=transcript_id][order(-V1)]
@@ -216,7 +228,7 @@ ts_order <- c("ENST00000398027.6",
 
 tmp[, transcript_id := factor(transcript_id, levels=rev(ts_order))]
 
-pdf("Zcwpw1_Isoforms.pdf",width = 4, height = 3)
+#pdf("Zcwpw1_Isoforms.pdf",width = 4, height = 3)
 ggplot(tmp,
        aes(transcript_id, read_count)) +
   geom_col() +
@@ -224,11 +236,38 @@ ggplot(tmp,
   scale_y_continuous(position = "right") +
   labs(y="Median TPM", x="Transcript") +
   theme_classic()
-dev.off()
+#dev.off()
 
-isoforms[SMTS=="Testis", mean(expression),by=transcript_id][transcript_annos, by=transcript_id]
+isoforms[SMTS=="Testis", mean(expression),by=transcript_id]#[transcript_annos, by=transcript_id]
 
 
+
+```
+
+
+# Gene exon structure
+
+```{r gene_exon}
+library(ggrepel)
+library(ggforce)
+library(biomaRt)
+
+ensembl = useEnsembl(biomart="ensembl", dataset="mmusculus_gene_ensembl")
+
+gb <- getBM(attributes=c('ensembl_exon_id',"exon_chrom_start","exon_chrom_end","gene_exon"), filters = "ensembl_transcript_id",
+            values="ENSMUST00000035852", mart=ensembl,bmHeader=TRUE) #ENSMUSG00000037108
+
+gb <- data.table(gb)
+names(gb) <- c("end","seq","ID","start")
+gb[order(start), Exon := 1:nrow(gb)]
+gb[, mid := mean(c(start, end)), by=Exon]
+gb
+
+ggplot(gb, aes(xmin=start, xmax=end, ymin=0, ymax=1, label=Exon, x=mid, y=1)) + 
+  geom_rect() + 
+  geom_label_repel(nudge_y = 0.2) + 
+  expand_limits(y=c(0,1.5)) + 
+  facet_zoom(x=Exon %in% c(5:8))
 
 ```
 
