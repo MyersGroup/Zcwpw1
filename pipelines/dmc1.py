@@ -1,15 +1,16 @@
 
 from os.path import join
 
-configfile: '../pipelines/config.yml'
+configfile: 'pipelines/config.yml'
 
 METADATA_DIR = config["metadata_dir"]
 
-sample, strand, gz = glob_wildcards("ssDNA_{sample}_rep1_type1_filtered_only_rmdup.chrALL.{strand}prime.{gz}")
+sample, strand, gz = glob_wildcards("data/dmc1/ssDNA_{sample}_rep1_type1_filtered_only_rmdup.chrALL.{strand}prime.{gz}")
 
 rule all:
     input:
-        "DMC1_SSDS.pdf"
+        "results/dmc1/DMC1_SSDS_plot.rds",
+        "results/dmc1/DMC1_stratified.rds"
 
 # Manual Step:
 # combine seperate chromosome files into one
@@ -36,9 +37,9 @@ rule clean:
   # reomve Mitochondria, Sex
   # convert chr1 to 1
   input:
-    "ssDNA_{sample}_rep1_type1_filtered_only_rmdup.chrALL.{strand}prime.bedgraph.gz"
+    "data/dmc1/ssDNA_{sample}_rep1_type1_filtered_only_rmdup.chrALL.{strand}prime.bedgraph.gz"
   output:
-    "ssDNA_{sample}_rep1_type1_filtered_only_rmdup.chrALLclean.{strand}prime.bedgraph"
+    "data/dmc1/ssDNA_{sample}_rep1_type1_filtered_only_rmdup.chrALLclean.{strand}prime.bedgraph"
   shell:
     """
     zgrep -v '_' {input} | grep -vP 'M|X|Y' | sed 's/chr//' > {output}
@@ -50,9 +51,9 @@ rule bedtoBigWig:
   # compress to bigwig for faster downstream processing
   #
   input:
-    "ssDNA_{sample}_rep1_type1_filtered_only_rmdup.chrALLclean.{strand}prime.bedgraph"
+    "data/dmc1/ssDNA_{sample}_rep1_type1_filtered_only_rmdup.chrALLclean.{strand}prime.bedgraph"
   output:
-    "{sample}_{strand}prime.bigWig"
+    "data/dmc1/{sample}_{strand}prime.bigWig"
   params:
     join("../",METADATA_DIR, "mm10_sizes.chrom")
   shell:
@@ -63,13 +64,13 @@ rule bedtoBigWig:
 
 rule averageProfile:
   input:
-    sample="{sample}_{strand}prime.bigWig",
-    b6="B6.bed",
-    ko="KO.bed"
+    sample="data/dmc1/{sample}_{strand}prime.bigWig",
+    b6="data/dmc1/B6.bed",
+    ko="data/dmc1/KO.bed"
   output:
-    b6="{sample}_{strand}prime_atB6.tsv",
-    b6m="{sample}_{strand}prime_atB6.bwm",
-    ko="{sample}_{strand}prime_atKO.tsv"
+    b6="data/dmc1/{sample}_{strand}prime_atB6.tsv",
+    b6m="data/dmc1/{sample}_{strand}prime_atB6.bwm",
+    ko="data/dmc1/{sample}_{strand}prime_atKO.tsv"
   params:
     a=5000,
     b=5000
@@ -89,23 +90,48 @@ rule beds:
   #5 = hshared
   #10 = motif center pos
   input:
-    b6="B6_composite.txt",
-    ko="KO.txt"
+    b6="data/dmc1/B6_composite.txt",
+    ko="data/dmc1/KO.txt"
   output:
-    ko="KO.bed",
-    b6="B6.bed"
+    ko="data/dmc1/KO.bed",
+    b6="data/dmc1/B6.bed",
+    b6f="data/dmc1/B6_composite_filtered.bed"
   shell:
     """
     awk -v OFS='\t' '$10=sprintf("%.0f",$10) {{if($1 != "20" && $5=="0" && $4=="B6") print $1,$10,$10,"0","0","+";}}'  {input.b6} > {output.b6}
-    awk -v OFS='\t' '$10=sprintf("%.0f",$10) {{if($1 != "20" && $5=="0" && $4=="B6") print $0;}}'  B6_composite.txt > B6_composite_filtered.bed
+    awk -v OFS='\t' '$10=sprintf("%.0f",$10) {{if($1 != "20" && $5=="0" && $4=="B6") print $0;}}'  {input.b6} > {output.b6f}
     awk -v OFS='\t' '{{if($1 != "20") print $1,$2,$2,"0","0","+";}}'  {input.ko} | tail -n +2 > {output.ko}
+    """
+
+rule spo11:
+  input:
+    bg="data/dmc1/B6_Spo11.bedgraph",
+    b6="data/dmc1/B6.bed"
+  output:
+    out='data/dmc1/B6_Spo11_atB6.bwm'
+  shell:
+    """
+    sed 's/chr//' data/dmc1/B6_Spo11.bedgraph > data/dmc1/B6_Spo11_clean.bedgraph
+    zgrep -v '_' data/dmc1/B6_Spo11.bedgraph | grep -vP 'M|X|Y' | sed 's/chr//' > data/dmc1/B6_Spo11_clean.bedgraph
+    bedGraphToBigWig data/dmc1/B6_Spo11_clean.bedgraph ../../single-cell/sequencing/metadata/mm10_sizes.chrom data/dmc1/B6_Spo11.bedgraph.bigWig
+    bwtool matrix -fill=0 -decimals=1 -tiled-averages=5 5000:5000 {output.b6} data/dmc1/B6_Spo11.bedgraph.bigWig {output.out}
     """
 
 rule plotdmc1:
   input:
-    expand("{sample}_{strand}prime_atB6.tsv", sample=set(sample), strand=set(strand)),
-    expand("{sample}_{strand}prime_atKO.tsv", sample=set(sample), strand=set(strand))
+    'data/dmc1/B6_Spo11_atB6.bwm',
+    "data/dmc1/B6_composite_filtered.bed",
+    "data/dmc1/B6_composite.txt",
+    expand("data/dmc1/{sample}_{strand}prime_atB6.tsv", sample=set(sample), strand=set(strand)),
+    expand("data/dmc1/{sample}_{strand}prime_atKO.tsv", sample=set(sample), strand=set(strand))
   output:
-    "DMC1_SSDS.pdf"
+    "results/dmc1/DMC1_SSDS.pdf",
+    "results/dmc1/DMC1_SSDS_plot.rds",
+    "results/dmc1/DMC1_stratified-1.pdf",
+    "results/dmc1/DMC1_stratified.rds"
   shell:
-    "Rscript ../pipelines/plotDMC1.R"
+    """
+    Rscript pipelines/plotDMC1.R
+    R -e "knitr::knit('analysis/dmc1_stratification.Rmd', 'results/dmc1_stratification.md')"
+    R -e "knitr::knit('analysis/dmc1.Rmd', 'results/dmc1.md')"
+    """
