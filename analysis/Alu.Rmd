@@ -3,9 +3,39 @@ title: "Alu"
 output: html_notebook
 ---
 
+```{r}
+knitr::opts_knit$set(base.dir = "results")
+knitr::opts_chunk$set(fig.path = "Alu/")
+knitr::opts_chunk$set(dev="pdf")
+knitr::opts_chunk$set(fig.show="hold")
+
+library(data.table)
+library(ggplot2)
+library(gghighlight)
+library(cowplot)
+library(mgcv)
+
+source("../functions.R")
+```
+
+```{r load_peaks}
+zcw_peaks_cin <- fread("../data/peaks/SingleBasePeaks.WTCHG_538916_221156_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144.p0.000001.sep250.ALL.bed")
+zcw_peaks_cin <- prejoin(zcw_peaks_cin)
+
+zcw_wP9_vs_chip_Z <- fread("../data/peaks/SingleBasePeaks.WTCHG_538916_223180_vs_WTCHG_538916_221156.p0.000001.sep250.ALL.bed")
+zcw_wP9_vs_chip_Z <- prejoin(zcw_wP9_vs_chip_Z)
+
+HP9N_peaks <- fread("../data/peaks/SingleBasePeaks.NA15-SRR5627138_AND_NA15-SRR5627139_vs_NA15-SRR5627140.p0.000001.sep250.ALL.bed")
+HP9N_peaks <- prejoin(HP9N_peaks)
+
+HP9combo_peaks <- fread("../data/peaks/SingleBasePeaks.NA15-SRR5627146_AND_NA15-SRR5627147_vs_NA15-SRR5627143.p0.000001.sep250.ALL.bed")
+HP9combo_peaks <- prejoin(HP9combo_peaks)
+```
+
+
 Over half of all ZcwST peaks overlap Alu, overrepresented in low enrichment peaks. L1 also shows a pattern of being depleted at high enrichment peaks. Other repeats don't overlap a large fraction of preaks.
 
-```{r}
+```{r Zcw_vs_repeats}
 repeats <- fread("../data/repeats/Repeat_MaskerSorted.bed")
 
 setnames(repeats, c("chr","CI_start","CI_stop","Name","Score","Strand"))
@@ -44,7 +74,7 @@ fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[grep("\\(",Name)], x1="Z
 # fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[Name=="THE1B"], x1="Zcw UT", y1="Repeats", shift=1e8) # not
 ```
 
-```{r}
+```{r zcw_vs_repeats_2}
 fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[grep("LTR",Name)], x1="Zcw UT", y1="LTR Repeats", shift=1e8) + scale_y_continuous()
 
 fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[Name=="MIRb"], x1="Zcw UT", y1="LTR Repeats", shift=1e8) + scale_y_continuous()
@@ -68,7 +98,7 @@ fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[grep("HAL1b",Name)], x1=
 ```
 
 
-```{r}
+```{r zcw_vs_repeats_3}
 repeats[grep("THE1.-int",Name)]
 repeats[, length := CI_stop-CI_start]
 repeats$enrichment <- as.numeric(repeats$Score)
@@ -92,7 +122,7 @@ fraction_overlapN2(repeats[grep("MIR",Name)], zcw_peaks_cin, x1="MIR", y1="Zcw U
 
 Non Alu repeats are not enriched relative to expected based on randomised positions.
 
-```{r}
+```{r zcw_vs_Alu_subtypes}
 
 # Summary of those not enriched
 fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[grep("\\(|MIR|L2|THE1B|MER|MLT|FLAM|THE|L3|rich|Charlie|Tigger|LTR|MST|Mam|HERV|ERVL",Name)], x1="Zcw UT", y1="Non Alu Repeats", shift=1e8)
@@ -124,7 +154,7 @@ fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[grep("AluSg",Name)], x1=
 
 75% of all Alu repeats have a ZcwST peak, higher for those with better match to consensus.
 
-```{r}
+```{r fraction_of_Alu}
 
 repeats$enrichment <- as.numeric(repeats$Score)
 fraction_overlapN2(repeats[Name!="Alu"][grep("Alu",Name)][CI_stop-CI_start>250 & CI_stop-CI_start<350], zcw_peaks_cin, x1="Alu Repeats by SmithWaterman Score (Not ", y1="Zcw UT", shift=1e8) # 
@@ -137,7 +167,7 @@ fraction_overlapN2(repeats[Name!="Alu"][grep("Alu",Name)][CI_stop-CI_start>250 &
 
 As expected Prdm9 is enriched for THE1B - but only N term not C term. Neither set of Prdm9 peaks not enriched for Alu repeats.
 
-```{r}
+```{r P9_Peaks_vs_repeats}
 # P9 enriched in THE1B
 fraction_overlapN2(HP9N_peaks[cov_input>=5], repeats[Name=="THE1B"], x1="HP9N", y1="THE1B", shift=1e8) + scale_y_continuous()
 # not C term
@@ -158,9 +188,9 @@ repeats[grep("Alu",Name)][,.N,by=Name][order(-N)][1:50]
 
 # CpG
 
-```{r}
+```{r Alu_by_CpG, fig.width = 10, fig.height = 5.5}
 
-AluRepeats <- seqinr::read.fasta("../data/AluRepeats.fa", forceDNAtolower = FALSE, as.string = TRUE)
+AluRepeats <- seqinr::read.fasta("../data/repeats/AluRepeats.fa", forceDNAtolower = FALSE, as.string = TRUE)
 AluRepeats <- unlist(AluRepeats)
 
 repeatsAlu <- repeats[Name!="Alu"][grep("Alu",Name)][CI_stop-CI_start>250 & CI_stop-CI_start<350]
@@ -183,8 +213,8 @@ repeatsAlu$enrichment <- repeatsAlu$CG_count
 AluEnrich <- fraction_overlapN2(repeatsAlu, zcw_peaks_cin, x1="Alu Repeats by CpG Count (Not ", y1="Zcw UT", shift=1e9) + 
   scale_x_continuous() +
   xlim(0,25) + # min of 200 data points required
-  xlab("CpG Count") + 
-  ylab("Fraction of Alu Repeats overlaping\n Zcwpw1 peaks (no Prdm9)") +
+  xlab("CpG Count in Alu Repeats") + 
+  ylab("Fraction of Alu Repeats overlaping\n ZCWPW1 peaks (no PRDM9)") +
   theme(legend.position = "bottom")
 
 
@@ -202,16 +232,16 @@ pi <- tmp2 +
   geom_ribbon(data=tmpR, aes(ymin = Overlap - 2*se, ymax = Overlap + 2*se), fill = "#377EB8", colour="#377EB8", alpha=0.5) +
   scale_x_log10(limits=c(0.3,5)) +
   theme(legend.position = "bottom") +
-  xlab("Zcwpw1 Enrichment (no Prdm9)") +
-  ylab("Fraction of Zcwpw1 peaks that overlap Alu repeats")
+  xlab("ZCWPW1 Enrichment (no PRDM9)") +
+  ylab("Fraction of ZCWPW1 peaks that overlap Alu repeats")
 
 pmain <- plot_grid(pi + theme(legend.position = "none"), AluEnrich + theme(legend.position = "none"), labels = "AUTO")
 
 alu_enrich_plot <- plot_grid(pmain, get_legend(AluEnrich), ncol=1, rel_heights = c(1, 0.07))
 
-pdf("../results/Alu_by_CpG.pdf", width = 10, height = 5.5)
+#pdf("../results/Alu_by_CpG.pdf", width = 10, height = 5.5)
 alu_enrich_plot
-dev.off()
+#dev.off()
 
 # % of Zcw
 fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeatsAlu[enrichment==0], x1="Zcw UT", y1="Alu Repeats CpG=0", shift=1e8) + scale_y_continuous()
@@ -281,15 +311,15 @@ ggplot(AluOverapProp, aes(CG_count, ratioOfProportions, size=Occurrences)) +
 ```
 
 Cross check results
-```{r}
-repeatsAlu$enrichment <- repeatsAlu$Score
+```{r cross_check}
+repeatsAlu$enrichment <- as.numeric(repeatsAlu$Score)
 fraction_overlapN2(repeatsAlu[grep("AluJ",Name)], zcw_peaks_cin, x1="AluJ Repeats by SmithWaterman Score (Not ", y1="Zcw UT", shift=1e8) + scale_x_continuous()
 fraction_overlapN2(repeatsAlu[grep("AluSz",Name)], zcw_peaks_cin, x1="AluSz Repeats by SmithWaterman Score (Not ", y1="Zcw UT", shift=1e8) + scale_x_continuous() 
 fraction_overlapN2(repeatsAlu[grep("AluS[cqpgx]",Name)], zcw_peaks_cin, x1="AluS[cqpgx] Repeats by SmithWaterman Score (Not ", y1="Zcw UT", shift=1e8) + scale_x_continuous()
 fraction_overlapN2(repeatsAlu[grep("AluY",Name)], zcw_peaks_cin, x1="AluY Repeats by SmithWaterman Score (Not ", y1="Zcw UT", shift=1e8) + scale_x_continuous()
 ```
 
-```{r}
+```{r score_&_CGcount}
 repeatsAlu[grep("AluJ",Name), class := "AluJ"]
 repeatsAlu[grep("AluSz",Name), class := "AluSz"]
 repeatsAlu[grep("AluS[qpgx]",Name), class := "AluS[qpgx]"]
@@ -305,7 +335,7 @@ ggplot(repeatsAlu, aes(CG_count)) + geom_histogram(binwidth = 1) + facet_wrap(~c
 
 Does CpG presence/number affect mean enrichment for non Alus?
 
-```{r}
+```{r Cpg_general, fig.width=10}
 
 rand_cpg <- fread("../data/peaks/Zcw_random_CpGcount.bed") #"~/Downloads/chr1_random_CpGcount.bed")
 # mean(rand_cpg$V7) = 2.817 - close!
@@ -328,6 +358,7 @@ zcw_wP9_vs_chip_Z_cpg <- prejoin(zcw_wP9_vs_chip_Z_cpg, width=0)
 
 zcw_peaks_cin_cpg_alu <- foverlaps(zcw_peaks_cin_cpg, repeatsAlu, mult = "first")
 zcw_peaks_cin_cpg_repeats <- foverlaps(zcw_peaks_cin_cpg, repeats, mult = "first")
+setkey(rand_cpg, chr, CI_start_ext, CI_stop_ext)
 rand_cpg_alu <- foverlaps(rand_cpg, repeatsAlu, mult = "first")
 
 # non Alus
@@ -413,9 +444,9 @@ CpGgeneral <- ggplot(tmp, aes(CpGcount, MeanEnrich, colour=Repeat, size=N)) +
   ylab("Mean Enrichment of Zcwpw1 peaks (without Prdm9)") +
   xlab("Count of CpGs under peak +/-150")
 
-pdf("../results/CpG_general.pdf", width=10)
+#pdf("../results/CpG_general.pdf", width=10)
 CpGgeneral
-dev.off()
+#dev.off()
 
 tmp <- cbind(data.table(table(rand_cpg_alu[!is.na(Name)]$CpG), type="Randomised Peaks"),
       data.table(table(zcw_peaks_cin_cpg_alu[!is.na(Name)]$CpGcount), type="Observed Peaks"))
@@ -433,10 +464,9 @@ ggplot(tmp, aes(CpGCount, NObs/NRand, colour=isAlu)) + geom_point()
 
 p2 <- ggplot(tmp, aes(CpGCount, NObs/NRand, colour=isAlu)) + geom_point() + scale_y_log10() + ylab("Observed Peaks : Randomised Peaks") + scale_color_brewer(palette = "Set1") + theme(legend.position = "bottom")
 
-pdf("../results/Cpg_general2.pdf")
-p1
+#pdf("../results/Cpg_general2.pdf")
 p2
-dev.off()
+#dev.off()
 
 ```
 
@@ -445,16 +475,12 @@ dev.off()
 
 
 ```{r}
-zcw_peaks_cin_cpg2 <- zcw_wP9_vs_chip_Z_cpg[cov_input>5]
-
-CpG_Proportions + xlab("CVC Zcwpw1 Enrichment")
-
 hist(zcw_wP9_vs_chip_Z_cpg[cov_input>5]$CpGcount, breaks=1000, xlim=c(-1,30))
 hist(rand_cpg[cov_input>5]$CpGcount, breaks=1000, xlim=c(-1,30))
 ```
 
 
-```{r}
+```{r CpG_Proportions, fig.width = 7, fig.height = 5}
 
 zcw_peaks_cin_cpg2 <- zcw_peaks_cin_cpg[cov_input>5]
 setorder(zcw_peaks_cin_cpg2, enrichment)
@@ -513,36 +539,37 @@ CpG_Proportions <- ggplot(tmp, aes(enrichment, value, fill=CpG)) +
   scale_fill_brewer() +
   scale_x_continuous(labels=c("Random \n Peaks",0:5), breaks=c(-0.5,0:5)) +
   scale_fill_brewer(direction = -1, palette = "RdBu") +
-  ylab("Proportion of Zcwpw1 Peaks") +
-  xlab("Enrichment of Zcwpw1") +
+  ylab("Proportion of ZCWPW1 Peaks") +
+  xlab("Enrichment of ZCWPW1") +
   labs(fill="Number\nof CpGs")
 
-ggsave("../results/CpG_Proportions.pdf", CpG_Proportions, width = 7, height = 5)
+CpG_Proportions
+#ggsave("../results/CpG_Proportions.pdf", CpG_Proportions, width = 7, height = 5)
 
 # to help with choosing bins
 hist(zcw_peaks_cin_cpg$CpGcount, breaks=300, xlim=c(-1,20))
 
 ```
 
-```{r}
+```{r check_geom_col}
 ggplot(data.table(a=c(1,1,2,2),b=c(0.1,0.9,0.5,0.5),c=c(1,2,1,2)), aes(a,b, fill=c)) + geom_col()
 ggplot(data.table(a=c(1,1,2,2),b=c(0.1,0.9,0.5,0.5),c=c(1,2,1,2)), aes(a,b, fill=c)) + geom_col(width=1)
 ggplot(data.table(a=c(1,1,2,2),b=c(0.1,0.9,0.5,0.5),c=c(1,2,1,2)), aes(a,b, fill=c)) + geom_col(width=2)
 ggplot(data.table(a=c(1,1,2,2),b=c(0.1,0.9,0.5,0.5),c=c(1,2,1,2)), aes(a,b, fill=c)) + geom_col(aes(width=a))
 ```
 
-```{r}
+```{r CpG_plot, fig.height=10, fig.width=10}
 #CpG_bottom <- plot_grid(CpGgeneral, CpG_Proportions, labels=c("C","D"), rel_widths = c(6,5))
 
-CpGWindows <- readRDS("~/Downloads/NormalPeaks300bp.rds")
+CpGWindows <- readRDS("../data/CpG/NormalPeaks300bp.rds")
 
-pdf("../results/CpG_plot.pdf", height = 10, width = 10)
-plot_grid(pi, CpGWindows, AluEnrich, CpG_Proportions + theme_minimal(), nrow=2, rel_widths = c(2,3), labels = c("A","C","B","D"))
-dev.off()
+#pdf("../results/CpG_plot.pdf", height = 10, width = 10)
+plot_grid(pi, CpGWindows + ylab("Probability of window overlaping a ZCWPW1 peak"), AluEnrich, CpG_Proportions + theme_minimal(), nrow=2, rel_widths = c(2,3), labels = c("A","C","B","D"))
+#dev.off()
 ```
 
 
-```{bash}
+```{bash, eval=FALSE}
 # format for IGV
 tail -n +2 SingleBasePeaks.WTCHG_538916_223180_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144.p0.000001.sep250.ALL.bed | cut -f 1-3 > SingleBasePeaks.WTCHG_538916_223180_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144.p0.000001.sep250.ALL_headless.bed
 
@@ -558,7 +585,7 @@ tail -n +2 ../results/peaks/SingleBasePeaks.SRA_Altemose2015_SRR5627152_AND_SRR5
 
 #What's enriched at Alus
 
-```{bash}
+```{bash, eval=FALSE}
 tmp <- fread("grep -v '#' repeats/Alu_meta299.txt")
 tmpIn <- fread("grep -v '#' repeats/Alu_meta_In299.txt")
 
