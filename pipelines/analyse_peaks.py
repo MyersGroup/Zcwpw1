@@ -7,8 +7,10 @@ METADATA_DIR = config["metadata_dir"]
 
 rule all:
     input:
-        "results/PeakCallingMA.md"
-
+        "results/PeakCallingMA.md",
+        "results/Alu.md",
+        "results/fc_100bp_windows.md",
+        "results/Domain_architechture.md"
 
 
 rule CpG_islands:
@@ -37,6 +39,51 @@ rule CpG_islands:
     bedtools intersect -a {input.windows} -b {output.cpg_bed} -f 0.1 -c > {output.cpg_bed_windows}
 
     bedtools intersect -a {input.windows} -b {output.cpg_bed} -f 1 -c > {output.cpg_bed_windows_f1}
+    """
+
+
+rule CpGs:
+  input:
+    genomeFasta = "data/motifs/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa",
+    zcw_peaks_cin = "data/peaks/SingleBasePeaks.WTCHG_538916_221156_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144.p0.000001.sep250.ALL.bed",
+    cvc_peaks = "data/peaks/SingleBasePeaks.WTCHG_538916_223180_vs_WTCHG_538916_221156.p0.000001.sep250.ALL.bed",
+    chrom_sizes = "../single-cell/sequencing/metadata/hg38_sizes.chrom"
+  output:
+    cpgs = "data/CpG/CpG_hg38.bed",
+    cpgs_cut = "data/CpG/CpG_hg38_cut.bed",
+    zcw_peaks_cin = "data/peaks/SingleBasePeaks.WTCHG_538916_221156_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144.p0.000001.sep250.ALL_wCpGcount.bed"
+    cvc_peaks = "data/peaks/SingleBasePeaks.WTCHG_538916_223180_vs_WTCHG_538916_221156.p0.000001.sep250.ALL_wCpGcount.bed"
+    random_peaks = "data/peaks/Zcw_random_CpGcount.bed"
+  shell:
+    """
+    # All CpG positions in genome
+    ./seqkit locate --ignore-case --non-greedy --only-positive-strand -p CG --bed {input.genomeFasta} > {output.cpgs}
+
+    cut -f 1-3 {output.cpgs} > {output.cpgs_cut}
+
+    # count CpG at each peak Whole genome
+    tail -n +2 {input.zcw_peaks_cin} |
+    bedtools slop -i stdin -g {input.chrom_sizes} -b 150 |
+    bedtools intersect -a stdin -b {output.cpgs} -c > {output.zcw_peaks_cin}
+
+    # and for CVC peaks
+    tail -n +2 {input.cvc_peaks} |
+    bedtools slop -i stdin -g {input.chrom_sizes} -b 150 |
+    bedtools intersect -a stdin -b {output.cpgs} -c > {output.cvc_peaks}
+
+    # Count CpG at random Zcw peaks
+    bedtools intersect -a data/peaks/Zcw_random.bed -b {output.cpgs} -c > {output.random_peaks}
+    
+    # 115320 peaks, each 300bp
+    # 2316765 CpG positions
+    # chr1 248956422
+    # 2316765 / (248956422/300) = 2.79 CpG per 300bp
+    # but clustering
+    # try randomisation instead
+    # head -1 ../single-cell/sequencing/metadata/hg38_sizes.chrom > chr1_size.bed
+    # bedtools random -n 115320 -l 300 -g chr1_size.bed -seed 71346 | sort -k1,1 -k2,2n > chr1_random.bed
+    #
+    # bedtools intersect -a chr1_random.bed -b CpG_chr1.bed -c > chr1_random_CpGcount.bed
     """
 
 
@@ -71,6 +118,7 @@ rule human_dmc1:
     # awk -v OFS='\t' '{{ if ($9 == 1 && $10 == 1 && ($3-$2)<3000 && $1!="chrY" && $1!="chrX") {{ print $1, $2, $3, ($4+$5)/2, ($6+$7)/4 }} }}' data/dmc1/GSE59836_Peak_data_Supplementary_File_1.txt \ > data/dmc1/Pratto_human_DSB_AA_autosomal_hg19.bed
     # #21699
     """
+
 
 rule repeats:
   input:
@@ -108,6 +156,7 @@ rule repeats:
     bedtools getfasta -s -fi {input.hg38_fa} -bed {output.alu_qc} -name > {output.alu_fa}
     """
 
+
 rule per100bp:
   input:
     windows = "data/forcepeaks/genome.windows.100wide.100slide.bed",
@@ -143,6 +192,7 @@ rule per100bp:
     bedtools intersect -a {input.windows} -b {output.zcw_random_1bp} -c > {output.zcw_random_100bp}
     """
 
+
 rule random_zcw:
   # Random Zcw Peaks
   input:
@@ -155,6 +205,7 @@ rule random_zcw:
     head -23 {input.chrom} > {output.sizes}
     bedtools random -n 1264519 -l 300 -g {output.sizes} -seed 71346 | sort -k1,1 -k2,2n > {output.bed}
     """
+
 
 rule methylation:
   ####################################
@@ -220,6 +271,7 @@ rule methylation:
     #cpg_Meth_100bp[chr=="chr1" & center_start==2442100]
     """
 
+
 rule mappability:
   input:
     hg_sizes = "data/genome/hg38_sizes_23.chrom",
@@ -255,6 +307,7 @@ rule mappability:
       > {output.zcwpw1_cin_mappable}
     """
 
+
 rule download_ENCODE_beds:
   output:
     "data/ENCODE_beds/ENCFF{bedcode}.bed"
@@ -263,8 +316,6 @@ rule download_ENCODE_beds:
     wget -P data/ENCODE_beds/ "https://www.encodeproject.org/files/$i/@@download/ENCFF{output}.bed.gz"
     gz -k data/ENCODE_beds/ENCFF{output}.bed.gz
     """
-
-
 
 ENCODE_BEDS = ["ENCFF314ZAL",
                 "ENCFF338RAX",
@@ -302,6 +353,7 @@ ENCODE_BEDS = ["ENCFF314ZAL",
                 "ENCFF108PRX"
                 ]
 
+
 rule tss:
   input:
   output:
@@ -312,6 +364,56 @@ rule tss:
     gzip -d data/genome/wgEncodeGencodeCompV28.txt.gz
     cut -f 2-6 data/genome/wgEncodeGencodeCompV28.txt > {output}
     """
+
+
+rule GTEX:
+  ############################
+  ####### Isoforms from GTEX data
+  ############################
+  input:
+  output:
+    "data/GTEX/zcwpw1_isoforms.tsv"
+    "data/GTEX/GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt"
+  shell:
+    """
+    wget -P data/GTEX/ https://storage.googleapis.com/gtex_analysis_v8/rna_seq_data/GTEx_Analysis_2017-06-05_v8_RSEMv1.3.0_transcript_tpm.gct.gz
+    zgrep -E "ENSG00000078487.17|transcript" data/GTEX/GTEx_Analysis_2017-06-05_v8_RSEMv1.3.0_transcript_tpm.gct.gz > data/GTEX/zcwpw1_isoforms.tsv
+
+    wget -P data/GTEX/ https://storage.googleapis.com/gtex_analysis_v8/annotations/GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt
+    """
+
+
+rule analyse_Alu:
+  input:
+    "data/repeats/Repeat_MaskerSorted.bed",
+    "data/repeats/AluRepeats.fa",
+    "data/peaks/Zcw_random_CpGcount.bed",
+    "data/peaks/ForceCalledPeaks_WTCHG_538916_221156_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144_AT_Zcw_random.bed.bed",
+    "data/peaks/SingleBasePeaks.WTCHG_538916_221156_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144.p0.000001.sep250.ALL_wCpGcount.bed",
+    "data/peaks/SingleBasePeaks.WTCHG_538916_223180_vs_WTCHG_538916_221156.p0.000001.sep250.ALL_wCpGcount.bed",
+    "data/CpG/NormalPeaks300bp.rds",
+    rmd = "analysis/Alu.Rmd"
+  output:
+    md = "results/Alu.md"
+  shell:
+    """
+    R -e "knitr::knit('{input.rmd}', '{output.md}')"
+    """
+
+
+rule domain_architechture:
+  input:
+    "data/alignment/Simons_Zcwpw1_alignment.rds",
+    "data/alignment/simons_alignment.fa",
+    "data/alignment/JSD_simons_alignment.txt",
+    rmd = "analysis/Domain_architechture.Rmd"
+  output:
+    md = "results/Domain_architechture.md"
+  shell:
+    """
+    R -e "knitr::knit('{input.rmd}', '{output.md}')"
+    """
+
 
 rule analyse_peaks:
   input:
@@ -328,6 +430,7 @@ rule analyse_peaks:
     """
     R -e "knitr::knit('{input.rmd}', '{output.md}')"
     """
+
 
 rule analyse_100bp_windows:
   input:
@@ -350,11 +453,10 @@ rule analyse_100bp_windows:
     "data/peaks/ForceCalledPeaks_NA15-SRR5627150_vs_NA15-SRR5627142_AT_genome.windows.100wide.100slide.bed.bed", # and others
     rmd = "analysis/fc_100bp_windows.Rmd",
   output:
+    "data/CpG/NormalPeaks300bp.rds",
     md = "results/fc_100bp_windows.md"
   shell:
     """
     R -e "knitr::knit('{input.rmd}', '{output.md}')"
     """
-
-
 
