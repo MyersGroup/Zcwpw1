@@ -23,6 +23,7 @@ knitr::opts_chunk$set(fig.show="hold")
 library(data.table)
 library(ggplot2)
 library(cowplot)
+library(mgcv)
 #devtools::install_github("zeehio/facetscales")
 library(facetscales) # for proportions plot
 
@@ -148,7 +149,7 @@ ggplot(data.table(number_of_peaks, experiment), aes(experiment, number_of_peaks)
 
 Enrichment value distributions
 
-```{r}
+```{r enrich_dist}
 ggplot(cbind(zcw_peaks, exp='Zcw'), aes(enrichment))+
   geom_density() +
   scale_x_log10() +
@@ -169,7 +170,7 @@ ggplot(cbind(zcw_peaks, exp='Zcw'), aes(enrichment))+
 
 Cov input distributions
 
-```{r}
+```{r cov_input_dist}
 
 ggplot(cbind(zcw_peaks, exp='Zcw'), aes(cov_input))+
     geom_histogram(bins=100) +
@@ -189,7 +190,7 @@ ggplot(cbind(zcw_peaks, exp='Zcw'), aes(cov_input))+
 
 replicate 1 read count distributions
 
-```{r}
+```{r read_count_dist}
 ggplot(cbind(zcw_peaks, exp='Zcw'), aes(cov_r1))+
     geom_histogram(binwidth = 1) +
     xlim(1,70) +
@@ -210,7 +211,7 @@ ggplot(cbind(zcw_peaks, exp='Zcw'), aes(cov_r1))+
 
 # Functions
 
-```{r}
+```{r prejoin}
 
 HP9_peaks <- prejoin(HP9_peaks)
 HP9N_peaks <- prejoin(HP9N_peaks)
@@ -242,17 +243,15 @@ h3k36me3_P9vsUT_peaks <- prejoin(h3k36me3_P9vsUT_peaks)
 
 # Mark TSS
 
-```{r, eval=FALSE}
-load_tss <- function(file="../data/hg38.wgEncodeGencodeCompV28.bed", flank=400){
+```{r tss}
+load_tss <- function(file="../data/genome/wgEncodeGencodeCompV28.txt.cut", flank=400){
 encode_tss <- fread(file)
-names(encode_tss) <- gsub("hg38.wgEncodeGencodeCompV28.|hg38.wgEncodeGencodeAttrsV28.","",names(encode_tss))
+names(encode_tss) <- c("tss","chr","strand","txStart","txEnd")
 
 encode_tss[strand=='+', CI_start_ext := txStart - flank]
 encode_tss[strand=='+', CI_stop_ext := txStart + flank]
 encode_tss[strand=='-', CI_start_ext := txEnd - flank]
 encode_tss[strand=='-', CI_stop_ext := txEnd + flank]
-setnames(encode_tss,'chrom','chr')
-setnames(encode_tss,'#name','tss')
 
 encode_tss <- encode_tss[,.(chr, CI_start_ext, CI_stop_ext,tss)]
 setkey(encode_tss, chr, CI_start_ext, CI_stop_ext)
@@ -276,7 +275,7 @@ zcw_peaks_cin$tss <- foverlaps(zcw_peaks_cin, encode_tss, mult = 'first')$tss
 
 # DMC1 peaks
 
-```{r}
+```{r load_dmc1}
 dmc1 <- fread("../data/pratto_dmc1/Pratto_human_DSB_Aintersect_autosomal_hg38.bed")
 setnames(dmc1, c("chr","CI_start","CI_stop","enrichment","enrichmentAB"))
 dmc1 <- prejoin(dmc1)
@@ -325,7 +324,7 @@ dmc1 <- prejoin(dmc1)
 
 # Proportions
 
-```{r}
+```{r proportions_function}
 
 create_set_matrix <- function(peaks, k=100, returnpeaks=FALSE){
   peaks$zcw_peaks_enrichment <- foverlaps(peaks, zcw_peaks_cin, mult="first")$enrichment
@@ -379,7 +378,7 @@ create_set_matrix <- function(peaks, k=100, returnpeaks=FALSE){
 }
 ```
 
-```{r}
+```{r repeats}
 repeats <- fread("../data/repeats/Repeat_MaskerSorted.bed")
 
 setnames(repeats, c("chr","CI_start","CI_stop","Name","Score","Strand"))
@@ -567,7 +566,6 @@ H3K9me3 <- loadBed("../data/ENCODE_beds/ENCFF538EDC.bed") # K562, 92k peaks, bed
 H3K9me3_2 <- loadBed("../data/ENCODE_beds/ENCFF422AIH.bed") # HEK293, 54k peaks,  bed narrowPeak	peaks	2
 
 
-setdb1_3$enrichment <- setdb1_3$V7
 
 
 CGI <- fread("../data/CpG/cpgIslandExtUnmasked.txt") #CpG
@@ -599,7 +597,11 @@ fraction_overlapN2(zcw_peaks_cin[cov_input>5], H3K9me3_2, "Zcwpw1", "H3K9me3", s
 
 fraction_overlapN2(zcw_peaks_cin[cov_input>5], setdb1_2, "Zcwpw1", "setdb1", shift=1e8, n=100) + theme(legend.position = "bottom")
 fraction_overlapN2(zcw_peaks_cin[cov_input>5], setdb1_3, "Zcwpw1", "setdb1", shift=1e8, n=100) + theme(legend.position = "bottom")
+
+setdb1_2$enrichment <- setdb1_3$V7
 fraction_overlapN2(setdb1_2, zcw_peaks_cin, "setdb1_2", "Zcwpw1", shift=1e8, n=100) + theme(legend.position = "bottom")
+
+setdb1_3$enrichment <- setdb1_3$V7
 fraction_overlapN2(setdb1_3, zcw_peaks_cin, "setdb1_3", "Zcwpw1", shift=1e8, n=100) + theme(legend.position = "bottom")
 
 fraction_overlapN2(zcw_peaks_cin[cov_input>5], ctcfl, "Zcwpw1", "Ctcfl in K562", shift=1e8, n=100)
@@ -696,7 +698,8 @@ fraction_overlapN2(HP9N_peaks[cov_input>5], H1C_H4K20, "HP9N", "H1C_H4K20", shif
 
 # Rank change with +P9
 
-```{r P9_change}
+```{r P9_change, eval=FALSE}
+# this chunk required FC_Zcw_enrichment from forcecalling script
 HP9combo_peaks$ZcwST_peaks_enrichment <- foverlaps(HP9combo_peaks, zcw_peaks_cin, mult="first")$enrichment
 
 ggplot(HP9combo_peaks[cov_input>5], aes(enrichment, ZcwST_peaks_enrichment)) + geom_point(alpha=0.1, stroke=0)
@@ -750,7 +753,8 @@ HP9N_peaks$HP9combo_enrichment <- foverlaps(HP9N_peaks, HP9combo_peaks, mult="fi
 # cor(HP9N_peaks[cov_input>5][!is.na(HP9_enrichment)]$enrichment, HP9N_peaks[cov_input>5][!is.na(HP9_enrichment)]$HP9_enrichment)
 ```
 
-```{r upset}
+```{r upset, eval=FALSE}
+# need to join these enrichments to eval this chunk
 UpSetR::upset(HP9N_peaks[,.("Nterm P9"=!is.na(chr),
                             "Cterm HA & V5"=!is.na(HP9combo_enrichment),
                             "C term HA"=!is.na(HP9_enrichment),
@@ -784,7 +788,8 @@ ggplot(HP9N_peaks[cov_input>5], aes(enrichment, HP9combo_enrichment,
 ```
 
 
-```{r NC_similar_force}
+```{r NC_similar_force, eval=FALSE}
+# need to join FC_hP9combo_enrichment for this chunk
 HP9N_peaks[,NC_similar := (FC_hP9combo_enrichment/enrichment)>exp(0.2*enrichment^1.5) | FC_hP9combo_enrichment/enrichment<exp(-0.2*FC_hP9combo_enrichment^1.5)]
 
 ggplot(HP9N_peaks[cov_input>5], aes(enrichment, FC_hP9combo_enrichment,
@@ -793,9 +798,7 @@ ggplot(HP9N_peaks[cov_input>5], aes(enrichment, FC_hP9combo_enrichment,
   scale_x_log10() + scale_y_log10() +
   theme(legend.position = 'bottom') + 
   geom_abline(intercept = 0,slope = 1)
-```
 
-```{r similar_rank}
 rr=rank(HP9N_peaks$enrichment)
 rr2=rank(HP9N_peaks$FC_hP9combo_enrichment)
 cor(rr,rr2)
@@ -1108,17 +1111,19 @@ fraction_overlapN2(zcw_wP9_peaks_cin[cov_input>10], HP9N_peaks, x1="Zcw wP9", y1
 fraction_overlapN2(zcw_wP9_vs_chip_Z[cov_input>=9], HP9N_peaks, x1="Zcw CVC", y1="HP9 N term", shift=1e7)
 ```
 
-```{r}
+```{r Zcw_vs_NP9N_diff_ext}
 HP9N_peaks <- prejoin(HP9N_peaks, ext=500)
-fraction_overlapN2(zcw_wP9_vs_chip_Z[cov_input>=9], HP9N_peaks, x1="Zcw CVC", y1="HP9 N term", shift=1e7) + ylim(0,1)
+fraction_overlapN2(zcw_wP9_vs_chip_Z[cov_input>=9], HP9N_peaks, x1="Zcw CVC", y1="HP9 N term 500", shift=1e7) + ylim(0,1)
 HP9N_peaks <- prejoin(HP9N_peaks, ext=500)
-fraction_overlapN2(zcw_wP9_vs_chip_Z[cov_input>=9], HP9N_peaks, x1="Zcw CVC", y1="HP9 N term", shift=1e7, corrected = T) + ylim(0,1)
+fraction_overlapN2(zcw_wP9_vs_chip_Z[cov_input>=9], HP9N_peaks, x1="Zcw CVC", y1="HP9 N term 500", shift=1e7, corrected = T) + ylim(0,1)
 HP9N_peaks <- prejoin(HP9N_peaks, ext=300)
-fraction_overlapN2(zcw_wP9_vs_chip_Z[cov_input>=9], HP9N_peaks, x1="Zcw CVC", y1="HP9 N term", shift=1e7, corrected = T) + ylim(0,1)
+fraction_overlapN2(zcw_wP9_vs_chip_Z[cov_input>=9], HP9N_peaks, x1="Zcw CVC", y1="HP9 N term 300", shift=1e7, corrected = T) + ylim(0,1)
 HP9N_peaks <- prejoin(HP9N_peaks, ext=200)
-fraction_overlapN2(zcw_wP9_vs_chip_Z[cov_input>=9], HP9N_peaks, x1="Zcw CVC", y1="HP9 N term", shift=1e7, corrected = T) + ylim(0,1)
+fraction_overlapN2(zcw_wP9_vs_chip_Z[cov_input>=9], HP9N_peaks, x1="Zcw CVC", y1="HP9 N term 200", shift=1e7, corrected = T) + ylim(0,1)
 HP9N_peaks <- prejoin(HP9N_peaks, ext=100)
-fraction_overlapN2(zcw_wP9_vs_chip_Z[cov_input>=9], HP9N_peaks, x1="Zcw CVC", y1="HP9 N term", shift=1e7, corrected = T) + ylim(0,1)
+fraction_overlapN2(zcw_wP9_vs_chip_Z[cov_input>=9], HP9N_peaks, x1="Zcw CVC", y1="HP9 N term 100", shift=1e7, corrected = T) + ylim(0,1)
+# reset, although not actually used after this point
+HP9N_peaks <- prejoin(HP9N_peaks)
 ```
 
 
@@ -1184,12 +1189,12 @@ fraction_overlapN2(zcw_wP9_peaks[cov_input>=5], h3k36me3_UT_peaks, x1="Zcw wP9",
 ```
 
 ```{r histone_correlation, fig.width=10}
-p1 <- fraction_overlapN2(zcw_wP9_peaks[cov_input>=5], h3k4me3_P9_peaks, x1="Zcw wP9", y1="h3k4me3_P9_peaks", shift=1e8, n=100) +
+p1 <- fraction_overlapN2(zcw_wP9_peaks_cin[cov_input>=5], h3k4me3_P9_peaks, x1="Zcw wP9", y1="h3k4me3_P9_peaks", shift=1e8, n=100) +
   ylab("Fraction of ZCWPW1 with PRDM9 peaks \n that overlap H3K4me3 with PRDM9 Peaks") +
   xlab("Mean Enrichment of ZCWPW1 cotransfected with PRDM9") +
   theme(legend.position = "bottom")
 
-p2 <- fraction_overlapN2(zcw_wP9_peaks[cov_input>=5], h3k36me3_P9_peaks, x1="Zcw wP9", y1="h3k36me3_P9_peaks", shift=1e8, n=100) +
+p2 <- fraction_overlapN2(zcw_wP9_peaks_cin[cov_input>=5], h3k36me3_P9_peaks, x1="Zcw wP9", y1="h3k36me3_P9_peaks", shift=1e8, n=100) +
   ylab("Fraction of ZCWPW1 with PRDM9 peaks \n that overlap H3K36me3 with PRDM9 Peaks") +
   xlab("Mean Enrichment of ZCWPW1 cotransfected with PRDM9") +
   scale_y_continuous() +
@@ -1200,70 +1205,11 @@ plot_grid(p1, p2, nrow=1)
 #dev.off()
 ```
 
-# GAM plot
-
-```{r gam_plot}
-
-    
-tmp <- overlapGam(zcw_peaks_cin[cov_input>=5], repeats[Name!="Alu"][grep("Alu",Name)][CI_stop-CI_start>250 & CI_stop-CI_start<350])
-tmpR <- overlapGam(zcw_peaks_cin[cov_input>=5], repeats[Name!="Alu"][grep("Alu",Name)][CI_stop-CI_start>250 & CI_stop-CI_start<350], shift = 1e8)
-
-tmp2 <- fraction_overlapN2(zcw_peaks_cin[cov_input>=5], 
-                           repeats[Name!="Alu"][grep("Alu",Name)][CI_stop-CI_start>250 & CI_stop-CI_start<350],
-                           x1="Zcw UT", y1="Alu Repeats", shift=1e8) # yes up to 70%
-
-tmp2 + 
-  geom_ribbon(data=tmp, aes(ymin = Overlap - 2*se, ymax = Overlap + 2*se), fill = "#E41A1C", colour="#E41A1C", alpha=0.5) +
-  geom_ribbon(data=tmpR, aes(ymin = Overlap - 2*se, ymax = Overlap + 2*se), fill = "#377EB8", colour="#377EB8", alpha=0.5) +
-  scale_x_log10(limits=c(0.3,5)) +
-  theme(legend.position = "bottom") +
-  xlab("Zcwpw1 Enrichment (no Prdm9)") +
-  ylab("Fraction of Zcwpw1 peaks \n that overlap Alu repeats")
-  
-
-
-tmp <- overlapGam(zcw_wP9_peaks[cov_input>=5], h3k36me3_P9_peaks, "a","b")
-
-
-tmp$overlap <- !is.na(tmp$test_enrichment)
-
-tmpgam <- gam(data=tmp, overlap ~ s(enrichment), family="quasibinomial")
-tmpglm <- glm(data=tmp, overlap ~ enrichment, family="binomial")
-
-n=500
-x_new <- seq(0.01, 50, length.out = n)
-y_pred <- data.table(enrichment = x_new,
-                     data.frame(predict(tmpgam, data.frame(enrichment = x_new), se.fit=TRUE, type="response")))
-tmpdt <- cbind(y_pred, Type="GAM")
-setnames(tmpdt, c("mean_enrichment","Overlap","se","Type"))
-
-y_pred2 <- data.table(enrichment = x_new,
-                     data.frame(predict(tmpglm, data.frame(enrichment = x_new), se.fit=TRUE, type="response")))
-tmpdt2 <- cbind(y_pred2, Type="GLM")
-setnames(tmpdt2, c("mean_enrichment","Overlap","se","resid","Type"))
-
-
-ggplot(y_pred, aes(enrichment, fit)) +
-    geom_ribbon(data=cbind(y_pred, Type="GAM"), aes(ymin = fit - 2*se.fit, ymax = fit + 2*se.fit), fill = "grey70", colour="grey70") +
-    geom_line() +
-    theme_minimal()
-
-tmp2 <- fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeats[Name!="Alu"][grep("Alu",Name)][CI_stop-CI_start>250 & CI_stop-CI_start<350], x1="Zcw UT", y1="Alu Repeats", shift=1e8) # yes up to 70%
-
-tmp2 + 
-  geom_ribbon(data=tmp, aes(ymin = Overlap - 2*se, ymax = Overlap + 2*se), fill = "grey70", colour="grey70", alpha=0.5) +
-  scale_x_log10(limits=c(0.3,5))
-
-p2 + 
-  geom_ribbon(data=tmpdt, aes(ymin = Overlap - 2*se, ymax = Overlap + 2*se), fill = "grey70", colour="grey70", alpha=0.5) +
-  geom_ribbon(data=tmpdt2, aes(ymin = Overlap - 2*se, ymax = Overlap + 2*se), fill = "grey70", colour="blue", alpha=0.5) +
-  scale_x_log10(limits=c(0.5,15))
-```
-
-
 # New
 
 ```{r hex_plot, fig.width=6}
+
+zcw_wP9_peaks_cin$zcw_peaks_enrichment <- foverlaps(zcw_wP9_peaks_cin, zcw_peaks_cin, mult="first")$enrichment
 
 ggplot(zcw_wP9_peaks_cin[order(-HP9combo_enrichment)], (aes(zcw_peaks_enrichment, enrichment, colour=log(HP9combo_enrichment)))) +
   geom_point(stroke=0, size=1) +
@@ -1424,11 +1370,9 @@ dd=cc*bb
 summary(lm(dd~aa+bb))
 
 enrich*bg=(0.5*(cov1+cov2)-0.3552*bg)
-Error: object 'cov1' not found
 > summary(lm(dd~0+aa+bb))
 
 enrich*bg=(0.5*(cov1+cov2)-0.3525*bg)
-Error: object 'cov1' not found
 > predcc=(0.5*aa-0.325*bb)/bb
 > plot(predcc,cc)
 > summary(lm(dd[dd>0]~0+aa[dd>0]+bb[dd>0]))
