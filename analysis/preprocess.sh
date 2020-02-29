@@ -1,58 +1,3 @@
-############################
-####### DMC1
-############################
-
-wget -p dmc1/ ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE59nnn/GSE59836/suppl/GSE59836%5FPeak%5Fdata%5FSupplementary%5FFile%5F1%2Etxt%2Egz
-gunzip dmc1/GSE59836_Peak_data_Supplementary_File_1.txt.gz
-
-# subset to only AorB allele peaks observed in all samples & compute average strength
-awk -v OFS='\t' '{ if ($16 == 1 && ($3-$2)<3000 && $1!="chrY" && $1!="chrX") { print $1, $2, $3, ($4+$5)/2, ($6+$7)/4 } }' \
-  dmc1/GSE59836_Peak_data_Supplementary_File_1.txt \
-  > dmc1/Pratto_human_DSB_Aintersect_autosomal_hg19.bed
-# 18342
-# 18326
-
-liftOver dmc1/Pratto_human_DSB_Aintersect_autosomal_hg19.bed hg19ToHg38.over.chain.gz \
-  dmc1/Pratto_human_DSB_Aintersect_autosomal_hg38.bed \
-  dmc1/Pratto_human_DSB_Aintersect_autosomal_Nonhg38.bed
-
-# awk -v OFS='\t' '{ if ($11 == 1 && ($3-$2)<3000 && $1!="chrY" && $1!="chrX") { print $1, $2, $3, ($4+$5)/2, ($6+$7)/4 } }' GSE59836_Peak_data_Supplementary_File_1.txt \ > Pratto_human_DSB_AB_autosomal_hg19.bed
-# wc -l Pratto_human_DSB_AB_autosomal_hg19.bed
-# #20336
-#
-# awk -v OFS='\t' '{ if ($9 == 1 && $10 == 1 && ($3-$2)<3000 && $1!="chrY" && $1!="chrX") { print $1, $2, $3, ($4+$5)/2, ($6+$7)/4 } }' GSE59836_Peak_data_Supplementary_File_1.txt \ > Pratto_human_DSB_AA_autosomal_hg19.bed
-# #21699
-
-
-############################
-####### Repeats
-############################
-
-curl 'http://genome.ucsc.edu/cgi-bin/hgTables?hgsid=738896965_zTgYMjAIHdEHcvRZcCteap7Zqbpt&boolshad.hgta_printCustomTrackHeaders=0&hgta_ctName=tb_rmsk&hgta_ctDesc=table+browser+query+on+rmsk&hgta_ctVis=pack&hgta_ctUrl=&fbQual=whole&fbUpBases=200&fbDownBases=200&hgta_doGetBed=get+BED' \
-  -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:67.0) Gecko/20100101 Firefox/67.0' \
-  -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' \
-  -H 'Accept-Language: en-GB,en;q=0.5' \
-  --compressed -H 'Connection: keep-alive' \
-  -H 'Referer: http://genome.ucsc.edu/cgi-bin/hgTables' \
-  -H 'Cookie: hguid.genome-euro=362527140_Mi0jIpneXLkgeplCtz5aa6JO13ha; hguid=673678055_VvqPPBb5iFgOJEF3WMG7M3t7iual' \
-  -H 'Upgrade-Insecure-Requests: 1' > repeats/Repeat_Masker.bed.gz
-
-gunzip -d repeats/Repeat_Masker.bed.gz
-
-grep -P 'chr[0-9XY]+\t' repeats/Repeat_Masker.bed | sort -k1,1 -k2,2n  > repeats/Repeat_MaskerSorted.bed
-
-# split into Alu and not
-grep 'Alu[a-zA-Z]' repeats/Repeat_MaskerSorted.bed > repeats/Repeat_MaskerSorted_Alu.bed
-grep -v 'Alu[a-zA-Z]' repeats/Repeat_MaskerSorted.bed > repeats/Repeat_MaskerSorted_NotAlu.bed
-
-# check Alu with no family name not present
-grep -P 'Alu\t' repeats/Repeat_MaskerSorted_Alu.bed | head
-
-awk '$3-$2 > 250 && $3-$2 < 350' repeats/Repeat_MaskerSorted_Alu.bed > repeats/Repeat_MaskerSorted_Alu_QC.bed
-
-
-bedtools getfasta -s -fi motifs/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa -bed repeats/Repeat_MaskerSorted_Alu_QC.bed -name > repeats/AluRepeats.fa
-
 
 ############################
 ####### Check Enrichment at Alus
@@ -133,21 +78,6 @@ bedtools intersect -a peaks/Zcw_random.bed -b CpG/CpG_hg38.bed -c > peaks/Zcw_ra
 # bedtools intersect -a chr1_random.bed -b CpG_chr1.bed -c > chr1_random_CpGcount.bed
 
 
-####################################
-###### Count CpG & CpG Islands per 100bp window
-####################################
-
-bedtools intersect -a forcepeaks/genome.windows.100wide.100slide.bed -b CpG/CpG_hg38_cut.bed -c > CpG/CpG_hg38_100bpwindows.bed
-
-##### CpG Islands per 100bp
-
-wget -P CpG/ http://hgdownload.soe.ucsc.edu/goldenPath/hg38/database/cpgIslandExtUnmasked.txt.gz
-gzip -d CpG/cpgIslandExtUnmasked.txt.gz
-cut -f 2-4 CpG/cpgIslandExtUnmasked.txt > CpG/cpgIslandExtUnmasked.bed
-
-bedtools intersect -a forcepeaks/genome.windows.100wide.100slide.bed -b CpG/cpgIslandExtUnmasked.bed -f 0.1 -c > CpG/cpgIslandExtUnmasked_100bpwindows.bed
-
-bedtools intersect -a forcepeaks/genome.windows.100wide.100slide.bed -b CpG/cpgIslandExtUnmasked.bed -f 1 -c > CpG/cpgIslandExtUnmasked_100bpwindows_f1.bed
 
 
 ####################################
@@ -224,68 +154,6 @@ bedtools intersect -a forcepeaks/genome.windows.100wide.100slide.bed -b repeats/
 
 
 
-############################
-####### ENCODE beds
-############################
-
-
-
-declare -a arr=("ENCFF314ZAL"
-                "ENCFF338RAX"
-                "ENCFF860DHS"
-                "ENCFF959SPJ"
-                "ENCFF131RPK"
-                "ENCFF108BVL"
-                "ENCFF418KWK"
-                "ENCFF451UZW"
-                "ENCFF464QPC"
-                "ENCFF700RBU"
-                "ENCFF483QXH"
-                "ENCFF446OZF"
-                "ENCFF786NME"
-                "ENCFF478NGK"
-                "ENCFF129ADK"
-                "ENCFF204MYY"
-                "ENCFF678TFE"
-                "ENCFF081QMM"
-                "ENCFF101AKQ"
-                "ENCFF611CFB"
-                "ENCFF342JBJ"
-                "ENCFF538EDC"
-                "ENCFF422AIH"
-
-                "ENCFF295WQL"
-                "ENCFF665UWA"
-                "ENCFF439CWL"
-                "ENCFF280SGN"
-                "ENCFF653UGW"
-                "ENCFF435BYC"
-                "ENCFF567BLE"
-                "ENCFF151LTX"
-                "ENCFF403LQH"
-                "ENCFF720TFF"
-                "ENCFF108PRX"
-                )
-
-## now loop through the above array
-for i in "${arr[@]}"
-do
-    wget -P ENCODE_beds/ "https://www.encodeproject.org/files/$i/@@download/$i.bed.gz"
-done
-
-
-############################
-####### SPO11
-############################
-
-
-sed 's/chr//' B6_Spo11.bedgraph > B6_Spo11_clean.bedgraph
-
-zgrep -v '_' B6_Spo11.bedgraph | grep -vP 'M|X|Y' | sed 's/chr//' > B6_Spo11_clean.bedgraph
-
-bedGraphToBigWig B6_Spo11_clean.bedgraph ../../single-cell/sequencing/metadata/mm10_sizes.chrom B6_Spo11.bedgraph.bigWig
-
-bwtool matrix -fill=0 -decimals=1 -tiled-averages=5 5000:5000 B6.bed B6_Spo11.bedgraph.bigWig B6_Spo11_atB6.bwm
 
 
 ############################
@@ -296,26 +164,7 @@ bwtool matrix -fill=0 -decimals=1 -tiled-averages=5 5000:5000 B6.bed B6_Spo11.be
 # Mappability track from genome browser (>7GB)
 # https://epgg-test.wustl.edu/d/hg38/hg38.mappability.75.bigwig
 
-# convert Hoffman lab mappability track to bed
-wget -P mappability/ https://www.pmgenomics.ca/hoffmanlab/proj/bismap/trackhub/hg38/k24.Umap.MultiTrackMappability.bw
 
-./bigWigToBedGraph mappability/k24.Umap.MultiTrackMappability.bw mappability/k24.Umap.MultiTrackMappability.bedGraph
-
-# keep if mappabilty >0.75
-awk '$4 > 0.75' mappability/k24.Umap.MultiTrackMappability.bedGraph | LC_ALL=C sort -k1,1 -k2,2n -S5G --parallel=5 | \
-  bedtools merge -i stdin > mappability/24.Umap.MultiTrackMappability_Keep.bed
-
-sort -k1,1 ../hg38_sizes_23.chrom > ../hg38_sizes_23_alphasort.chrom
-
-# invert for exclusion bed
-awk '$1!="chrY"' mappability/24.Umap.MultiTrackMappability_Keep.bed | \
-  bedtools complement -i stdin -g ../hg38_sizes_23_alphasort.chrom \
-  > mappability/24.Umap.MultiTrackMappability_Exclude.bed
-
-# censor Zcwpw1 peaks that aren't mappable if using 24bp (for overlap with Chip that did use 24bp..)
-bedtools slop -i mappability/24.Umap.MultiTrackMappability_Exclude.bed -g hg38_sizes_23_alphasort.chrom -b 10 | \
-  bedtools subtract -A -a peaks/SingleBasePeaks.WTCHG_538916_221156_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144.p0.000001.sep250.ALL.bed -b stdin \
-  > mappability/Zcwpw1_peak_cin_24bpmappable.bed
 
 
 bwtool extract bed ch6_sample.bed mappability/k24.Umap.MultiTrackMappability.bw mappability/k24.Umap.MultiTrackMappability_bwtool.bed
