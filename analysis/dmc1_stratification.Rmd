@@ -1,38 +1,23 @@
 ---
 title: "DMC1 Profiles, stratified by heat"
-output: html_notebook
+output:
+  html_document:
+    dev: pdf
+    self_contained: false
 ---
 
-
 ```{r}
-B6 <- fread("dmc1/B6_composite_filtered.bed")
-names(B6) <- names(fread("dmc1/B6_composite.txt", nrows = 1))
+knitr::opts_knit$set(base.dir = "results")
+knitr::opts_chunk$set(fig.path = "dmc1/")
+knitr::opts_chunk$set(dev="pdf")
+knitr::opts_chunk$set(fig.show="hold")
 
-bwm <- as.matrix(fread("dmc1/ZCWPW1_HOM_260619_5prime_atB6.bwm"))
-bwm_wt <- as.matrix(fread("dmc1/B6_Sample1_Brick2012_5prime_atB6.bwm"))
+library(data.table)
+library(ggplot2)
+library(gghighlight)
+```
 
-bwm3p <- as.matrix(fread("dmc1/ZCWPW1_HOM_260619_3prime_atB6.bwm"))
-bwm_wt3p <- as.matrix(fread("dmc1/B6_Sample1_Brick2012_3prime_atB6.bwm"))
-
-# sanity checks
-plot_profile(bwm, bwm_wt)
-title("5p")
-plot_profile(bwm3p, bwm_wt3p)
-title("3p")
-plot_profile(bwm3p[,2000:0], bwm_wt3p[,2000:0])
-title("3p reversed")
-plot_profile(bwm+bwm3p[,2000:0], bwm_wt+bwm_wt3p[,2000:0])
-title("5p + 3p reversed")
-dev.off()
-
-spo11 <- as.matrix(fread("dmc1/B6_Spo11_atB6.bwm"))
-
-# combine 3p & 5p to reduce noise
-bwm <- bwm+bwm3p[,2000:0]
-
-bwm_wt <- bwm_wt+bwm_wt3p[,2000:0]
-
-
+```{r, functions}
 normalise <- function(x){
   x <- colMeans(x)
   x <- x - mean(x[c(1:500,1501:2000)])
@@ -67,8 +52,8 @@ plot_profile <- function(a,b,c=NULL,d=NULL,e=NULL,f=NULL, left=650, right=1150, 
     scale_linetype_manual(labels = c("Wild Type",expression(italic("Zcwpw1")^"-/-")), values=c("dashed","solid")) +
     theme_minimal() +
     theme(legend.position = "bottom") +
-    xlab("Position relative to motif (kb)") +
-    ylab(paste("Relative DMC1 signal")) +
+    xlab("Position relative to PRDM9 motif (kb)") +
+    ylab(paste("Normalised Mean DMC1 Coverage")) +
     scale_x_continuous(breaks = seq(-1.5,0.5,0.5), limits = c(pos[left], pos[right]))
     
   # p +
@@ -81,7 +66,7 @@ plot_profile <- function(a,b,c=NULL,d=NULL,e=NULL,f=NULL, left=650, right=1150, 
   }
    
   
-  plot(pos, a, type="l",ylim=c(0,max(c(a,b,c,d))), xlim=c(pos[left],pos[right]), xlab="Position relative to motif (kb)", ylab=ylabel)
+  plot(pos, a, type="l",ylim=c(0,max(c(a,b,c,d))), xlim=c(pos[left],pos[right]), xlab="Position relative to PRDM9 motif (kb)", ylab=ylabel)
   lines(pos, b, col="blue")
   if(!is.null(c)){ lines(pos, c, col="red") }
   if(!is.null(d)){ lines(pos, d, col="black", lty="dotted") 
@@ -91,24 +76,6 @@ plot_profile <- function(a,b,c=NULL,d=NULL,e=NULL,f=NULL, left=650, right=1150, 
     }
 }
 
-
-
-
-
-# By Chromosome
-plot(colMeans(bwm[B6$chr=="1",]), type="l", col=viridis::viridis(max(B6$chr))[1], xlim=c(500,1500))
-for(i in 2:max(B6$chr)){
-  lines(colMeans(bwm[B6$chr==i,]), col=viridis::viridis(max(B6$chr))[i])
-}
-
-plot(colMeans(bwm_wt[B6$chr=="1",]), type="l", col=viridis::viridis(max(B6$chr))[1], xlim=c(500,1500))
-for(i in 2:max(B6$chr)){
-  lines(colMeans(bwm_wt[B6$chr==i,]), col=viridis::viridis(max(B6$chr))[i])
-}
-dev.off()
-
-
-# By annotation
 
 plot_split <- function(name, conds, left=650, right=1150){
   pdf(paste(name,".pdf"), width = 12, height = 5)
@@ -122,9 +89,7 @@ plot_split <- function(name, conds, left=650, right=1150){
   dev.off()
 }
 
-new_dmc1 <- rowSums(bwm)
-
-#
+# By annotation
 create_split <- function(heat=B6$enrichment){
   cum_enrich = cumsum(sort(heat))
   b1 = sort(heat)[max(which(cum_enrich < cum_enrich[length(cum_enrich)]/2))]
@@ -135,56 +100,107 @@ create_split <- function(heat=B6$enrichment){
   return(cbind(cond1,cond1.5,cond2))
 }
 
+```
+
+
+```{r, sanity_checks}
+B6 <- fread("../data/dmc1/B6_composite_filtered.bed")
+names(B6) <- names(fread("../data/dmc1/B6_composite.txt", nrows = 1))
+
+bwm <- as.matrix(fread("../data/dmc1/ZCWPW1_HOM_260619_5prime_atB6.bwm"))
+bwm_wt <- as.matrix(fread("../data/dmc1/B6_Sample1_Brick2012_5prime_atB6.bwm"))
+
+bwm3p <- as.matrix(fread("../data/dmc1/ZCWPW1_HOM_260619_3prime_atB6.bwm"))
+bwm_wt3p <- as.matrix(fread("../data/dmc1/B6_Sample1_Brick2012_3prime_atB6.bwm"))
+
+# sanity checks
+plot_profile(bwm, bwm_wt)
+title("5p")
+plot_profile(bwm3p, bwm_wt3p)
+title("3p")
+plot_profile(bwm3p[,2000:0], bwm_wt3p[,2000:0])
+title("3p reversed")
+plot_profile(bwm+bwm3p[,2000:0], bwm_wt+bwm_wt3p[,2000:0])
+title("5p + 3p reversed")
+```
+
+# By Chromosome
+```{r, dmc1_by_chromosome}
+spo11 <- as.matrix(fread("../data/dmc1/B6_Spo11_atB6.bwm"))
+
+# combine 3p & 5p to reduce noise
+bwm <- bwm+bwm3p[,2000:0]
+
+bwm_wt <- bwm_wt+bwm_wt3p[,2000:0]
+
+plot(colMeans(bwm[B6$chr=="1",]), type="l", col=viridis::viridis(max(B6$chr))[1], xlim=c(500,1500))
+for(i in 2:max(B6$chr)){
+  lines(colMeans(bwm[B6$chr==i,]), col=viridis::viridis(max(B6$chr))[i])
+}
+
+# WT
+plot(colMeans(bwm_wt[B6$chr=="1",]), type="l", col=viridis::viridis(max(B6$chr))[1], xlim=c(500,1500))
+for(i in 2:max(B6$chr)){
+  lines(colMeans(bwm_wt[B6$chr==i,]), col=viridis::viridis(max(B6$chr))[i])
+}
+```
+
+# Stratify by enrichment
+```{r, DMC1_stratified}
+new_dmc1 <- rowSums(bwm)
+
 # # OLD split by quantile
 # cond1 <- B6$enrichment > quantile(B6$enrichment, 0.98)
 # cond2 <- B6$enrichment < quantile(B6$enrichment, 0.8)
 
 conds <- create_split(B6$enrichment)
+
 p2 <- plot_profile(bwm[conds[,1],], bwm[conds[,2],], bwm[conds[,3],],
                    bwm_wt[conds[,1],], bwm_wt[conds[,2],], bwm_wt[conds[,3],],
                    left=650, right=1150, ggplot=TRUE)
 
-saveRDS(p2, "DMC_stratified.rds")
-
-plot_profile(bwm[conds[,1],], bwm[conds[,2],], bwm[conds[,3],], left=650, right=1150, ggplot=TRUE)
-pdf("H3K4me3_gg.pdf")
+p2 <- p2 +
+  gghighlight(keep_scales = T) +
+  facet_wrap(~Genotype)+
+  scale_linetype_manual(values=c(1,1), guide=FALSE) +
+  scale_color_manual(values=c("#e41a1c","#377eb8","black"), name="H3K4me3") + 
+  theme(legend.position="bottom",
+        panel.border = element_rect(color = "grey40", fill = NA, size = 0.5),
+        strip.background = element_rect(color = "grey40", size = 0.5))
 p2
-dev.off()
 
-
-
+saveRDS(p2, "../results/dmc1/DMC1_stratified.rds")
+```
 
 # Individual locations
+```{r, dmc1_individual_loci}
 
 for(i in 1:10){
   plot(bwm_wt[sample(1:nrow(bwm_wt),1),])
-}
-for(i in 1:10){
   plot(bwm[sample(1:nrow(bwm),1),])
 }
-dev.off()
-
+```
 
 # heatmap ordered by enrichment
+```{r, dmc1_byenrichment, eval=FALSE}
 ComplexHeatmap::Heatmap(bwm[order(B6$enrichment),],
                                            cluster_rows = F,
                                            cluster_columns = F)
 ComplexHeatmap::Heatmap(bwm_wt[order(B6$enrichment),],
                                            cluster_rows = F,
                                            cluster_columns = F)
-dev.off()
-
 ```
 
 
 # asymmetry?
-```{r}
 
-bwm <- as.matrix(fread("dmc1/ZCWPW1_HOM_260619_5prime_atB6.bwm"))
-bwm_wt <- as.matrix(fread("dmc1/B6_Sample1_Brick2012_5prime_atB6.bwm"))
+```{r, eval=FALSE}
 
-bwm3p <- as.matrix(fread("dmc1/ZCWPW1_HOM_260619_3prime_atB6.bwm"))
-bwm_wt3p <- as.matrix(fread("dmc1/B6_Sample1_Brick2012_3prime_atB6.bwm"))
+bwm <- as.matrix(fread("../data/dmc1/ZCWPW1_HOM_260619_5prime_atB6.bwm"))
+bwm_wt <- as.matrix(fread("../data/dmc1/B6_Sample1_Brick2012_5prime_atB6.bwm"))
+
+bwm3p <- as.matrix(fread("../data/dmc1/ZCWPW1_HOM_260619_3prime_atB6.bwm"))
+bwm_wt3p <- as.matrix(fread("../data/dmc1/B6_Sample1_Brick2012_3prime_atB6.bwm"))
 
 bwm <- bwm+bwm3p
 
@@ -193,6 +209,7 @@ bwm_wt <- bwm_wt+bwm_wt3p
 ko_asym <- rowSums(bwm[,1:1000]) / rowSums(bwm[,1001:2000])
 wt_asym <- rowSums(bwm_wt[,1:1000]) / rowSums(bwm_wt[,1001:2000])
 
+pdf("results/dmc1/Asymmetry.pdf")
 ComplexHeatmap::Heatmap(bwm[order(ko_asym),],
                                            cluster_rows = F,
                                            cluster_columns = F)
