@@ -760,10 +760,10 @@ p1 <- ggplot(forcecalled[zcw_cov_input>5 & hP9combo_cov_input>5][!zcw_enrichment
   #stat_summary_hex(bins=200, alpha=0.5, fun= function(x) as.character(mean(x))) + # na.rm=T
   stat_summary_hex(bins=200, alpha=0.5, fun= function(x)if(length(x)>=3){as.character(mean(x))}else{NA}) + # na.rm=T
   geom_density_2d(aes(colour=hP9Combo.bound),bins=15) +
-  labs(x="Enrichment of Zcwpw1", y="Enrichment of Zcwpw1 when cotransfected with human Prdm9") +
+  labs(x="Enrichment of Zcwpw1", y="Enrichment of ZCWPW1 when cotransfected with human PRDM9") +
   scale_fill_manual(labels = c("p = 1", "p < 10^(-9)"), values = c("#E41A1C", "#377EB8")) +
   scale_colour_manual(values = c("#E41A1C", "#377EB8"), guide=FALSE) +
-  labs(fill="Evidence of human Prdm9 binding") +
+  labs(fill="Evidence of human PRDM9 binding") +
   theme(legend.position = "bottom") +
   ylim(0,8) + xlim(0,8)
 
@@ -788,10 +788,10 @@ p2 <- ggplot(forcecalled[zcw_cov_input>5 & cP9combo_cov_input>5][!zcw_enrichment
   #stat_summary_hex(bins=200, alpha=0.5, fun= function(x) as.character(mean(x))) + # na.rm=T
   stat_summary_hex(bins=200, alpha=0.5, fun= function(x)if(length(x)>=3){as.character(mean(x))}else{NA}) + # na.rm=T
   geom_density_2d(aes(colour=cP9Combo.bound),bins=15) +
-  labs(x="Enrichment of Zcwpw1", y="Enrichment of Zcwpw1 when cotransfected with chimp Prdm9") +
+  labs(x="Enrichment of Zcwpw1", y="Enrichment of ZCWPW1 when cotransfected with chimp PRDM9") +
   scale_fill_manual(labels = c("p = 1", "p < 10^(-3)"), values = c("#E41A1C", "#377EB8")) +
   scale_colour_manual(values = c("#E41A1C", "#377EB8"), guide=FALSE) +
-  labs(fill="Evidence of chimp Prdm9 binding") +
+  labs(fill="Evidence of chimp PRDM9 binding") +
   theme(legend.position = "bottom") +
   ylim(0,6) + xlim(0,6)
 
@@ -916,16 +916,16 @@ commongrobs <- list(
 
 pmain <- plot_grid(p1 + commongrobs + theme(legend.position = "none") + labs(title="Transfected vs Cotransfected",
                                                                              x="ln(0.1 + Enrichment of H3K4me3 in humanPRDM9 transfection)", 
-                                                                             y="ln(0.1 + Enrichment of Zcwpw1 in Zcwpw1-humanPrdm9 cotransfection)"),
+                                                                             y="ln(0.1 + Enrichment of ZCWPW1 in Zcwpw1-humanPRDM9 cotransfection)"),
           p3 + commongrobs + theme(legend.position = "none") + labs(title="Transfected vs Singly-transfected",
                                                                              x="ln(0.1 + Enrichment of H3K4me3 in humanPRDM9 transfection)", 
-                                                                             y="ln(0.1 + Enrichment of Zcwpw1 in Zcwpw1 single transfection)"),
+                                                                             y="ln(0.1 + Enrichment of ZCWPW1 in ZCWPW1 single transfection)"),
           p4 + commongrobs + theme(legend.position = "none") + labs(title="Un-transfected vs Cotransfected",
                                                                              x="ln(0.1 + Enrichment of H3K4me3 in untransfected)", 
-                                                                             y="ln(0.1 + Enrichment of Zcwpw1 in Zcwpw1-humanPrdm9 cotransfection)"),
+                                                                             y="ln(0.1 + Enrichment of ZCWPW1 in ZCWPW1-humanPRDM9 cotransfection)"),
           p2 + commongrobs + theme(legend.position = "none") + labs(title="Un-transfected vs Singly-transfected",
                                                                              x="ln(0.1 + Enrichment of H3K4me3 in untransfected)", 
-                                                                             y="ln(0.1 + Enrichment of Zcwpw1 in Zcwpw1 single transfection)"))
+                                                                             y="ln(0.1 + Enrichment of ZCWPW1 in ZCWPW1 single transfection)"))
 
 #pdf("H3K4strength_allchr.pdf", width = 14, height = 14)
 plot_grid(pmain, get_legend(p1 + commongrobs), ncol=1, rel_heights = c(1, 0.05))
@@ -994,8 +994,8 @@ p2 <- fraction_overlapN(forcecalled[sample(1:nrow(forcecalled))][h3k36me3_hP9_co
                         "h3k36me3_hP9_enrichment","zcw_hP9_enrichment", n=100) + 
   scale_y_log10() + scale_x_log10() +
   theme(legend.position = "none") +
-  ylab("Mean Zcwpw1 Enrichment when co-transfected with Prdm9") +
-  xlab("Mean H3K36me3 Enrichment when co-transfected with Prdm9 + 0.01")
+  ylab("Mean ZCWPW1 Enrichment when co-transfected with PRDM9") +
+  xlab("Mean H3K36me3 Enrichment when co-transfected with PRDM9 + 0.01")
 
 #pdf("results/H3Kme3_vs_Zcw_wP9.pdf", width = 11)
 plot_grid(p1,p2)
@@ -1271,7 +1271,8 @@ forcecalled2[is.na(gap_type) & CpG==0 & hP9combo_pvalue==1 & h3k36me3_hP9_pvalue
 
 # K36wP9 vs K4wP9
 
-```{r k36_vs_k4}
+```{r k36_vs_k4, eval=FALSE}
+# need zcw_P9_pvalue before changing eval to TRUE
 p <- ggplot(forcecalled[h3k36me3_hP9_enrichment>5], aes(h3k36me3_hP9_enrichment, h3k4me3_hP9_enrichment)) +
   geom_hex(aes(fill = stat(log(count))), bins=200) +
   scale_fill_viridis_c()
