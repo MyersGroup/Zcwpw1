@@ -302,6 +302,17 @@ ENCODE_BEDS = ["ENCFF314ZAL",
                 "ENCFF108PRX"
                 ]
 
+rule tss:
+  input:
+  output:
+    "data/genome/wgEncodeGencodeCompV28.txt.cut"
+  shell:
+    """
+    wget -P data/genome/ https://hgdownload.cse.ucsc.edu/goldenpath/hg38/database/wgEncodeGencodeCompV28.txt.gz
+    gzip -d data/genome/wgEncodeGencodeCompV28.txt.gz
+    cut -f 2-6 data/genome/wgEncodeGencodeCompV28.txt > {output}
+    """
+
 rule analyse_peaks:
   input:
     "functions.R",
@@ -309,7 +320,8 @@ rule analyse_peaks:
     rmd = "analysis/PeakCallingMA.Rmd",
     cpgi = "data/CpG/cpgIslandExtUnmasked.txt",
     repeats = "data/repeats/Repeat_MaskerSorted.bed",
-    mappability = "../data/mappability/Zcwpw1_peak_cin_24bpmappable.bed"
+    mappability = "data/mappability/Zcwpw1_peak_cin_24bpmappable.bed",
+    tss = "data/genome/wgEncodeGencodeCompV28.txt"
   output:
     md = "results/PeakCallingMA.md"
   shell:
@@ -319,8 +331,8 @@ rule analyse_peaks:
 
 rule analyse_100bp_windows:
   input:
-    "peaks/ForceCalledPeaks_NA15-SRR5627150_AND_NA15-SRR5627151_vs_NA15-SRR5627142_AT_cpgIslandExtUnmasked.bed.bed",
-    "peaks/ForceCalledPeaks_WTCHG_538916_221156_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144_AT_cpgIslandExtUnmasked.bed.bed",
+    "data/peaks/ForceCalledPeaks_NA15-SRR5627150_AND_NA15-SRR5627151_vs_NA15-SRR5627142_AT_cpgIslandExtUnmasked.bed.bed",
+    "data/peaks/ForceCalledPeaks_WTCHG_538916_221156_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144_AT_cpgIslandExtUnmasked.bed.bed",
     "data/CpG/cpgIsland_Meth.bed",
     "data/CpG/CpG_hg38_100bpwindows.bed",
     "data/motifs/motif_locs_M7_100bpwindows.bed",
@@ -335,7 +347,14 @@ rule analyse_100bp_windows:
     "data/CpG/cpgIslandExtUnmasked_100bpwindows.bed",
     "data/CpG/cpgIslandExtUnmasked_100bpwindows_f1.bed",
     "data/CpG/cpg_Meth_100bpwindows.bed",
-    "peaks/ForceCalledPeaks_NA15-SRR5627150_vs_NA15-SRR5627142_AT_genome.windows.100wide.100slide.bed.bed" # and others
+    "data/peaks/ForceCalledPeaks_NA15-SRR5627150_vs_NA15-SRR5627142_AT_genome.windows.100wide.100slide.bed.bed", # and others
+    rmd = "analysis/fc_100bp_windows.Rmd",
+  output:
+    md = "results/fc_100bp_windows.md"
+  shell:
+    """
+    R -e "knitr::knit('{input.rmd}', '{output.md}')"
+    """
 
 
 
