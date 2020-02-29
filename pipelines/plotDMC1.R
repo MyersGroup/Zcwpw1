@@ -28,7 +28,7 @@ readdmc1 <- function(filename){
 }
 
 tmp <-
-  list.files(pattern = "prime_at.*tsv") %>%
+  list.files(path = "data/dmc1", pattern = "prime_at.*tsv", full.names = T) %>%
   map_df(~readdmc1(.))
 
 names(tmp)[1:2] <- c("Position","MeanCoverage")
@@ -41,22 +41,24 @@ tmp[, MeanCoverage := MeanCoverage - background, by=c("Strand","Mouse")]
 
 tmp[, MeanCoverage := MeanCoverage / sum(MeanCoverage), by=c("Strand","Mouse")]
 
+tmp[, Position := Position / 1000]
 
-p <- ggplot(tmp[abs(Position)<2000], aes(Position, MeanCoverage, colour=Mouse, alpha=Strand)) + #group=Strand,
+p <- ggplot(tmp[abs(Position)<2], aes(Position, MeanCoverage, colour=Mouse, linetype=Strand)) + #group=Strand,
   geom_line(size=0.45) +
   facet_wrap(~Genotype, nrow=1) +
   scale_color_brewer(palette = "Set1", labels = c("WT",expression(italic("Zcwpw1")^"-/-"))) +
-  xlab("Position from center (bp)") +
+  xlab("Position relative to PRDM9 motif (kb)") +
   theme_minimal() +
   theme(legend.position = "bottom",
         panel.border = element_rect(color = "grey40", fill = NA, size = 0.5),
         strip.background = element_rect(color = "grey40", size = 0.5)) +
   scale_alpha_manual(values=c(1,0.5)) +
-  ylab("Normalised Mean DMC1 Coverage")
+  ylab("Normalised Mean DMC1 Coverage") +
+  scale_linetype_manual(values=c("solid","dotted"))
 
-saveRDS(p, "DMC1_SSDS_plot.rds")
+saveRDS(p, "results/dmc1/DMC1_SSDS_plot.rds")
 
-pdf("DMC1_SSDS.pdf", height = 5, width = 8)
+pdf("results/dmc1/DMC1_SSDS.pdf", height = 5, width = 8)
 p
 dev.off()
 
