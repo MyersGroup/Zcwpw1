@@ -4,129 +4,18 @@ output: html_notebook
 ---
 
 ```{r}
+knitr::opts_knit$set(base.dir = "results")
+knitr::opts_chunk$set(fig.path = "100bp_windows/")
+knitr::opts_chunk$set(dev="pdf")
+knitr::opts_chunk$set(fig.show="hold")
 
-Alu100bp <- fread("repeats/Repeat_MaskerSorted_Alu_QC_100bp.bed")
-setnames(Alu100bp, c("chr","center_start","center_stop","Alu"))
+library(data.table)
+library(ggplot2)
+library(gghighlight)
+library(cowplot)
+library(mgcv)
 
-forcecalled <- merge(forcecalled, Alu100bp)
-
-Alu100bp_f0.5 <- fread("repeats/Repeat_MaskerSorted_Alu_QC_100bp_f0.5.bed") # 0.5 actually 1.0, meaning Alu must overlap full 100bp
-setnames(Alu100bp_f0.5, c("chr","center_start","center_stop","Aluf1"))
-
-forcecalled <- merge(forcecalled, Alu100bp_f0.5)
-
-# Non Alu Repeats
-NotAlu100bp <- fread("repeats/Repeat_MaskerSorted_NotAlu_100bp.bed")
-setnames(NotAlu100bp, c("chr","center_start","center_stop","NotAlu"))
-
-forcecalled <- merge(forcecalled, NotAlu100bp)
-
-
-###### Zcw peaks
-zcw_peak <- fread("peaks/SingleBasePeaks.WTCHG_538916_221156_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144.p0.000001.sep250.ALL.100bpWindows.bed")
-setnames(zcw_peak, c("chr","center_start","center_stop","ZcwPeak"))
-
-
-zcw_peak_rand <- fread("peaks/Zcw_random_1bp.100bpWindows.bed")
-setnames(zcw_peak_rand, c("chr","center_start","center_stop","ZcwPeakRand"))
-
-```
-
-
-
-```{r}
-cpgImeth <- fread("CpG/cpgIsland_Meth.bed")
-setnames(cpgImeth, c("chr","center_start","center_stop","meth","unmeth"))
-cpgImeth[, len := center_stop-center_start]
-cpgImeth[, meth_prop := (meth+3) / (meth + unmeth + 6)]
-
-pdf("Meth_by_len.pdf")
-plot(cpgImeth[meth+unmeth > 10]$len, cpgImeth[meth+unmeth > 10]$meth_prop, log="x", pch=".")
-hist(cpgImeth[meth+unmeth > 10][len<350]$meth_prop, breaks=100)
-hist(cpgImeth[meth+unmeth > 10][len>500]$meth_prop, breaks=100)
-dev.off()
-
-H3K4UT_CGI <- fread("peaks/ForceCalledPeaks_NA15-SRR5627150_AND_NA15-SRR5627151_vs_NA15-SRR5627142_AT_cpgIslandExtUnmasked.bed.bed")
-Zcw_CGI <- fread("peaks/ForceCalledPeaks_WTCHG_538916_221156_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144_AT_cpgIslandExtUnmasked.bed.bed")
-
-setkey(cpgImeth, chr,center_start,center_stop)
-setkey(H3K4UT_CGI, chr,center_start,center_stop)
-setkey(Zcw_CGI, chr,center_start,center_stop)
-
-cgi <- H3K4UT_CGI[Zcw_CGI[cpgImeth]]
-# add prefixes post merge, i=zcw
-tmp <- grep("i\\.", names(cgi), value=T)
-setnames(cgi, tmp, gsub("i\\.","zcw.",tmp))
-
-# chrY and alts arent forcecalled
-cgi[is.na(enrichment), .N,by=chr][order(-N)]
-
-cgi[, isMethylated := meth_prop > 0.5 & (meth+unmeth > 10)]
-cgi[, isH3K4 := enrichment > 0.1 & cov_input>=5]
-
-
-# large diff in H3K4 between unmeth & meth
-cgi[!is.na(enrichment), mean(enrichment), by=meth_prop > 0.5]
-#   meth_prop         V1
-# 1:      TRUE  0.5512826
-# 2:     FALSE 14.9644733
-
-# smaller
-cgi[!is.na(enrichment), mean(zcw.enrichment), by=meth_prop > 0.5]
-#   meth_prop       V1
-# 1:      TRUE 1.465204
-# 2:     FALSE 1.129344
-
-cgi[zcw.cov_input>=5, mean(zcw.enrichment), by=c("isMethylated","isH3K4")]
-#    isMethylated isH3K4       V1
-# 1:         TRUE  FALSE 1.482543
-# 2:        FALSE   TRUE 1.179341
-# 3:        FALSE  FALSE 1.049465
-# 4:         TRUE   TRUE 1.187082
-
-
-
-
-
-pdf("CpG/CGI_meth.pdf")
-ggplot(cgi[meth+unmeth > 10 & cov_input>=5 & zcw.cov_input>=5], aes(enrichment+0.01, meth_prop, colour=sqrt(zcw.enrichment))) +
-  geom_point(stroke=0, size=0.5) + scale_x_log10() +
-  scale_colour_viridis_c()
-
-ggplot(cgi[meth+unmeth > 10 & cov_input>=5 & zcw.cov_input>=5], aes(enrichment+0.01, meth_prop)) +
-  geom_hex(aes(fill = stat(log(count+0.1))), bins=200) + theme(legend.position = "bottom") +
-  scale_fill_viridis_c(direction = -1) + scale_x_log10()
-
-ggplot(cgi[meth+unmeth > 10 & cov_input>=5 & zcw.cov_input>=5], aes(enrichment+0.01, meth_prop, z=sqrt(zcw.enrichment))) +
-  stat_summary_hex(bins=200) + theme(legend.position = "bottom") +
-  scale_fill_viridis_c(name = "sqrt(Zcw)", direction = -1) + scale_x_log10()
-
-ggplot(cgi[meth+unmeth > 10 & cov_input>=5 & enrichment==0 & zcw.cov_input>=5], aes(as.character(round(meth_prop,1)), zcw.enrichment)) +
-  geom_boxplot() +
-  ggtitle("CGI with no H3K4")
-
-ggplot(forcecalledk[zcw_cov_input>=5], aes(CpG, zcw_enrichment+0.01)) +
-  geom_hex(aes(fill = stat(log(count+0.1))), bins=200) + theme(legend.position = "bottom") +
-  scale_fill_viridis_c(direction = -1) + scale_y_log10()
-
-ggplot(forcecalledk[meth+unmeth > 10 & zcw_cov_input>=5], aes(prop_meth, zcw_enrichment+0.01)) +
-  geom_hex(aes(fill = stat(log(count+0.1))), bins=200) + theme(legend.position = "bottom") +
-  scale_fill_viridis_c(direction = -1) + scale_y_log10()
-
-dev.off()
-
-# %, prior 0.5
-# awk -v OFS='\t' '{print $1,$2,$3, $4+1 / ($4+$5+2);}' GSM1254259_HEK293-CT.CpG_Sum.txt > GSM1254259_HEK293-CT.CpG_percent.txt
-
-# awk -v OFS='\t' '$1 == "chr1" && $2>22000000 && $2<22600000 {print $1,$2,$2+1,$6;}' GSM1254259_HEK293-CT.CpG.txt > CpGMeth_CN_sample.bed
-# bedGraphToBigWig hglft_genome_56cb7_9415b0.bed ../single-cell/sequencing/metadata/hg38_sizes.chrom CpGMeth_CN_sample.bigWig
-# 
-# awk -v OFS='\t' '$1 == "chr1" && $2>22000000 && $2<22600000 {print $1,$2,$2+1,$7 / ($7+$8+1);}' GSM1254259_HEK293-CT.CpG.txt > CpGMeth_sample.bed
-# # liftover
-# awk -v OFS='\t' '{print $1, $2, $3, 1-$4}' hglft_genome_aa0c_8e5a20.bed > hglft_genome_aa0c_8e5a20_UnMeth.bed
-# bedGraphToBigWig hglft_genome_aa0c_8e5a20_UnMeth.bed ../single-cell/sequencing/metadata/hg38_sizes.chrom CpGUnMeth_sample.bigWig
-# bedGraphToBigWig hglft_genome_aa0c_8e5a20.bed ../single-cell/sequencing/metadata/hg38_sizes.chrom CpGMeth_sample.bigWig
-
+source("../functions.R")
 ```
 
 
@@ -134,43 +23,40 @@ dev.off()
 
 
 ```{r}
-library(data.table)
-library(ggplot2)
-library(cowplot)
 
 #just using Chromosome 1, as many data points
 #grep -P 'chr1\\t|chr\\t' 
 
-CpG_100bp <- fread("CpG/CpG_hg38_100bpwindows.bed")
+CpG_100bp <- fread("../data/CpG/CpG_hg38_100bpwindows.bed")
 
-M7 <- fread("motifs/motif_locs_M7_100bpwindows.bed")
-
-
-h3k4me3_UT_100bp <- fread("peaks/ForceCalledPeaks_NA15-SRR5627150_vs_NA15-SRR5627142_AT_genome.windows.100wide.100slide.bed.bed")
-
-h3k36me3_UT_100bp <- fread("peaks/ForceCalledPeaks_NA15-SRR5627148_vs_NA15-SRR5627142_AT_genome.windows.100wide.100slide.bed.bed")
-
-h3k4me3_hP9_100bp <- fread("peaks/ForceCalledPeaks_NA15-SRR5627152_AND_NA15-SRR5627153_vs_NA15-SRR5627143_AT_genome.windows.100wide.100slide.bed.bed")
-
-h3k36me3_hP9_100bp <- fread("peaks/ForceCalledPeaks_NA15-SRR5627149_vs_NA15-SRR5627143_AT_genome.windows.100wide.100slide.bed.bed")
+M7 <- fread("../data/motifs/motif_locs_M7_100bpwindows.bed")
 
 
-zcw_100bp <- fread("peaks/ForceCalledPeaks_WTCHG_538916_221156_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144_AT_genome.windows.100wide.100slide.bed.bed")
+h3k4me3_UT_100bp <- fread("../data/peaks/ForceCalledPeaks_NA15-SRR5627150_vs_NA15-SRR5627142_AT_genome.windows.100wide.100slide.bed.bed")
 
-zcw_hP9_100bp <- fread("peaks/ForceCalledPeaks_WTCHG_538916_223180_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144_AT_genome.windows.100wide.100slide.bed.bed")
+h3k36me3_UT_100bp <- fread("../data/peaks/ForceCalledPeaks_NA15-SRR5627148_vs_NA15-SRR5627142_AT_genome.windows.100wide.100slide.bed.bed")
 
-zcw_cP9_100bp <- fread("peaks/ForceCalledPeaks_WTCHG_538916_224192_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144_AT_genome.windows.100wide.100slide.bed.bed")
+h3k4me3_hP9_100bp <- fread("../data/peaks/ForceCalledPeaks_NA15-SRR5627152_AND_NA15-SRR5627153_vs_NA15-SRR5627143_AT_genome.windows.100wide.100slide.bed.bed")
 
-zcw_hCVC <- fread("peaks/ForceCalledPeaks_WTCHG_538916_223180_vs_WTCHG_538916_221156_AT_genome.windows.100wide.100slide.bed.bed")
-
-zcw_cCVC <- fread("peaks/ForceCalledPeaks_WTCHG_538916_224192_vs_WTCHG_538916_221156_AT_genome.windows.100wide.100slide.bed.bed")
+h3k36me3_hP9_100bp <- fread("../data/peaks/ForceCalledPeaks_NA15-SRR5627149_vs_NA15-SRR5627143_AT_genome.windows.100wide.100slide.bed.bed")
 
 
-hP9combo <- fread("peaks/ForceCalledPeaks_NA15-SRR5627146_AND_NA15-SRR5627147_vs_NA15-SRR5627143_AT_genome.windows.100wide.100slide.bed.bed")
+zcw_100bp <- fread("../data/peaks/ForceCalledPeaks_WTCHG_538916_221156_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144_AT_genome.windows.100wide.100slide.bed.bed")
 
-cP9combo <- fread("peaks/ForceCalledPeaks_NA15-SRR5627145_AND_NA15-SRR5627144_vs_NA15-SRR5627143_AT_genome.windows.100wide.100slide.bed.bed")
+zcw_hP9_100bp <- fread("../data/peaks/ForceCalledPeaks_WTCHG_538916_223180_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144_AT_genome.windows.100wide.100slide.bed.bed")
 
-hP9GFP <- fread("peaks/ForceCalledPeaks_NA15-SRR5627138_AND_NA15-SRR5627139_vs_NA15-SRR5627140_AT_genome.windows.100wide.100slide.bed.bed")
+zcw_cP9_100bp <- fread("../data/peaks/ForceCalledPeaks_WTCHG_538916_224192_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144_AT_genome.windows.100wide.100slide.bed.bed")
+
+zcw_hCVC <- fread("../data/peaks/ForceCalledPeaks_WTCHG_538916_223180_vs_WTCHG_538916_221156_AT_genome.windows.100wide.100slide.bed.bed")
+
+zcw_cCVC <- fread("../data/peaks/ForceCalledPeaks_WTCHG_538916_224192_vs_WTCHG_538916_221156_AT_genome.windows.100wide.100slide.bed.bed")
+
+
+hP9combo <- fread("../data/peaks/ForceCalledPeaks_NA15-SRR5627146_AND_NA15-SRR5627147_vs_NA15-SRR5627143_AT_genome.windows.100wide.100slide.bed.bed")
+
+cP9combo <- fread("../data/peaks/ForceCalledPeaks_NA15-SRR5627145_AND_NA15-SRR5627144_vs_NA15-SRR5627143_AT_genome.windows.100wide.100slide.bed.bed")
+
+hP9GFP <- fread("../data/peaks/ForceCalledPeaks_NA15-SRR5627138_AND_NA15-SRR5627139_vs_NA15-SRR5627140_AT_genome.windows.100wide.100slide.bed.bed")
 
 
 # CAREFULL WITH ORDERING WHEN ADDING NEW COLUMNS!
@@ -237,74 +123,160 @@ sum(forcecalled$center_start!=h3k36me3_hP9_100bp$center_start)
 
 # Islands
 
-forcecalled$CpG_Island_any <- forcecalled$CpG_Island
-
-CpG_Island_100bp <- fread("CpG/cpgIslandExtUnmasked_100bpwindows.bed")
+CpG_Island_100bp <- fread("../data/CpG/cpgIslandExtUnmasked_100bpwindows.bed")
 setnames(CpG_Island_100bp, c("chr","center_start","center_stop","CpG_Island"))
 forcecalled <- merge(forcecalled, CpG_Island_100bp)
 
-CpG_Island_100bp <- fread("CpG/cpgIslandExtUnmasked_100bpwindows_f1.bed")
+CpG_Island_100bp <- fread("../data/CpG/cpgIslandExtUnmasked_100bpwindows_f1.bed")
 setnames(CpG_Island_100bp, c("chr","center_start","center_stop","CpG_Island_f1"))
 forcecalled <- merge(forcecalled, CpG_Island_100bp)
 
 
 ## Meth
 
-cpg_Meth_100bp <- fread("CpG/cpg_Meth_100bpwindows.bed")
+cpg_Meth_100bp <- fread("../data/CpG/cpg_Meth_100bpwindows.bed")
 setnames(cpg_Meth_100bp, c("chr","center_start","center_stop","meth","unmeth"))
 
 setkey(forcecalled, chr, center_start, center_stop)
 setkey(cpg_Meth_100bp, chr, center_start, center_stop)
 
-
-#cpg_Meth_100bp[chr=="chr1" & center_start==2442100]
-
 forcecalled <- merge(forcecalled, cpg_Meth_100bp)
 forcecalled[, prop_meth := (meth+3) / (meth + unmeth + 6)]
 
+```
 
-fimo <- fread("motifs/fimo_M4_WG_100bpwindows.bed")
-setnames(fimo, c("chr","center_start","center_stop","M4"))
-setkey(fimo, chr,center_start,center_stop)
-forcecalledM4 <- merge(fimo, forcecalled)
+```{r}
 
-quantile(forcecalledM4$M4, c(0.25,0.5,0.75,0.85,0.95,0.98,0.99,0.999,0.9999))
+Alu100bp <- fread("../data/repeats/Repeat_MaskerSorted_Alu_QC_100bp.bed")
+setnames(Alu100bp, c("chr","center_start","center_stop","Alu"))
+forcecalled <- merge(forcecalled, Alu100bp)
 
-max(forcecalledM4$M4)
+Alu100bp_f0.5 <- fread("../data/repeats/Repeat_MaskerSorted_Alu_QC_100bp_f0.5.bed") # 0.5 actually 1.0, meaning Alu must overlap full 100bp
+setnames(Alu100bp_f0.5, c("chr","center_start","center_stop","Aluf1"))
+forcecalled <- merge(forcecalled, Alu100bp_f0.5)
 
-forcecalledM4[M4==117]
+# Non Alu Repeats
+NotAlu100bp <- fread("../data/repeats/Repeat_MaskerSorted_NotAlu_100bp.bed")
+setnames(NotAlu100bp, c("chr","center_start","center_stop","NotAlu"))
+forcecalled <- merge(forcecalled, NotAlu100bp)
 
-seqkit <- fread("motifs/motif_locs_CHB6_100bpwindows.bed")
-setnames(seqkit, c("chr","center_start","center_stop","M4"))
-setkey(seqkit, chr,center_start,center_stop)
-forcecalledCHG <- merge(seqkit, forcecalled)
+###### Zcw peaks
+zcw_peak <- fread("../data/peaks/SingleBasePeaks.WTCHG_538916_221156_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144.p0.000001.sep250.ALL.100bpWindows.bed")
+setnames(zcw_peak, c("chr","center_start","center_stop","ZcwPeak"))
+forcecalled <- merge(forcecalled, zcw_peak)
 
+zcw_peak_rand <- fread("../data/peaks/Zcw_random_1bp.100bpWindows.bed")
+setnames(zcw_peak_rand, c("chr","center_start","center_stop","ZcwPeakRand"))
+forcecalled <- merge(forcecalled, zcw_peak_rand)
+
+forcecalled <- forcecalled[chr=="chr1"]
+```
+
+# CpG Island Methylation
+
+```{r CGI_meth}
+cpgImeth <- fread("../data/CpG/cpgIsland_Meth.bed")
+setnames(cpgImeth, c("chr","center_start","center_stop","meth","unmeth"))
+cpgImeth[, len := center_stop-center_start]
+cpgImeth[, meth_prop := (meth+3) / (meth + unmeth + 6)]
+
+#pdf("Meth_by_len.pdf")
+# longer islands more unmethylated
+plot(cpgImeth[meth+unmeth > 10]$len, cpgImeth[meth+unmeth > 10]$meth_prop, log="x", pch=".")
+hist(cpgImeth[meth+unmeth > 10][len<350]$meth_prop, breaks=100)
+hist(cpgImeth[meth+unmeth > 10][len>500]$meth_prop, breaks=100)
+#dev.off()
+
+
+H3K4UT_CGI <- fread("../data/peaks/ForceCalledPeaks_NA15-SRR5627150_AND_NA15-SRR5627151_vs_NA15-SRR5627142_AT_cpgIslandExtUnmasked.bed.bed")
+Zcw_CGI <- fread("../data/peaks/ForceCalledPeaks_WTCHG_538916_221156_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144_AT_cpgIslandExtUnmasked.bed.bed")
+
+setkey(cpgImeth, chr,center_start,center_stop)
+setkey(H3K4UT_CGI, chr,center_start,center_stop)
+setkey(Zcw_CGI, chr,center_start,center_stop)
+
+cgi <- H3K4UT_CGI[Zcw_CGI[cpgImeth]]
+# add prefixes post merge, i=zcw
+tmp <- grep("i\\.", names(cgi), value=T)
+setnames(cgi, tmp, gsub("i\\.","zcw.",tmp))
+
+# chrY and alts arent forcecalled
+cgi[is.na(enrichment), .N,by=chr][order(-N)]
+
+cgi[, isMethylated := meth_prop > 0.5 & (meth+unmeth > 10)]
+cgi[, isH3K4 := enrichment > 0.1 & cov_input>=5]
+
+
+# large diff in H3K4 between unmeth & meth
+cgi[!is.na(enrichment), mean(enrichment), by=meth_prop > 0.5]
+#   meth_prop         V1
+# 1:      TRUE  0.5512826
+# 2:     FALSE 14.9644733
+
+# smaller diff for Zcwpw1 enrichment
+cgi[!is.na(enrichment), mean(zcw.enrichment), by=meth_prop > 0.5]
+#   meth_prop       V1
+# 1:      TRUE 1.465204
+# 2:     FALSE 1.129344
+
+cgi[zcw.cov_input>=5, mean(zcw.enrichment), by=c("isMethylated","isH3K4")]
+#    isMethylated isH3K4       V1
+# 1:         TRUE  FALSE 1.482543
+# 2:        FALSE   TRUE 1.179341
+# 3:        FALSE  FALSE 1.049465
+# 4:         TRUE   TRUE 1.187082
+
+
+
+#pdf("CpG/CGI_meth.pdf")
+# promoters mostly unmethylated
+ggplot(cgi[meth+unmeth > 10 & cov_input>=5 & zcw.cov_input>=5], aes(enrichment+0.01, meth_prop, colour=sqrt(zcw.enrichment))) +
+  geom_point(stroke=0, size=0.5) + scale_x_log10() +
+  scale_colour_viridis_c()
+
+ggplot(cgi[meth+unmeth > 10 & cov_input>=5 & zcw.cov_input>=5], aes(enrichment+0.01, meth_prop)) +
+  geom_hex(aes(fill = stat(log(count+0.1))), bins=200) + theme(legend.position = "bottom") +
+  scale_fill_viridis_c(direction = -1) + scale_x_log10()
+
+ggplot(cgi[meth+unmeth > 10 & cov_input>=5 & zcw.cov_input>=5], aes(enrichment+0.01, meth_prop, z=sqrt(zcw.enrichment))) +
+  stat_summary_hex(bins=200) + theme(legend.position = "bottom") +
+  scale_fill_viridis_c(name = "sqrt(Zcw)", direction = -1) + scale_x_log10()
+
+ggplot(cgi[meth+unmeth > 10 & cov_input>=5 & enrichment==0 & zcw.cov_input>=5], aes(as.character(round(meth_prop,1)), zcw.enrichment)) +
+  geom_boxplot() +
+  ggtitle("CGI with no H3K4")
+
+ggplot(forcecalled[zcw_cov_input>=5], aes(CpG, zcw_enrichment+0.01)) +
+  geom_hex(aes(fill = stat(log(count+0.1))), bins=200) + theme(legend.position = "bottom") +
+  scale_fill_viridis_c(direction = -1) + scale_y_log10()
+
+ggplot(forcecalled[meth+unmeth > 10 & zcw_cov_input>=5], aes(prop_meth, zcw_enrichment+0.01)) +
+  geom_hex(aes(fill = stat(log(count+0.1))), bins=200) + theme(legend.position = "bottom") +
+  scale_fill_viridis_c(direction = -1) + scale_y_log10()
 
 ```
 
 # Prob Peak
 
-```{r}
-forcecalled <- merge(forcecalled, zcw_peak)
-forcecalled <- merge(forcecalled, zcw_peak_rand)
+```{r prob_peak}
 
 #By meth Status of CpgIslands - not much diff
 
-forcecalledk[, methStatus := "Unk"]
-forcecalledk[prop_meth>0.75, methStatus := "Meth"]
-forcecalledk[prop_meth<0.25, methStatus := "UnMeth"]
+forcecalled[, methStatus := "Unk"]
+forcecalled[prop_meth>0.75, methStatus := "Meth"]
+forcecalled[prop_meth<0.25, methStatus := "UnMeth"]
 
 pPeak_CpG <- rbind(
-forcecalledk[CpG_Island>0,.(PeakProb=mean(ZcwPeak),.N, Type="Observed"), by=c("CpG","methStatus")][order(CpG)],
-forcecalledk[CpG_Island>0,.(PeakProb=mean(ZcwPeakRand>0),.N, Type="Random"), by=c("CpG","methStatus")][order(CpG)])
+forcecalled[CpG_Island>0,.(PeakProb=mean(ZcwPeak),.N, Type="Observed"), by=c("CpG","methStatus")][order(CpG)],
+forcecalled[CpG_Island>0,.(PeakProb=mean(ZcwPeakRand>0),.N, Type="Random"), by=c("CpG","methStatus")][order(CpG)])
 
 pPeak_CpG[,sep := sqrt((PeakProb * (1- PeakProb))/N), by=c("CpG","methStatus")]
 
 ggplot(pPeak_CpG[CpG<16], aes(CpG, PeakProb, colour=Type)) +
   geom_pointrange(aes(ymax = PeakProb + 2*sep, ymin = PeakProb - 2*sep)) +
   scale_color_brewer(palette = "Set1") +
-  facet_wrap(~methStatus)
-dev.off()
+  facet_wrap(~methStatus)+
+  ggtitle("By methStatus")
 
 # By CpG Island - ok
 
@@ -351,7 +323,7 @@ ggplot(pPeak_CpG[ CpG<16], aes(CpG, PeakProb, colour=Type)) +
   ggtitle("By Not Alu (non CpGIsland)")
 
 
-dev.off()
+#dev.off()
 
 # Normal peaks
 pPeak_CpG <- rbind(
@@ -364,7 +336,7 @@ ggplot(pPeak_CpG[CpG<16], aes(CpG, PeakProb, colour=Type)) +
   geom_pointrange(aes(ymax = PeakProb + 2*sep, ymin = PeakProb - 2*sep)) +
   scale_color_brewer(palette = "Set1") +
   ggtitle("Non Repeat, Non Alu, Non CpG Island Peaks")
-dev.off()
+#dev.off()
 
 
 # Summarise for every 3 rows to get 300bp windows (~approx, ignoring changes between chrs)
@@ -397,9 +369,9 @@ p <- ggplot(pPeak_CpG[CpG<20 & methStatus!="Unk"], aes(CpG, PeakProb, colour=Typ
   scale_alpha_manual(values=c("Meth"=1, "NA"=1, "UnMeth"=0.5), name="Methylation\nStatus") +
   theme_minimal()
 p
-dev.off()
+#dev.off()
 
-saveRDS(p,"CpG/NormalPeaks300bp.rds")
+#saveRDS(p,"../data/CpG/NormalPeaks300bp.rds")
 
 
 
@@ -418,7 +390,7 @@ ggplot(pPeak_CpG[CpG<20 & methStatus!="Unk"], aes(CpG, PeakProb, colour=Type, al
   #coord_cartesian(ylim=c(0,0.8)) +
   scale_alpha_manual(values=c("Meth"=1, "NA"=1, "UnMeth"=0.5), name="Methylation\nStatus") +
   theme_minimal()
-dev.off()
+#dev.off()
 
 forcecalled300[CpG_Island_f1>0, CGI:=1]
 
@@ -437,14 +409,14 @@ ggplot(pPeak_CpG[CpG<25 & methStatus!="Unk"], aes(CpG, PeakProb, colour=Type, al
   facet_wrap(~CGI) +
   scale_alpha_manual(values=c("Meth"=1, "NA"=1, "UnMeth"=0.5), name="Methylation\nStatus") +
   theme_minimal()
-dev.off()
+#dev.off()
 
 
 ```
 
 # Regressions
 
-```{r}
+```{r regressions}
 zcw_lm <- lm(zcw_enrichment ~ h3k4me3_UT_enrichment + h3k36me3_UT_enrichment, forcecalled[zcw_cov_input>5])
 zcw_lm2 <- lm(zcw_enrichment ~ h3k4me3_UT_enrichment + h3k36me3_UT_enrichment + CpG, forcecalled[zcw_cov_input>5])
 zcw_lm3 <- lm(zcw_enrichment ~ h3k4me3_UT_enrichment + h3k36me3_UT_enrichment + CpG + CpG_Island, forcecalled[zcw_cov_input>5])
@@ -459,20 +431,18 @@ forcecalled[chr=="chr1",mean(zcw_enrichment),by=M7]
 forcecalled[,mean(zcw_enrichment),by=CpG][order(-CpG)]
 
 
-zcw_lm7 <- lm(zcw_enrichment ~ h3k4me3_UT_enrichment + h3k36me3_UT_enrichment + CpG + CpG_Island + prop_meth, forcecalledk[zcw_cov_input>5])
+zcw_lm7 <- lm(zcw_enrichment ~ h3k4me3_UT_enrichment + h3k36me3_UT_enrichment + CpG + CpG_Island + prop_meth, forcecalled[zcw_cov_input>5])
 
-zcw_lm8 <- lm(zcw_enrichment ~ h3k4me3_UT_enrichment + h3k36me3_UT_enrichment + CpG * prop_meth  + M7 + CpG_Island, forcecalledk[zcw_cov_input>5])
+zcw_lm8 <- lm(zcw_enrichment ~ h3k4me3_UT_enrichment + h3k36me3_UT_enrichment + CpG * prop_meth  + M7 + CpG_Island, forcecalled[zcw_cov_input>5])
 
-zcw_lm9 <- lm(zcw_enrichment ~ h3k4me3_UT_enrichment * h3k36me3_UT_enrichment + CpG * prop_meth  + M7 + CpG_Island, forcecalledk[zcw_cov_input>5])
+zcw_lm9 <- lm(zcw_enrichment ~ h3k4me3_UT_enrichment * h3k36me3_UT_enrichment + CpG * prop_meth  + M7 + CpG_Island, forcecalled[zcw_cov_input>5])
 
-zcw_lm10 <- lm(zcw_enrichment ~ h3k4me3_UT_enrichment * h3k36me3_UT_enrichment , forcecalledk[zcw_cov_input>5])
+zcw_lm10 <- lm(zcw_enrichment ~ h3k4me3_UT_enrichment * h3k36me3_UT_enrichment , forcecalled[zcw_cov_input>5])
 
-
-zcw_lm11 <- lm(zcw_enrichment ~ h3k4me3_UT_enrichment + h3k36me3_UT_enrichment + CpG + sqrt(M4), forcecalledM4[zcw_cov_input>5])
 ```
 
 
-```{r}
+```{r CpG_Proportions_windows, fig.width = 7, fig.height = 5}
 forcecalled2 <- copy(forcecalled)
 setorder(forcecalled2, zcw_enrichment)
 
@@ -525,32 +495,31 @@ tmp[,maxwidth := min(c(diffnext,diffprev)), by=c("enrichment")]
 
 ggplot(tmp, aes(enrichment, value, fill=CpG)) +
   geom_col(aes(width=maxwidth)) +
-  scale_fill_brewer() +
   scale_x_continuous(labels=c("Random \n Windows",0:5), breaks=c(-0.5,0:5)) +
   scale_fill_brewer(direction = -1, palette = "RdBu") +
   ylab("Proportion of 100bp Windows") +
   xlab("Enrichment of Zcwpw1") +
   labs(fill="Number\nof CpGs")
 
-ggsave("CpG/CpG_Proportions_windows.pdf", width = 7, height = 5)
+#ggsave("CpG/CpG_Proportions_windows.pdf", width = 7, height = 5)
 
 ggplot(binned_cpg_prop, aes(bin, -value, fill=variable)) +
   geom_col(width=1) +
   scale_fill_brewer()
+```
 
-pdf("CpG_Zcw.pdf")
+```{r CpG_Zcw}
+#pdf("CpG_Zcw.pdf")
 ggplot(forcecalled[zcw_cov_input>5,.(mean_enrich=mean(zcw_enrichment),stdv=sd(zcw_enrichment),.N), by=CpG],
        aes(CpG, mean_enrich)) +
   geom_pointrange(aes(ymin = mean_enrich - 2*(stdv/sqrt(N)), ymax = mean_enrich + 2*(stdv/sqrt(N))))
-dev.off()
-
-
+#dev.off()
 ```
 
 
 # qPRC control regions
 
-```{r}
+```{r qPCR_control, eval=FALSE}
 
 quantile(forcecalled$h3k36me3_hP9_enrichment, c(0.8,0.9,0.95,0.975,0.98))
 quantile(forcecalled$h3k4me3_hP9_enrichment, c(0.8,0.9,0.95,0.975,0.98))
@@ -646,7 +615,7 @@ tbl_with_sources <- data.table(tbl_with_sources)[center_start!=1]
 tbl_with_sources[, filename := gsub("peaks/ForceCalledPeaks_","",filename)]
 tbl_with_sources[, filename := gsub("_AT_qPCRregions_18-09-19.bed.bed","",filename)]
 
-regions <- fread("forcepeaks/qPCRregions_18-09-19.bed")
+regions <- fread("../data/forcepeaks/qPCRregions_18-09-19.bed")
 regions <- regions[V2!=1]
 
 regions$class <- rep(c("humanPrdm9+ve_&_ZCWPW1","chimpPrdm9+ve_&_ZCWPW1","Prdm9-ve_&_ZCWPW1"),each=5)
@@ -662,7 +631,7 @@ fwrite(casted, "qPCRregions_forcecalled_enrichments_18-09-19.csv")
 
 # Dependence of transfected Zcw on UT
 
-```{r}
+```{r transfected_UT_dependence}
 # plot(forcecalled$zcw_enrichment,forcecalled$zcw_hP9_enrichment, pch=".", log="xy")
 # plot(forcecalled$zcw_enrichment,forcecalled$zcw_hP9_enrichment, pch=".")
 
@@ -673,10 +642,8 @@ summary(fclm)
 fclm <- lm(zcw_hP9_enrichment ~ 0 + zcw_enrichment + zcw_enrichment:hP9combo_enrichment, forcecalled[zcw_cov_input>5])
 summary(fclm)
 
-plot(fclm)
-
-fclm2 <- lm(log(zcw_hP9_enrichment+0.1) ~ log(zcw_enrichment+0.1), forcecalled[zcw_cov_input>5])
-plot(fclm2)
+fclm <- lm(log(zcw_hP9_enrichment+0.1) ~ log(zcw_enrichment+0.1), forcecalled[zcw_cov_input>5])
+summary(fclm)
 
 ####
 # Counts
@@ -751,11 +718,12 @@ p4CVC <- ggplot(forcecalled[zcw_cov_input>5], (aes(zcw_enrichment, zcw_cP9_enric
   scale_fill_viridis_c(name = "log(cCVC+0.1)", direction = -1) +
   theme(legend.position = "bottom")
 
-
+```
 
 # Arrange & Save plots
 
-pdf(width = 14, height = 14, file = "Zcw_vs_CoTransfection.pdf")
+```{r Zcw_vs_CoTransfection, fig.width=14, fig.height=14}
+#pdf(width = 14, height = 14, file = "Zcw_vs_CoTransfection.pdf")
 plot_grid(cHP9 + ylim(0,8),
           cHP9 + scale_x_log10(limits=c(0.1,NA)) + scale_y_log10(limits=c(0.1,NA)),
           cCP9 + ylim(0,8),
@@ -770,12 +738,13 @@ plot_grid(p1 + scale_x_log10(limits=c(0.1,NA)) + scale_y_log10(limits=c(0.1,NA))
           p4 + scale_x_log10(limits=c(0.1,NA)) + scale_y_log10(limits=c(0.1,NA)))
 
 plot_grid(p1CVC + ylim(0,8), p2CVC + ylim(0,8), p3CVC + ylim(0,8), p4CVC + ylim(0,8))
-dev.off()
-
+#dev.off()
+```
 
 # Split into definately bound and definately not, for visual clarity
 
-pdf("Zcw_vs_CoTransfection2.pdf")
+```{r Zcw_vs_CoTransfection2}
+#pdf("Zcw_vs_CoTransfection2.pdf")
 p1 + ylim(0,8) + gghighlight(hP9combo_pvalue<1e-9, unhighlighted_colour="darkgrey")
 p1 + ylim(0,8) + gghighlight(hP9combo_pvalue==1, unhighlighted_colour="darkgrey")
 
@@ -785,7 +754,9 @@ cHP9 + ylim(0,8) + gghighlight(hP9combo_pvalue==1, unhighlighted_colour="darkgre
 forcecalled[,hP9Combo.bound := NA]
 forcecalled[hP9combo_pvalue==1, hP9Combo.bound := FALSE]
 forcecalled[hP9combo_pvalue<1e-9, hP9Combo.bound := TRUE]
+```
 
+```{r Zcw_vs_CoTransfection_summary_plot_allchr, fig.width=12}
 p1 <- ggplot(forcecalled[zcw_cov_input>5 & hP9combo_cov_input>5][!zcw_enrichment<1e-2 & !zcw_hP9_enrichment<1e-2], (aes(zcw_enrichment, zcw_hP9_enrichment, z=hP9Combo.bound))) +
   #stat_summary_hex(bins=200, alpha=0.5, fun= function(x) as.character(mean(x))) + # na.rm=T
   stat_summary_hex(bins=200, alpha=0.5, fun= function(x)if(length(x)>=3){as.character(mean(x))}else{NA}) + # na.rm=T
@@ -826,9 +797,9 @@ p2 <- ggplot(forcecalled[zcw_cov_input>5 & cP9combo_cov_input>5][!zcw_enrichment
   ylim(0,6) + xlim(0,6)
 
 
-pdf("Zcw_vs_CoTransfection_summary_plot_allchr.pdf", width=12)
+#pdf("Zcw_vs_CoTransfection_summary_plot_allchr.pdf", width=12)
 plot_grid(p1, p2)
-dev.off()
+#dev.off()
 
 
 ```
@@ -836,9 +807,9 @@ dev.off()
 
 # Relative Strength/Attraction of H3K4me3
 
-```{r}
+```{r H3K4strength}
 
-pdf("H3K4strength.pdf")
+#pdf("H3K4strength.pdf")
 
 # K4UT vs K4wP9
 
@@ -880,7 +851,7 @@ ggplot(forcecalled[zcw_cov_input>5 & hP9combo_cov_input>5 & h3k4me3_hP9_cov_inpu
   theme(legend.position = "bottom") +
   scale_fill_viridis_c(name = "log(Zcw_w/hP9+0.1)", direction = -1)
 
-dev.off()
+#dev.off()
 ```
 
 
@@ -889,7 +860,7 @@ dev.off()
 For a given amount of H3K4, Zcw is higher enriched when P9 bound at non promoters than promoters
 
 
-```{r}
+```{r H3K4strength_allchr, fig.width = 14, fig.height = 14}
 
 forcecalled[,UTP9 := NULL]
 forcecalled[hP9combo_cov_input>5 & hP9combo_pvalue==1, UTP9 := "0"]
@@ -957,9 +928,9 @@ pmain <- plot_grid(p1 + commongrobs + theme(legend.position = "none") + labs(tit
                                                                              x="ln(0.1 + Enrichment of H3K4me3 in untransfected)", 
                                                                              y="ln(0.1 + Enrichment of Zcwpw1 in Zcwpw1 single transfection)"))
 
-pdf("H3K4strength_allchr.pdf", width = 14, height = 14)
+#pdf("H3K4strength_allchr.pdf", width = 14, height = 14)
 plot_grid(pmain, get_legend(p1 + commongrobs), ncol=1, rel_heights = c(1, 0.05))
-dev.off()
+#dev.off()
 
 ```
 
@@ -1006,7 +977,7 @@ fraction_overlapN <- function(dt,x,y, n=25, filters=c("All"), returndf=F, pseudo
 
 # Histone marks +ve correlate with Zcw enrich
 
-```{r}
+```{r H3Kme3_vs_Zcw_wP9, fig.width=11}
 
 forcecalled$enrichment <- forcecalled$h3k4me3_hP9_enrichment
 
@@ -1027,18 +998,18 @@ p2 <- fraction_overlapN(forcecalled[sample(1:nrow(forcecalled))][h3k36me3_hP9_co
   ylab("Mean Zcwpw1 Enrichment when co-transfected with Prdm9") +
   xlab("Mean H3K36me3 Enrichment when co-transfected with Prdm9 + 0.01")
 
-pdf("results/H3Kme3_vs_Zcw_wP9.pdf", width = 11)
+#pdf("results/H3Kme3_vs_Zcw_wP9.pdf", width = 11)
 plot_grid(p1,p2)
-dev.off()
+#dev.off()
 
 ```
 
 
 # Binned H3K4 Strength
 
-```{r}
+```{r H3K4strength_binned_allchr_A}
 
-pdf("H3K4strength_binned_allchr.pdf")
+#pdf("H3K4strength_binned_allchr.pdf")
 forcecalled$enrichment <- forcecalled$h3k4me3_hP9_enrichment
 
 tmp <- rbind(
@@ -1053,25 +1024,23 @@ p <- ggplot(tmp, aes(mean_enrichment, Mean, colour=Subset)) +
   geom_point() +
   #scale_x_log10() +
   xlab("Mean H3K4me3 enrichment in humanPRDM9 transfection") +
-  ylab("Mean Zcwpw1 enrichment in Zcwpw1-humanPRDM9 cotransfection") +
+  ylab("Mean ZCWPW1 enrichment in ZCWPW1-humanPRDM9 cotransfection") +
   geom_pointrange(aes(ymax = uq, ymin = lq), linetype="dotted") +
   geom_errorbar(aes(ymax = Mean + 2*sem, ymin = Mean - 2*sem), width = 0.05) +
-  scale_colour_manual(labels = c("humanPRDM9 bound (p<1e-7) & No Untransfected H3K4me3 (p>1e-5)",
-                               "Untransfected H3K4me3 (p<1e-5)"),
+  scale_colour_manual(labels = c("humanPRDM9 bound (p<1e-7) & No pre-existing H3K4me3 (p>1e-5)",
+                               "Pre-existing H3K4me3 (p<1e-5)"),
                       guide=guide_legend(nrow=2),
                     values = RColorBrewer::brewer.pal(3, "Set1")) +
   theme_minimal() +
   theme(legend.position = "bottom")
 p
-dev.off()
+#dev.off()
 
 ```
 
 ## Gam version
 
-```{r}
-
-library(mgcv)
+```{r H3K4strength_binned_allchr_B}
 
 labels <- c("humanPRDM9 bound (p<1e-7) & No Untransfected H3K4me3 (p>1e-5)","Untransfected H3K4me3 (p<1e-5)")
 
@@ -1095,7 +1064,7 @@ y_pred <- data.table(h3k4me3_hP9_enrichment=rep(x_new, 2),
 tmp2 <- y_pred
 names(tmp2)[1:3] <- c("mean_enrichment","Subset","Mean")
 
-pdf("H3K4strength_binned_allchr.pdf")
+#pdf("H3K4strength_binned_allchr.pdf")
 p + geom_ribbon(aes(ymin = Mean - 2*se.fit, ymax = Mean + 2*se.fit, group=Subset),
                 data=tmp2[se.fit<0.5], fill = "grey70", colour="grey70", alpha=0.5) +
   geom_hline(yintercept = 1.95, linetype="dashed")
@@ -1103,20 +1072,23 @@ p + geom_ribbon(aes(ymin = Mean - 2*se.fit, ymax = Mean + 2*se.fit, group=Subset
 p + geom_ribbon(aes(ymin = Mean - 2*se.fit, ymax = Mean + 2*se.fit, group=Subset),
                 data=tmp2[se.fit<0.05], fill = "grey70", colour="grey70", alpha=0.5) +
   geom_hline(yintercept = 1.95, linetype="dashed") + scale_x_log10()
-dev.off()
+
+p + geom_ribbon(aes(ymin = Mean - 2*se.fit, ymax = Mean + 2*se.fit, group=Subset),
+                data=tmp2[se.fit<0.05], fill = "grey70", colour="grey70", alpha=0.5) +
+  geom_hline(yintercept = 1.95, linetype="dashed") + scale_x_log10() + scale_y_log10()
 
 ```
 
 
 # Prop meth
 
-```{r}
-forcecalledk$enrichment <- forcecalledk$prop_meth
+```{r prop_meth}
+forcecalled$enrichment <- forcecalled$prop_meth
 
 tmp <- rbind(
-  fraction_overlapN(forcecalledk[zcw_cov_input>5 & (meth + unmeth>10)][CpG_Island==0],
+  fraction_overlapN(forcecalled[zcw_cov_input>5 & (meth + unmeth>10)][CpG_Island==0],
                     "prop_meth","zcw_enrichment", n=50, returndf = T, filter="CpG_Island==0", pseudoenrich = 0.01),
-  fraction_overlapN(forcecalledk[zcw_cov_input>5 & (meth + unmeth>10)][CpG_Island>0], 
+  fraction_overlapN(forcecalled[zcw_cov_input>5 & (meth + unmeth>10)][CpG_Island>0], 
                     "prop_meth","zcw_enrichment", n=50, returndf = T, filter="CpG_Island>0", pseudoenrich = 0.01)
 )
 
@@ -1134,9 +1106,9 @@ p <- ggplot(tmp, aes(mean_enrichment, Mean, colour=Subset)) +
   theme_minimal() +
   theme(legend.position = "bottom")
 p
-dev.off()
 
-forcecalledk[zcw_cov_input>5 & (meth + unmeth>10)][CpG_Island==0][prop_meth<0.1][order(-zcw_enrichment)]
+
+forcecalled[zcw_cov_input>5 & (meth + unmeth>10)][CpG_Island==0][prop_meth<0.1][order(-zcw_enrichment)]
 # 
 #  chr1    195096200   195096300 
 # 
@@ -1145,7 +1117,9 @@ forcecalledk[zcw_cov_input>5 & (meth + unmeth>10)][CpG_Island==0][prop_meth<0.1]
 #  chr1:53,882,156-53,949,798
 # 
 #   
- 
+```
+
+```{r, eval=FALSE}
 ############## Create Enrichment BigWig for IGV
 con1=gzfile("peaks/enrichments/SingleBaseEnrichment.SingleBasePeaks.WTCHG_538916_221156_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144.p0.000001.sep250.ALL.bed.chr1.binary.r",open="rb")
 	vec=readBin(con1,what=numeric(1),n=1e9)
@@ -1163,27 +1137,27 @@ con1=gzfile("peaks/enrichments/SingleBaseEnrichment.SingleBasePeaks.WTCHG_538916
 	bedGraphToBigWig enrich_WTCHG_538916_221156_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144.bedGraph ../single-cell/sequencing/metadata/hg38_sizes.chrom enrich_WTCHG_538916_221156_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144.bigWig
 
 	# result is quite spikey, (from low input)
-
+```
 	
 ######### CpG count stripes
 
+```{r CpG_count_stripes}
+forcecalled[zcw_cov_input>5 & (meth + unmeth>10)][, .(mean(CpG), quantile(CpG, 0.25), quantile(CpG, 0.75), quantile(CpG, 0.95)), by=CpG_Island]
 
-forcecalledk[zcw_cov_input>5 & (meth + unmeth>10)][, .(mean(CpG), quantile(CpG, 0.25), quantile(CpG, 0.75), quantile(CpG, 0.95)), by=CpG_Island]
-
-forcecalledk[zcw_cov_input>5][CpG==0][meth>0]
+forcecalled[zcw_cov_input>5][CpG==0][meth>0]
 
  
 
 tmp <- rbind(
-  fraction_overlapN(forcecalledk[zcw_cov_input>5 & (meth + unmeth>10)][CpG_Island==0][CpG==1],
+  fraction_overlapN(forcecalled[zcw_cov_input>5 & (meth + unmeth>10)][CpG_Island==0][CpG==1],
                     "prop_meth","zcw_enrichment", n=25, returndf = T, filter="CpG==1", pseudoenrich = 0.01),
-  fraction_overlapN(forcecalledk[zcw_cov_input>5 & (meth + unmeth>10)][CpG_Island==0][CpG==2],
+  fraction_overlapN(forcecalled[zcw_cov_input>5 & (meth + unmeth>10)][CpG_Island==0][CpG==2],
                     "prop_meth","zcw_enrichment", n=25, returndf = T, filter="CpG==2", pseudoenrich = 0.01),
-  fraction_overlapN(forcecalledk[zcw_cov_input>5 & (meth + unmeth>10)][CpG_Island==0][CpG==4],
+  fraction_overlapN(forcecalled[zcw_cov_input>5 & (meth + unmeth>10)][CpG_Island==0][CpG==4],
                     "prop_meth","zcw_enrichment", n=25, returndf = T, filter="CpG==4", pseudoenrich = 0.01),
-  fraction_overlapN(forcecalledk[zcw_cov_input>5 & (meth + unmeth>10)][CpG_Island==0][CpG==7],
+  fraction_overlapN(forcecalled[zcw_cov_input>5 & (meth + unmeth>10)][CpG_Island==0][CpG==7],
                     "prop_meth","zcw_enrichment", n=25, returndf = T, filter="CpG==7", pseudoenrich = 0.01),
-  fraction_overlapN(forcecalledk[zcw_cov_input>5 & (meth + unmeth>10)][CpG_Island==1][CpG==7],
+  fraction_overlapN(forcecalled[zcw_cov_input>5 & (meth + unmeth>10)][CpG_Island==1][CpG==7],
                     "prop_meth","zcw_enrichment", n=25, returndf = T, filter="CpG==7 & CpG_Island==1", pseudoenrich = 0.01)
 )
 
@@ -1197,17 +1171,17 @@ p <- ggplot(tmp, aes(mean_enrichment, Mean, colour=Subset)) +
   theme_minimal() +
   theme(legend.position = "bottom")
 p
-dev.off()
+
 
 ```
 
 
 # Zcw ST vs CT binned
 
-```{r}
+```{r Zcw_ST_vs_CT_binned}
 forcecalled$enrichment <- forcecalled$zcw_enrichment
 
-pdf("Zcw_ST_vs_CT_binned.pdf")
+#pdf("Zcw_ST_vs_CT_binned.pdf")
 
 fraction_overlapN(forcecalled[zcw_cov_input>5], 
                     "zcw_enrichment","zcw_hP9_enrichment", n=25)
@@ -1232,7 +1206,7 @@ ggplot(tmp, aes(mean_enrichment, Mean, colour=Subset)) +
                     values = RColorBrewer::brewer.pal(3, "Set1")) +
   theme_minimal() +
   theme(legend.position = "bottom")
-dev.off()
+#dev.off()
 
 ```
 
@@ -1240,7 +1214,7 @@ dev.off()
 
 ```{r}
 
-dmc1 <- fread("Pratto_human_DSB_Aintersect_autosomal_hg38.bed")
+dmc1 <- fread("../data/pratto_dmc1/Pratto_human_DSB_Aintersect_autosomal_hg38.bed")
 setnames(dmc1, c("chr","CI_start","CI_stop","enrichment","enrichmentAB"))
 dmc1 <- prejoin(dmc1)
   
@@ -1251,10 +1225,12 @@ dmc1 <- prejoin(dmc1)
 ```{r}
 forcecalled$enrichment <- forcecalled$CpG
 
-pdf("CpG.pdf")
+#pdf("CpG.pdf")
 ggplot(forcecalled[zcw_cov_input>5][,.(mean_enrich=mean(zcw_hP9_enrichment),stdv=sd(zcw_hP9_enrichment),.N),by=CpG][order(-CpG)], aes(CpG, mean_enrich)) + geom_pointrange(aes(ymin = mean_enrich - 2*(stdv/sqrt(N)), ymax = mean_enrich + 2*(stdv/sqrt(N))))
-dev.off()
+#dev.off()
+```
 
+```{r, eval=FALSE}
 #curl -s "http://hgdownload.cse.ucsc.edu/goldenPath/hg38/database/cytoBand.txt.gz" | gunzip -c | grep acen | head
 
 gaps <- fread("curl -s http://hgdownload.cse.ucsc.edu/goldenPath/hg38/database/gap.txt.gz | gunzip -c")
@@ -1280,7 +1256,7 @@ forcecalled[is.na(gap_type) & CpG==0 & hP9combo_pvalue==1 & h3k36me3_hP9_pvalue=
 
 
 
-mappability <- fread("mappability/hg38.75mer.Excludable.t0.5.chr1.merge500.bed")
+mappability <- fread("../data/mappability/hg38.75mer.Excludable.t0.5.chr1.merge500.bed")
 setnames(mappability, c("chr","i.center_start","i.center_stop"))
 setkey(mappability, chr, i.center_start, i.center_stop)
 mappability$exclude <- T
@@ -1296,7 +1272,7 @@ forcecalled2[is.na(gap_type) & CpG==0 & hP9combo_pvalue==1 & h3k36me3_hP9_pvalue
 
 # K36wP9 vs K4wP9
 
-```{r}
+```{r k36_vs_k4}
 p <- ggplot(forcecalled[h3k36me3_hP9_enrichment>5], aes(h3k36me3_hP9_enrichment, h3k4me3_hP9_enrichment)) +
   geom_hex(aes(fill = stat(log(count))), bins=200) +
   scale_fill_viridis_c()
@@ -1327,7 +1303,6 @@ p + facet_wrap(~ zcw_P9_pvalue<1e-6 ) + ggtitle("Split by zcw_P9_pvalue<1e-6") +
 p + facet_wrap(~ zcw_enrichment>1 ) + ggtitle("Split by zcw_enrichment>1") + 
   ylim(0,15)
 
-dev.off()
 
 ```
 
