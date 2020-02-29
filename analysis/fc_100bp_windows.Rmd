@@ -24,9 +24,6 @@ source("../functions.R")
 
 ```{r}
 
-#just using Chromosome 1, as many data points
-#grep -P 'chr1\\t|chr\\t' 
-
 CpG_100bp <- fread("../data/CpG/CpG_hg38_100bpwindows.bed")
 
 M7 <- fread("../data/motifs/motif_locs_M7_100bpwindows.bed")
@@ -169,7 +166,9 @@ zcw_peak_rand <- fread("../data/peaks/Zcw_random_1bp.100bpWindows.bed")
 setnames(zcw_peak_rand, c("chr","center_start","center_stop","ZcwPeakRand"))
 forcecalled <- merge(forcecalled, zcw_peak_rand)
 
-forcecalled <- forcecalled[chr=="chr1"]
+#just using Chromosome 1, as many data points
+#grep -P 'chr1\\t|chr\\t' 
+#forcecalled <- forcecalled[chr=="chr1"]
 ```
 
 # CpG Island Methylation
@@ -363,7 +362,7 @@ pPeak_CpG[,sep := sqrt((PeakProb * (1- PeakProb))/N), by=c("CpG")]
 p <- ggplot(pPeak_CpG[CpG<20 & methStatus!="Unk"], aes(CpG, PeakProb, colour=Type, alpha=methStatus)) +
   geom_pointrange(aes(ymax = PeakProb + 2*sep, ymin = PeakProb - 2*sep)) +
   scale_color_brewer(palette = "Set1", name="Peak Type") +
-  ylab("Probability of window overlaping a Zcwpw1 peak") +
+  ylab("Probability of window overlaping a ZCWPW1 peak") +
   xlab("CpG count in 300bp window") +
   #ggtitle("300bp, Non Repeat, Non Alu, Non CpG Island Peaks") +
   scale_alpha_manual(values=c("Meth"=1, "NA"=1, "UnMeth"=0.5), name="Methylation\nStatus") +
