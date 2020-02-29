@@ -114,7 +114,7 @@ fraction_overlapN2 <- function(x,y, x1, y1, n=25, shift=1e5, filters=c("All"), r
 
   if(corrected){
     tmp <- dcast(tmp, enrichment_bin + mean_enrichment + num + Subset ~ Type, value.var = "Overlap")
-    tmp[,Overlap := (1 - ( (1-Normal) / (1-Randomised) ))]
+    tmp[,Overlap := (1 - ( (1-Observed) / (1-Randomised) ))]
     tmp[,Type := "Corrected"]
     tmp[,sep := sqrt((Overlap * (1- Overlap))/num), by=enrichment_bin]
   }
