@@ -299,9 +299,9 @@ saveRDS(dmc1_curveline,"../results/dmc1/dmc1_curveline.rds")
 ```
 
 ```{r DMC1, fig.width = 7, fig.height = 7*1.5}
-dmc1_ssds <- readRDS("../results/dmc1/DMC1_SSDS_plot.rds")
-dmc1_curveline <- readRDS("../results/dmc1/dmc1_curveline.rds")
-dmc1_stratified <- readRDS("../results/dmc1/DMC1_stratified.rds")
+dmc1_ssds <- readRDS("../results/dmc1/DMC1_SSDS_plot.rds") # from plotDMC1.R
+#dmc1_curveline <- readRDS("../results/dmc1/dmc1_curveline.rds")
+dmc1_stratified <- readRDS("../results/dmc1/DMC1_stratified.rds") # from dmc1_stratification.Rmd
 
 #pdf("../results/DMC1.pdf", )
 cowplot::plot_grid(dmc1_ssds,

@@ -1,10 +1,12 @@
 ---
-title: "DMC1 Profiles, stratified by heat"
+title: "DMC1 Profiles, stratified by H3K4me3"
 output:
   html_document:
     dev: pdf
     self_contained: false
 ---
+
+Hotspots with higher H3K4me3 have wider profiles in WT, but not in Zcwpw1 KO
 
 ```{r}
 knitr::opts_knit$set(base.dir = "results")
