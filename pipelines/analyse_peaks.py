@@ -445,3 +445,56 @@ rule analyse_100bp_windows:
     R -e "knitr::knit('{input.rmd}', '{output.md}')"
     """
 
+
+rule allele_specificity:
+  input:
+    z_wHP9_atHP9 = "data/bwprofilesNorm/WTCHG_538916_223180_VS_WTCHG_538916_221156_AT_SingleBasePeaks.NA15-SRR5627146_AND_NA15-SRR5627147_vs_NA15-SRR5627143.p0.000001.sep250.ALL.profile",
+    z_wHP9_atHP9_mct = "data/bwprofilesNorm/WTCHG_538916_223180_VS_WTCHG_538916_221156_AT_SingleBasePeaks.NA15-SRR5627146_AND_NA15-SRR5627147_vs_NA15-SRR5627143.p0.000001.sep250.ALL_MotifCenteredStranded.profile",
+    z_wHP9_atCP9 = "data/bwprofilesNorm/WTCHG_538916_223180_VS_WTCHG_538916_221156_AT_SingleBasePeaks.NA15-SRR5627145_AND_NA15-SRR5627144_vs_NA15-SRR5627143.p0.000001.sep250.ALL.profile",
+    z_wCP9_atHP9 = "data/bwprofilesNorm/WTCHG_538916_224192_VS_WTCHG_538916_221156_AT_SingleBasePeaks.NA15-SRR5627146_AND_NA15-SRR5627147_vs_NA15-SRR5627143.p0.000001.sep250.ALL.profile",
+    z_wCP9_atHP9_mct = "data/bwprofilesNorm/WTCHG_538916_224192_VS_WTCHG_538916_221156_AT_SingleBasePeaks.NA15-SRR5627146_AND_NA15-SRR5627147_vs_NA15-SRR5627143.p0.000001.sep250.ALL_MotifCenteredStranded.profile",
+    z_wCP9_atCP9 = "data/bwprofilesNorm/WTCHG_538916_224192_VS_WTCHG_538916_221156_AT_SingleBasePeaks.NA15-SRR5627145_AND_NA15-SRR5627144_vs_NA15-SRR5627143.p0.000001.sep250.ALL.profile",
+    z_wHP9_atHP9_in = "data/bwprofilesNorm/WTCHG_538916_223180_VS_WTCHG_538916_220144_AT_SingleBasePeaks.NA15-SRR5627146_AND_NA15-SRR5627147_vs_NA15-SRR5627143.p0.000001.sep250.ALL.profile",
+    z_wHP9_atCP9_in = "data/bwprofilesNorm/WTCHG_538916_223180_VS_WTCHG_538916_220144_AT_SingleBasePeaks.NA15-SRR5627145_AND_NA15-SRR5627144_vs_NA15-SRR5627143.p0.000001.sep250.ALL.profile",
+    z_wCP9_atHP9_in = "data/bwprofilesNorm/WTCHG_538916_224192_VS_WTCHG_538916_220144_AT_SingleBasePeaks.NA15-SRR5627146_AND_NA15-SRR5627147_vs_NA15-SRR5627143.p0.000001.sep250.ALL.profile",
+    z_wCP9_atCP9_in = "data/bwprofilesNorm/WTCHG_538916_224192_VS_WTCHG_538916_220144_AT_SingleBasePeaks.NA15-SRR5627145_AND_NA15-SRR5627144_vs_NA15-SRR5627143.p0.000001.sep250.ALL.profile",
+    script = "pipelines/MultiProfilePlot.R"
+  output:
+    as = "results/bwplots/AlleleSpecificity.pdf"
+    mct = "results/bwplots/AlleleSpecificityMCT.pdf"
+    vin = "results/bwplots/AlleleSpecificity_vInput.pdf"
+  shell:
+    """
+    Rscript {input.script} {output.as} 'Zcwpw1 binds Prdm9 sites in an allele specific manner' 8 8 \
+    {z_wHP9_atHP9} \
+    {z_wHP9_atCP9} \
+    {z_wCP9_atHP9} \
+    {z_wCP9_atCP9} \
+    '1) Zcwpw1 cotransfected with human Prdm9, at human Prdm9 sites' \
+    '2) Zcwpw1 cotransfected with human Prdm9, at chimp Prdm9 sites' \
+    '3) Zcwpw1 cotransfected with chimp Prdm9, at human Prdm9 sites' \
+    '4) Zcwpw1 cotransfected with chimp Prdm9, at chimp Prdm9 sites'
+
+    # Use Motif Centered and Stranded for Human allele
+    Rscript {input.script} {output.mct} 'Zcwpw1 binds Prdm9 sites in an allele specific manner (Motif Centered and Stranded MCS)' 10 7 \
+    {z_wHP9_atHP9_mct} \
+    {z_wHP9_atCP9} \
+    {z_wCP9_atHP9_mct} \
+    {z_wCP9_atCP9} \
+    '1) Zcwpw1 cotransfected with human Prdm9, at human Prdm9 MCS sites' \
+    '2) Zcwpw1 cotransfected with human Prdm9, at chimp Prdm9 sites' \
+    '3) Zcwpw1 cotransfected with chimp Prdm9, at human Prdm9 MCS sites' \
+    '4) Zcwpw1 cotransfected with chimp Prdm9, at chimp Prdm9 sites'
+
+    # vs input
+    Rscript {input.script} {output.vin} 'Zcwpw1 binds Prdm9 sites in an allele specific manner' 8 8 \
+    {z_wHP9_atHP9_in} \
+    {z_wHP9_atCP9_in} \
+    {z_wCP9_atHP9_in} \
+    {z_wCP9_atCP9_in} \
+    '1) Zcwpw1 cotransfected with human Prdm9, at human Prdm9 sites' \
+    '2) Zcwpw1 cotransfected with human Prdm9, at chimp Prdm9 sites' \
+    '3) Zcwpw1 cotransfected with chimp Prdm9, at human Prdm9 sites' \
+    '4) Zcwpw1 cotransfected with chimp Prdm9, at chimp Prdm9 sites'
+    """
+
