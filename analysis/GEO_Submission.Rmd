@@ -100,7 +100,7 @@ tar -cvf GEO_submission/bigWigs_bedGraphs.tar GEO_submission/bigWig
 ```{bash}
 sftp geoftp@sftp-private.ncbi.nlm.nih.gov
 
-cd uploads/danielwells_kPKtUw46
+cd uploads/danielwells_kPKtUw46/new_geo_submission
 
 mkdir new_geo_submission
 cd new_geo_submission
@@ -111,5 +111,55 @@ mput fastq/*
 
 mput *.tar
 
+```
+
+```{bash}
+# get insert sizes and stdev
+find filtered -name "WTCHG_538916*sorted.bam" -exec basename {} \; | parallel "samtools stats filtered/{} > qc/samstats/{}.txt"
+```
+
+
+```{r}
+geo <- readxl::read_xlsx("~/Dropbox/Downloads/Book1.xlsx", col_names = F)
+
+s1 <- grep("ChIPHA_ZCWPW1-HA[^+]",geo$...2, value = T, fixed = F)
+s2 <- grep("Input_ZCWPW1-HA[^+]",geo$...2, value = T, fixed = F)
+s3 <- grep("ChIPHA_ZCWPW1-HA+humanPRDM9",geo$...2, value = T, fixed = T)
+s4 <- grep("Input_ZCWPW1-HA+humanPRDM9",geo$...2, value = T, fixed = T)
+s5 <- grep("ChIPHA_ZCWPW1-HA+chimpPRDM9",geo$...2, value = T, fixed = T)
+s6 <- grep("HOM",geo$...2, value = T, fixed = T)
+
+cat(grep("fastq",s1,fixed = T,invert = T, value = T))
+```
+
+
+```{r}
+geo <- readxl::read_xlsx("~/Dropbox/Downloads/Book2.xlsx", col_names = F)
+
+SRR5627143 <- grep("Input_humanPRDM9-HA",geo$...1, value = T, fixed = F)
+SRR5627146 <- grep("ChIPHA_humanPRDM9-HA",geo$...1, value = T, fixed = F)
+SRR5627144 <- grep("ChIPHA_chimpPRDM9-HA",geo$...1, value = T, fixed = F)
+SRR5627145 <- grep("ChIPV5_chimpPRDM9-V5",geo$...1, value = T, fixed = F)
+SRR5627147 <- grep("ChIPV5_humanPRDM9-V5",geo$...1, value = T, fixed = F)
+SRR5627149 <- grep("ChIPH3K36me3_humanPRDM9-HA",geo$...1, value = T, fixed = F)
+SRR5627152 <- grep("ChIPH3K4me3_humanPRDM9-HA_Rep1",geo$...1, value = T, fixed = F)
+SRR5627153 <- grep("ChIPH3K4me3_humanPRDM9-HA_Rep2",geo$...1, value = T, fixed = F)
+SRR5627142 <- grep("Input_Untransfected",geo$...1, value = T, fixed = F)
+SRR5627150 <- grep("ChIPH3K4me3_Untransfected_Rep1",geo$...1, value = T, fixed = F)
+SRR5627151 <- grep("ChIPH3K4me3_Untransfected_Rep2",geo$...1, value = T, fixed = F)
+SRR5627148 <- grep("ChIH3K36me3_Untransfected",geo$...1, value = T, fixed = F)
+
+find GEO_submission/ -type f -name '*' -execdir rename -v 's:SRR5627143:Input_humanPRDM9-HA:g' {} \;
+find GEO_submission/ -type f -name '*' -execdir rename -v 's:SRR5627146:ChIPHA_humanPRDM9-HA:g' {} \;
+find GEO_submission/ -type f -name '*' -execdir rename -v 's:SRR5627144:ChIPHA_chimpPRDM9-HA:g' {} \;
+find GEO_submission/ -type f -name '*' -execdir rename -v 's:SRR5627145:ChIPV5_chimpPRDM9-V5:g' {} \;
+find GEO_submission/ -type f -name '*' -execdir rename -v 's:SRR5627147:ChIPV5_humanPRDM9-V5:g' {} \;
+find GEO_submission/ -type f -name '*' -execdir rename -v 's:SRR5627149:ChIPH3K36me3_humanPRDM9-HA:g' {} \;
+find GEO_submission/ -type f -name '*' -execdir rename -v 's:SRR5627152:ChIPH3K4me3_humanPRDM9-HA_Rep1:g' {} \;
+find GEO_submission/ -type f -name '*' -execdir rename -v 's:SRR5627153:ChIPH3K4me3_humanPRDM9-HA_Rep2:g' {} \;
+find GEO_submission/ -type f -name '*' -execdir rename -v 's:SRR5627142:Input_Untransfected:g' {} \;
+find GEO_submission/ -type f -name '*' -execdir rename -v 's:SRR5627150:ChIPH3K4me3_Untransfected_Rep1:g' {} \;
+find GEO_submission/ -type f -name '*' -execdir rename -v 's:SRR5627151:ChIPH3K4me3_Untransfected_Rep2:g' {} \;
+find GEO_submission/ -type f -name '*' -execdir rename -v 's:SRR5627148:ChIH3K36me3_Untransfected:g' {} \;
 ```
 
