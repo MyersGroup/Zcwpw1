@@ -5,7 +5,7 @@ output: html_notebook
 
 ```{r}
 knitr::opts_knit$set(base.dir = "results")
-knitr::opts_chunk$set(fig.path = "Domain_Architechture/")
+knitr::opts_chunk$set(fig.path = "non_ChIP/")
 knitr::opts_chunk$set(dev="pdf")
 knitr::opts_chunk$set(fig.show="hold")
 

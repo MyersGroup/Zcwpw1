@@ -3,14 +3,28 @@ title: "DMC1 Counts"
 output: html_notebook
 ---
 
+```{r}
+knitr::opts_knit$set(base.dir = "results")
+knitr::opts_chunk$set(fig.path = "non_ChIP/")
+knitr::opts_chunk$set(dev="pdf")
+knitr::opts_chunk$set(fig.show="hold")
 
-```{r, fig.width=5, fig.retina=T}
+library(data.table)
+library(ggplot2)
+library(ggsignif)
+#library(readxl)
+#library(Hmisc)
+library(cowplot)
+```
+
+
+```{r load_DMC1}
 
 # # # # # # # # # # # #
 # Load KO counts
 # # # # # # # # # # # #
 
-dmc1_counts_KO <- readxl::read_excel("../data/zcw_dmc1.xlsx", sheet = "KO")
+dmc1_counts_KO <- readxl::read_excel("../data/cellular/zcw_dmc1.xlsx", sheet = "KO")
 dmc1_counts_KO$...4 <- colnames(dmc1_counts_KO)[1]
 dmc1_counts_KO$...10 <- colnames(dmc1_counts_KO)[7]
 dmc1_counts_KO$...14 <- colnames(dmc1_counts_KO)[11]
@@ -29,7 +43,7 @@ dmc1_counts_KO$Genotype <- "Zcwpw1 -/-"
 # # # # # # # # # # # #
 
 
-dmc1_counts_WT <- readxl::read_excel("../data/zcw_dmc1.xlsx", sheet = "WT")
+dmc1_counts_WT <- readxl::read_excel("../data/cellular/zcw_dmc1.xlsx", sheet = "WT")
 
 dmc1_counts_WT$...4 <- colnames(dmc1_counts_WT)[1]
 dmc1_counts_WT$...8 <- colnames(dmc1_counts_WT)[5]
@@ -46,7 +60,7 @@ dmc1_counts_WT$Genotype <- "Wild Type"
 # Load P9 KO counts
 # # # # # # # # # # # #
 
-dmc1_counts_P9 <- readxl::read_excel("../data/zcw_dmc1.xlsx", sheet = "Prdm9 KO", skip=1)
+dmc1_counts_P9 <- readxl::read_excel("../data/cellular/zcw_dmc1.xlsx", sheet = "Prdm9 KO", skip=1)
 
 # # add mouse ID column
 # dmc1_counts_P9$...4 <- colnames(dmc1_counts_P9)[1]
@@ -58,7 +72,7 @@ dmc1_counts_P9$Mouse <- "TGFJ 27.1B (6 Aug 2019)"
 dmc1_counts_P9$Genotype <- "Prdm9 -/-"
 
 
-dmc1_counts_P9B <- readxl::read_excel("../data/Second prdm9 KO DMC1 foci.xlsx", skip = 1)
+dmc1_counts_P9B <- readxl::read_excel("../data/cellular/Second prdm9 KO DMC1 foci.xlsx", skip = 1)
 dmc1_counts_P9B$Mouse <- "TGFJ 26.2C (11Oct 2019)"
 dmc1_counts_P9B$Genotype <- "Prdm9 -/-"
 
@@ -66,7 +80,7 @@ dmc1_counts_P9B$Genotype <- "Prdm9 -/-"
 # Unrelated WT counts
 # # # # # # # # # # # #
 
-dmc1_counts_UWT <- readxl::read_excel("../data/zcw_dmc1.xlsx", sheet = "Unrelated wt")
+dmc1_counts_UWT <- readxl::read_excel("../data/cellular/zcw_dmc1.xlsx", sheet = "Unrelated wt")
 dmc1_counts_UWT$...4 <- colnames(dmc1_counts_UWT)[1]
 dmc1_counts_UWT$...9 <- colnames(dmc1_counts_UWT)[6]
 dmc1_counts_UWT$...13 <- colnames(dmc1_counts_UWT)[10]
@@ -113,13 +127,16 @@ dmc1_counts[dmc1_counts$Genotype=="Wild Type (unrelated)",]$Genotype <- "Wild Ty
 
 dmc1_counts$Stage <- factor(dmc1_counts$Stage, levels = c("L","Late L","Early Z","Z","Late Z","P","P?","Pseudop"))
 dmc1_counts$Genotype <- factor(dmc1_counts$Genotype, levels = c("Wild Type","Wild Type (unrelated)","Zcwpw1 -/-","Prdm9 -/-"))
+```
 
+```{r dmc1_counts, fig.width=7, fig.height=5, fig.retina=T}
 p <- ggplot(dmc1_counts, aes(Stage, Foci, colour=Genotype)) + 
   geom_point(size=0.5, position = position_jitterdodge()) + 
   scale_color_brewer(palette = "Set1", labels = c("Wild Type",expression(italic("Zcwpw1")^"-/-"),expression(italic("Prdm9")^"-/-"))) + 
   theme_minimal() + 
   geom_boxplot(alpha=0) +
-  theme(legend.position = "bottom")
+  theme(legend.position = "bottom") +
+  ylab("DMC1 Foci Count")
 
 
 # check by mouse
@@ -152,15 +169,15 @@ p + geom_signif(y_position=c(80, 290, 325, 220, 230),
               annotation=c("0.5",fs("2.0e-3"),fs("6.0e-10"),fs("1.2e-06"),fs("3.3e-52")),
               tip_length=0.01, col="black", parse=TRUE) + ylim(0,330)
 
-ggsave("../results/dmc1_counts.pdf", width = 7, height = 5)
+#ggsave("../results/dmc1_counts.pdf", width = 7, height = 5)
 ```
 
-```{r}
+```{r load_rad51}
 # # # # # # # # # # # #
 # KO
 # # # # # # # # # # # #
 
-rad51_counts_ZCW <- readxl::read_excel("../data/Rad51.xlsx", sheet = "ZCW KO")
+rad51_counts_ZCW <- readxl::read_excel("../data/cellular/Rad51.xlsx", sheet = "ZCW KO")
 
 rad51_counts_ZCW$Mouse1 <- colnames(rad51_counts_ZCW)[1]
 rad51_counts_ZCW$Mouse2 <- colnames(rad51_counts_ZCW)[5]
@@ -178,7 +195,7 @@ rad51_counts_ZCW$Genotype <- "Zcwpw1 KO"
 # Prdm9KO counts
 # # # # # # # # # # # #
 
-rad51_counts_P9KO <- readxl::read_excel("../data/Rad51.xlsx", sheet = "Prdm9 KO")
+rad51_counts_P9KO <- readxl::read_excel("../data/cellular/Rad51.xlsx", sheet = "Prdm9 KO")
 
 rad51_counts_P9KO$Mouse <- colnames(rad51_counts_P9KO)[1]
 rad51_counts_P9KO <- rad51_counts_P9KO[2:nrow(rad51_counts_P9KO),]
@@ -192,7 +209,7 @@ rad51_counts_P9KO$Genotype <- "Prdm9 KO"
 # WT counts
 # # # # # # # # # # # #
 
-rad51_counts_WT <- readxl::read_excel("../data/Rad51.xlsx", sheet = "Wt unrelated")
+rad51_counts_WT <- readxl::read_excel("../data/cellular/Rad51.xlsx", sheet = "Wt unrelated")
 
 rad51_counts_WT$Mouse1 <- colnames(rad51_counts_WT)[1]
 rad51_counts_WT$Mouse2 <- colnames(rad51_counts_WT)[6]
@@ -226,8 +243,10 @@ for(stage in c("Late L","Early Z","Z","Late Z","(Pseudo)P")){
 print(t.test(data.table(rad51_counts)[Genotype=="Zcwpw1 KO" & Stage ==stage]$Foci,
        data.table(rad51_counts)[Genotype=="WT" & Stage ==stage]$Foci))
 }
+```
 
 
+```{r rad51_counts, fig.width=7, fig.height=5}
 p <- ggplot(rad51_counts[Stage!="Late P" & Stage!="L"], aes(Stage, Foci, colour=Genotype)) + 
   geom_point(size=0.5, position = position_jitterdodge()) + 
   scale_color_brewer(palette = "Set1", labels = c("Wild Type",expression(italic("Zcwpw1")^"-/-"),expression(italic("Prdm9")^"-/-"))) + 
@@ -244,21 +263,20 @@ p + geom_signif(y_position=c(110, 210, 270, 130, 100),
 
 p
 
-ggsave("../results/rad51_counts.pdf", width = 7, height = 5)
+#ggsave("../results/rad51_counts.pdf", width = 7, height = 5)
 ```
 
-```{r}
-# export data
+```{r export_data}
 dmc1_counts$Target <- "DMC1"
 rad51_counts$Target <- "RAD51"
 
-fwrite(rbind(dmc1_counts, rad51_counts), "../results/DMC1_RAD51_Counts.tsv")
+fwrite(rbind(dmc1_counts, rad51_counts), "../results/non_ChIP/DMC1_RAD51_Counts.tsv")
 
 ```
 
 
 
-```{r}
+```{r synapsis}
 synapsis <- data.table(Synapsis = c(0.98,0.94,0.946,0.02,0.00,0.019,0.054,0.06),
            n = c(51L,52L,56L,51L,51L,53L,55L,49L),
            Genotype = c("WT","WT","WT","Zcwpw1-/-","Zcwpw1-/-","Zcwpw1-/-","Prdm9-/-","Prdm9-/-"))
@@ -286,7 +304,7 @@ ps <- ps + scale_x_discrete(labels=c("WT",expression(italic("Zcwpw1")^"-/-"),exp
 ```
 
 
-```{r}
+```{r weights}
 weights <- data.table(lean_body_weight=c(19.7,21.98,19.8,20.42,22.56,20.66, 18.89, 19.62, 21.77, 22.36),
            paired_testes_weight=c(35,56.9,179.2,183.8,190.4,49.8, 39.4, 50.9, 50.3, 49.2),
            Genotype=c("Zcwpw1-/-","Zcwpw1-/-","WT","WT","WT","Zcwpw1-/-","Zcwpw1-/-","Zcwpw1-/-", "Prdm9-/-", "Prdm9-/-"))
@@ -313,9 +331,9 @@ pw <- pw + scale_x_discrete(labels=c("WT",expression(italic("Zcwpw1")^"-/-"),exp
 
 ```
 
-```{r}
+```{r weights_&_synapsis, fig.width=3, fig.height=7}
 
 cowplot::plot_grid(pw, ps, nrow=2)
-ggsave("../results/weight_&_synapsis.pdf", width = 3, height = 7)
+#ggsave("../results/weight_&_synapsis.pdf", width = 3, height = 7)
 ```
 
