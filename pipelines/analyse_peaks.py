@@ -9,8 +9,7 @@ rule all:
     input:
         "results/PeakCallingMA.md",
         "results/Alu.md",
-        "results/fc_100bp_windows.md",
-        "results/Domain_architechture.md"
+        "results/fc_100bp_windows.md"
 
 
 rule CpG_islands:
@@ -395,20 +394,6 @@ rule analyse_Alu:
     rmd = "analysis/Alu.Rmd"
   output:
     md = "results/Alu.md"
-  shell:
-    """
-    R -e "knitr::knit('{input.rmd}', '{output.md}')"
-    """
-
-
-rule domain_architechture:
-  input:
-    "data/alignment/Simons_Zcwpw1_alignment.rds",
-    "data/alignment/simons_alignment.fa",
-    "data/alignment/JSD_simons_alignment.txt",
-    rmd = "analysis/Domain_architechture.Rmd"
-  output:
-    md = "results/Domain_architechture.md"
   shell:
     """
     R -e "knitr::knit('{input.rmd}', '{output.md}')"
