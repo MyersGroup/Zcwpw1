@@ -14,21 +14,49 @@ output:
 ---
 
 
+```{r}
+knitr::opts_knit$set(base.dir = "results")
+knitr::opts_chunk$set(fig.path = "ForceCallingHP9/")
+knitr::opts_chunk$set(dev="pdf")
+knitr::opts_chunk$set(fig.show="hold")
+
+library(ggplot2)
+library(data.table)
+library(cowplot)
+library(PRROC)
+library(brms)
+
+source("../functions.R")
+```
+
 # Load Results
+
+```{r load_non_force_called}
+HP9_peaks <- fread("../data/peaks/SingleBasePeaks.NA15-SRR5627146_vs_NA15-SRR5627143.p0.000001.sep250.ALL.bed")
+HP9combo_peaks <- fread("../data/peaks/SingleBasePeaks.NA15-SRR5627146_AND_NA15-SRR5627147_vs_NA15-SRR5627143.p0.000001.sep250.ALL.bed")
+HP9N_peaks <- fread("../data/peaks/SingleBasePeaks.NA15-SRR5627138_AND_NA15-SRR5627139_vs_NA15-SRR5627140.p0.000001.sep250.ALL.bed")
+zcw_wP9_vs_chip_Z <- fread("../data/peaks/SingleBasePeaks.WTCHG_538916_223180_vs_WTCHG_538916_221156.p0.000001.sep250.ALL.bed")
+
+HP9_peaks <- prejoin(HP9_peaks)
+HP9N_peaks <- prejoin(HP9N_peaks)
+HP9combo_peaks <- prejoin(HP9combo_peaks)
+zcw_wP9_vs_chip_Z <- prejoin(zcw_wP9_vs_chip_Z)
+```
+
 
 ## C term
 
 ```{r}
-h3k4me3_UT_AT_HP9 <- fread("../data/peaks/ForceCalledPeaks_SRA_Altemose2015_SRR5627150_vs_SRA_Altemose2015_SRR5627142_AT_SRA_Altemose2015_SRR5627146_vs_SRA_Altemose2015_SRR5627143.bed")
+h3k4me3_UT_AT_HP9 <- fread("../data/peaks/ForceCalledPeaks_NA15-SRR5627150_vs_NA15-SRR5627142_AT_NA15-SRR5627146_vs_NA15-SRR5627143.bed")
 setkey(h3k4me3_UT_AT_HP9, chr, center_start, center_stop)
 
-h3k4me3_P9_AT_HP9 <- fread("../data/peaks/ForceCalledPeaks_SRA_Altemose2015_SRR5627152_AND_SRR5627153_vs_SRA_Altemose2015_SRR5627143_AT_SRA_Altemose2015_SRR5627146_vs_SRA_Altemose2015_SRR5627143.bed")
+h3k4me3_P9_AT_HP9 <- fread("../data/peaks/ForceCalledPeaks_NA15-SRR5627152_AND_SRR5627153_vs_NA15-SRR5627143_AT_NA15-SRR5627146_vs_NA15-SRR5627143.bed")
 setkey(h3k4me3_P9_AT_HP9, chr, center_start, center_stop)
 
-h3k36me3_P9_AT_HP9 <- fread("../data/peaks/ForceCalledPeaks_SRA_Altemose2015_SRR5627149_vs_SRA_Altemose2015_SRR5627143_AT_SRA_Altemose2015_SRR5627146_vs_SRA_Altemose2015_SRR5627143.bed")
+h3k36me3_P9_AT_HP9 <- fread("../data/peaks/ForceCalledPeaks_NA15-SRR5627149_vs_NA15-SRR5627143_AT_NA15-SRR5627146_vs_NA15-SRR5627143.bed")
 setkey(h3k36me3_P9_AT_HP9, chr, center_start, center_stop)
 
-Zcw_CVC_AT_hP9 <- fread("../data/peaks/ForceCalledPeaks_WTCHG_538916_223180_vs_WTCHG_538916_221156_AT_SRA_Altemose2015_SRR5627146_vs_SRA_Altemose2015_SRR5627143.bed")
+Zcw_CVC_AT_hP9 <- fread("../data/peaks/ForceCalledPeaks_WTCHG_538916_223180_vs_WTCHG_538916_221156_AT_NA15-SRR5627146_vs_NA15-SRR5627143.bed")
 setkey(Zcw_CVC_AT_hP9, chr, center_start, center_stop)
 
 HP9_peaks$FC_Zcw_CVC_enrichment <- Zcw_CVC_AT_hP9$enrichment
@@ -48,23 +76,23 @@ HP9_peaks$FC_Zcw_CVC_cov_input <- Zcw_CVC_AT_hP9$cov_input
 ## C term combo
 
 ```{r}
-h3k4me3_UT_AT_HP9combo <- fread("../data/peaks/ForceCalledPeaks_SRA_Altemose2015_SRR5627150_vs_SRA_Altemose2015_SRR5627142_AT_SRA_Altemose2015_SRR5627146_AND_SRA_Altemose2015_SRR5627147_vs_SRA_Altemose2015_SRR5627143.bed")
+h3k4me3_UT_AT_HP9combo <- fread("../data/peaks/ForceCalledPeaks_NA15-SRR5627150_vs_NA15-SRR5627142_AT_NA15-SRR5627146_AND_NA15-SRR5627147_vs_NA15-SRR5627143.bed")
 setkey(h3k4me3_UT_AT_HP9combo, chr, center_start, center_stop)
 
-h3k4me3_P9_AT_HP9combo <- fread("../data/peaks/ForceCalledPeaks_SRA_Altemose2015_SRR5627152_AND_SRA_Altemose2015_SRR5627153_vs_SRA_Altemose2015_SRR5627143_AT_SRA_Altemose2015_SRR5627146_AND_SRA_Altemose2015_SRR5627147_vs_SRA_Altemose2015_SRR5627143.bed")
+h3k4me3_P9_AT_HP9combo <- fread("../data/peaks/ForceCalledPeaks_NA15-SRR5627152_AND_NA15-SRR5627153_vs_NA15-SRR5627143_AT_NA15-SRR5627146_AND_NA15-SRR5627147_vs_NA15-SRR5627143.bed")
 setkey(h3k4me3_P9_AT_HP9combo, chr, center_start, center_stop)
 
-h3k36me3_P9_AT_HP9combo <- fread("../data/peaks/ForceCalledPeaks_SRA_Altemose2015_SRR5627149_vs_SRA_Altemose2015_SRR5627143_AT_SRA_Altemose2015_SRR5627146_AND_SRA_Altemose2015_SRR5627147_vs_SRA_Altemose2015_SRR5627143.bed")
+h3k36me3_P9_AT_HP9combo <- fread("../data/peaks/ForceCalledPeaks_NA15-SRR5627149_vs_NA15-SRR5627143_AT_NA15-SRR5627146_AND_NA15-SRR5627147_vs_NA15-SRR5627143.bed")
 setkey(h3k36me3_P9_AT_HP9combo, chr, center_start, center_stop)
 
-Zcw_CVC_AT_hP9combo <- fread("../data/peaks/ForceCalledPeaks_WTCHG_538916_223180_vs_WTCHG_538916_221156_AT_SRA_Altemose2015_SRR5627146_AND_SRA_Altemose2015_SRR5627147_vs_SRA_Altemose2015_SRR5627143.bed")
+Zcw_CVC_AT_hP9combo <- fread("../data/peaks/ForceCalledPeaks_WTCHG_538916_223180_vs_WTCHG_538916_221156_AT_NA15-SRR5627146_AND_NA15-SRR5627147_vs_NA15-SRR5627143.bed")
 setkey(Zcw_CVC_AT_hP9combo, chr, center_start, center_stop)
 
 
-Zcw_wP9_AT_hP9combo <- fread("../data/peaks/ForceCalledPeaks_WTCHG_538916_223180_vs_WTCHG_538916_220144_AT_SRA_Altemose2015_SRR5627146_AND_SRA_Altemose2015_SRR5627147_vs_SRA_Altemose2015_SRR5627143.bed")
+Zcw_wP9_AT_hP9combo <- fread("../data/peaks/ForceCalledPeaks_WTCHG_538916_223180_vs_WTCHG_538916_220144_AT_NA15-SRR5627146_AND_NA15-SRR5627147_vs_NA15-SRR5627143.bed")
 setkey(Zcw_wP9_AT_hP9combo, chr, center_start, center_stop)
 
-Zcw_AT_hP9combo <- fread("../data/peaks/ForceCalledPeaks_WTCHG_538916_221156_vs_WTCHG_538916_217108_AT_SRA_Altemose2015_SRR5627146_AND_SRA_Altemose2015_SRR5627147_vs_SRA_Altemose2015_SRR5627143.bed")
+Zcw_AT_hP9combo <- fread("../data/peaks/ForceCalledPeaks_WTCHG_538916_221156_vs_WTCHG_538916_217108_AT_NA15-SRR5627146_AND_NA15-SRR5627147_vs_NA15-SRR5627143.bed")
 setkey(Zcw_AT_hP9combo, chr, center_start, center_stop)
 
 HP9combo_peaks$FC_Zcw_CVC_enrichment <- Zcw_CVC_AT_hP9combo$enrichment
@@ -92,31 +120,31 @@ all.equal(Zcw_CVC_AT_hP9combo$center_start, HP9combo_peaks$center_start)
 ## N term
 
 ```{r}
-h3k4me3_UT_AT_HP9N <- fread("../data/peaks/ForceCalledPeaks_SRA_Altemose2015_SRR5627150_vs_SRA_Altemose2015_SRR5627142_AT_SRA_Altemose2015_SRR5627138_AND_SRR5627139_vs_SRA_Altemose2015_SRR5627140.bed")
+h3k4me3_UT_AT_HP9N <- fread("../data/peaks/ForceCalledPeaks_NA15-SRR5627150_vs_NA15-SRR5627142_AT_NA15-SRR5627138_AND_SRR5627139_vs_NA15-SRR5627140.bed")
 setkey(h3k4me3_UT_AT_HP9N, chr, center_start, center_stop)
 
-h3k4me3_P9_AT_HP9N <- fread("../data/peaks/ForceCalledPeaks_SRA_Altemose2015_SRR5627152_AND_SRA_Altemose2015_SRR5627153_vs_SRA_Altemose2015_SRR5627143_AT_SRA_Altemose2015_SRR5627138_AND_SRR5627139_vs_SRA_Altemose2015_SRR5627140.bed")
+h3k4me3_P9_AT_HP9N <- fread("../data/peaks/ForceCalledPeaks_NA15-SRR5627152_AND_NA15-SRR5627153_vs_NA15-SRR5627143_AT_NA15-SRR5627138_AND_SRR5627139_vs_NA15-SRR5627140.bed")
 setkey(h3k4me3_P9_AT_HP9N, chr, center_start, center_stop)
 
-h3k36me3_P9_AT_HP9N <- fread("../data/peaks/ForceCalledPeaks_SRA_Altemose2015_SRR5627149_vs_SRA_Altemose2015_SRR5627143_AT_SRA_Altemose2015_SRR5627138_AND_SRR5627139_vs_SRA_Altemose2015_SRR5627140.bed")
+h3k36me3_P9_AT_HP9N <- fread("../data/peaks/ForceCalledPeaks_NA15-SRR5627149_vs_NA15-SRR5627143_AT_NA15-SRR5627138_AND_SRR5627139_vs_NA15-SRR5627140.bed")
 setkey(h3k36me3_P9_AT_HP9N, chr, center_start, center_stop)
 
-Zcw_CVC_AT_hP9N <- fread("../data/peaks/ForceCalledPeaks_WTCHG_538916_223180_vs_WTCHG_538916_221156_AT_SRA_Altemose2015_SRR5627138_AND_SRR5627139_vs_SRA_Altemose2015_SRR5627140.bed")
+Zcw_CVC_AT_hP9N <- fread("../data/peaks/ForceCalledPeaks_WTCHG_538916_223180_vs_WTCHG_538916_221156_AT_NA15-SRR5627138_AND_SRR5627139_vs_NA15-SRR5627140.bed")
 setkey(Zcw_CVC_AT_hP9N, chr, center_start, center_stop)
 
-Zcw_CVC_AT_hP9N_flank150 <- fread("../data/peaks/ForceCalledPeaks_WTCHG_538916_223180_vs_WTCHG_538916_221156_AT_SRA_Altemose2015_SRR5627138_AND_SRA_Altemose2015_SRR5627139_vs_SRA_Altemose2015_SRR5627140.flank150.bed")
+Zcw_CVC_AT_hP9N_flank150 <- fread("../data/peaks/ForceCalledPeaks_WTCHG_538916_223180_vs_WTCHG_538916_221156_AT_NA15-SRR5627138_AND_NA15-SRR5627139_vs_NA15-SRR5627140.flank150.bed")
 setkey(Zcw_CVC_AT_hP9N_flank150, chr, center_start, center_stop)
 
-Zcw_wP9_AT_hP9N <- fread("../data/peaks/ForceCalledPeaks_WTCHG_538916_223180_vs_WTCHG_538916_220144_AT_SRA_Altemose2015_SRR5627138_AND_SRR5627139_vs_SRA_Altemose2015_SRR5627140.bed")
+Zcw_wP9_AT_hP9N <- fread("../data/peaks/ForceCalledPeaks_WTCHG_538916_223180_vs_WTCHG_538916_220144_AT_NA15-SRR5627138_AND_SRR5627139_vs_NA15-SRR5627140.bed")
 setkey(Zcw_wP9_AT_hP9N, chr, center_start, center_stop)
 
-Zcw_AT_hP9N <- fread("../data/peaks/ForceCalledPeaks_WTCHG_538916_221156_vs_WTCHG_538916_217108_AT_SRA_Altemose2015_SRR5627138_AND_SRR5627139_vs_SRA_Altemose2015_SRR5627140.bed")
+Zcw_AT_hP9N <- fread("../data/peaks/ForceCalledPeaks_WTCHG_538916_221156_vs_WTCHG_538916_217108_AT_NA15-SRR5627138_AND_SRR5627139_vs_NA15-SRR5627140.bed")
 setkey(Zcw_AT_hP9N, chr, center_start, center_stop)
 
-hP9_AT_hP9N <- fread("../data/peaks/ForceCalledPeaks_SRA_Altemose2015_SRR5627146_vs_SRA_Altemose2015_SRR5627143_AT_SRA_Altemose2015_SRR5627138_AND_SRR5627139_vs_SRA_Altemose2015_SRR5627140.bed")
+hP9_AT_hP9N <- fread("../data/peaks/ForceCalledPeaks_NA15-SRR5627146_vs_NA15-SRR5627143_AT_NA15-SRR5627138_AND_SRR5627139_vs_NA15-SRR5627140.bed")
 setkey(hP9_AT_hP9N, chr, center_start, center_stop)
 
-hP9combo_AT_hP9N <- fread("../data/peaks/ForceCalledPeaks_SRA_Altemose2015_SRR5627146_AND_SRA_Altemose2015_SRR5627147_vs_SRA_Altemose2015_SRR5627143_AT_SRA_Altemose2015_SRR5627138_AND_SRR5627139_vs_SRA_Altemose2015_SRR5627140.bed")
+hP9combo_AT_hP9N <- fread("../data/peaks/ForceCalledPeaks_NA15-SRR5627146_AND_NA15-SRR5627147_vs_NA15-SRR5627143_AT_NA15-SRR5627138_AND_SRR5627139_vs_NA15-SRR5627140.bed")
 setkey(hP9combo_AT_hP9N, chr, center_start, center_stop)
 
 
@@ -278,7 +306,6 @@ Blue = Without Zcw_CVC
 Without Zcw_CVC seems to do better despite having a larger coefficient...?
 
 ```{r}
-library(PRROC)
 
 probs = predict(DMC1N_glm,
                 newdata = HP9N_peaks[cov_input>5 & FC_Zcw_CVC_cov_input>5 & FC_h3k4me3_P9_cov_input>5 & FC_h3k4me3_UT_cov_input>5 & FC_h3k36me3_P9_cov_input>5 & chr != "chrX"],
@@ -358,7 +385,7 @@ summary(glm(isDMC1 ~ enrichment +
 ## Bayesian GLM
 b_enrichment = hPrdm9 Nterm
 ```{r}
-library(brms)
+
 bGLMN = brm(
   isDMC1 ~ enrichment + 
                   FC_Zcw_CVC_enrichment + 
@@ -530,12 +557,15 @@ tmp3 <- data.table(tmp3)
 tmp4 <- data.table(tmp4)
 tmp5 <- data.table(tmp5)
 
-tmp1$Predictors <- "Prdm9 Only"
-tmp2$Predictors <- "Zcwpw1 (Prdm9-dependent) Only"
+tmp1$Predictors <- "PRDM9 Only"
+tmp2$Predictors <- "ZCWPW1 (PRDM9-dependent) Only"
 tmp3$Predictors <- "Both"
 tmp4$Predictors <- "All"
-tmp5$Predictors <- "H3KXme3" # better, but co-transfection efficieny..??
+tmp5$Predictors <- "H3K4me3" # better, but co-transfection efficieny..??
+```
 
+
+```{r DMC1_ROC_PR, fig.width=10, fig.height=5}
 p1 <- ggplot(rbind(tmp1, tmp2, tmp3), aes(V1, V2, colour=Predictors)) +
   geom_line() + 
   scale_color_brewer(palette = "Set1") + 
@@ -554,8 +584,8 @@ tmp1 <- data.table(tmp1)
 tmp2 <- data.table(tmp2)
 tmp3 <- data.table(tmp3)
 
-tmp1$Predictors <- "Prdm9 Only"
-tmp2$Predictors <- "Zcwpw1 (Prdm9-dependent) Only"
+tmp1$Predictors <- "PRDM9 Only"
+tmp2$Predictors <- "ZCWPW1 (PRDM9-dependent) Only"
 tmp3$Predictors <- "Both"
 
 p2 <- ggplot(rbind(tmp1, tmp2, tmp3)[V1>0.005], aes(V1, V2, colour=Predictors)) +
@@ -572,9 +602,9 @@ p2 <- ggplot(rbind(tmp1, tmp2, tmp3)[V1>0.005], aes(V1, V2, colour=Predictors)) 
 pmain <- plot_grid(p1+theme(legend.position = "none"),
                    p2+theme(legend.position = "none"))
 
-pdf("../results/DMC1_ROC_PR.pdf", width=10, height = 5)
+#pdf("../results/DMC1_ROC_PR.pdf", width=10, height = 5)
 plot_grid(pmain, get_legend(p1), ncol=1, rel_heights = c(1, 0.07))
-dev.off()
+#dev.off()
 ```
 
 ```{r}
@@ -623,7 +653,7 @@ head(Zcw_CVC_AT_hP9N[order(-enrichment)],10)
 
 # Visualising Discrimination, C vs N term
 
-```{r}
+```{r DMC1_density}
 ggplot(HP9combo_peaks[cov_input>5], aes(enrichment, FC_Zcw_CVC_enrichment)) +
   geom_point(size=0.1, alpha=0.5) +
   scale_y_log10() + scale_x_log10() + facet_wrap(~isDMC1)
@@ -648,9 +678,9 @@ p2 <- ggplot(HP9combo_peaks[cov_input>5 & FC_Zcw_CVC_cov_input>5], aes(enrichmen
     geom_density(alpha=0.5) +
     scale_x_log10(limits=c(0.5, 50)) +  theme_minimal() + scale_fill_brewer(palette = "Set1") + xlab("Enrichment of humanPrdm9")
 
-pdf("../results/DMC1_density.pdf", width=10, height = 5)
+#pdf("../results/DMC1_density.pdf", width=10, height = 5)
 plot_grid(p1, p2)
-dev.off()
+#dev.off()
 ```
 
 # Average DMC1 Overlap HP9 C term

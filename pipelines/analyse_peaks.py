@@ -416,6 +416,18 @@ rule analyse_peaks:
     R -e "knitr::knit('{input.rmd}', '{output.md}')"
     """
 
+rule analyse_fcHP9:
+  input:
+    "functions.R",
+    "data/pratto_dmc1/Pratto_human_DSB_Aintersect_autosomal_hg38.bed",
+    rmd = "analysis/ForceCallingHP9.Rmd",
+  output:
+    md = "results/ForceCallingHP9.md"
+  shell:
+    """
+    R -e "knitr::knit('{input.rmd}', '{output.md}')"
+    """
+
 
 rule analyse_100bp_windows:
   input:
