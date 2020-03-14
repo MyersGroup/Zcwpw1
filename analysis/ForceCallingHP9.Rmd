@@ -408,7 +408,8 @@ bayesplot::mcmc_areas(posterior, pars=c("b_enrichment", "b_FC_Zcw_CVC_enrichment
 
 ## GLM with only N peaks similar to C peaks
 
-```{r}
+```{r, eval=FALSE}
+# requires NC_similar to run
 HP9N_peaks$isDMC1 <- !is.na(HP9N_peaks$DMC1_enrichment)
 
 DMC1N_glm_NC_similar <- glm(isDMC1 ~ enrichment + 
@@ -423,7 +424,8 @@ DMC1N_glm_NC_similar <- glm(isDMC1 ~ enrichment +
 summary(DMC1N_glm_NC_similar)
 ```
 
-```{r}
+```{r, eval=FALSE}
+# requires similar_rank to run
 bGLMN_sr = brm(
   isDMC1 ~ enrichment + 
                   FC_Zcw_CVC_enrichment + 
@@ -750,10 +752,6 @@ plot(fraction_overlap_FC6(HP9N_peaks[cov_input>=4 & FC_Zcw_CVC_cov_input>=5 & ch
 points(fraction_overlap_FC6(HP9N_peaks[cov_input>=4 & FC_Zcw_CVC_cov_input>=5 & chr!="chrX"][FC_Zcw_CVC_enrichment<0.3],n=bins), ylim=c(0,0.5), col='blue')
 points(fraction_overlap_FC6(HP9N_peaks[cov_input>=4 & FC_Zcw_CVC_cov_input>=5 & chr!="chrX"][FC_Zcw_CVC_enrichment>1], n=bins), col='red')
 
-plot(fraction_overlap_FC6(HP9N_peaks[similar_rank & cov_input>=4 & FC_Zcw_CVC_cov_input>=5 & chr!="chrX"],n=bins), ylim=c(0,0.95), xlab="Bin HP9 N Peaks, low to high enrich",  ylab="DMC1 Overlap", main="Nterm, black=all, blue is ZcwCVCenrich<0.8, red>0.8")
-points(fraction_overlap_FC6(HP9N_peaks[similar_rank & cov_input>=4 & FC_Zcw_CVC_cov_input>=5 & chr!="chrX"][FC_Zcw_CVC_enrichment<0.3],n=bins), ylim=c(0,0.5), col='blue')
-points(fraction_overlap_FC6(HP9N_peaks[similar_rank & cov_input>=4 & FC_Zcw_CVC_cov_input>=5 & chr!="chrX"][FC_Zcw_CVC_enrichment>1], n=bins), col='red')
-
 split_overlap <- function(dt, n=10, filters, returndf=F){
   setorder(dt, enrichment)
   dt$enrichment_bin <- cut(1:nrow(dt), n)
@@ -810,12 +808,6 @@ split_overlap(HP9N_peaks[cov_input>=4 & FC_Zcw_CVC_cov_input_flank150>=5 & chr!=
               filters=c("All",
                         "FC_Zcw_CVC_enrichment_flank150<0.3",
                         "FC_Zcw_CVC_enrichment_flank150>0.8")) + ylim(0,0.5) + theme(legend.position = "bottom")
-
-split_overlap(HP9N_peaks[similar_rank & cov_input>=4 & FC_Zcw_CVC_cov_input>=5 & chr!="chrX"],
-              filters=c("All",
-                        "FC_Zcw_CVC_enrichment<0.3",
-                        "FC_Zcw_CVC_enrichment>0.9")) + ylim(0,0.5)
-
 
 
 tmp <- split_overlap(HP9N_peaks[cov_input>=4 & FC_Zcw_CVC_cov_input>=5 & chr!="chrX"],
