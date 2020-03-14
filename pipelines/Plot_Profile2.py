@@ -289,7 +289,7 @@ rule NormaliseProfile:
     tc=$(cat {input.control_t})
     ratio=$(echo "scale=3 ; $tc/$ts" | bc)
     
-    # normalise sample by control + lib size
+    # normalise sample by control + lib size, two sets of 6 columns, pos, Q1-4 & random.
     paste {input.sample} {input.control} | awk -v r="$ratio" -v OFS='\t' '{{print $1, r*$2/$8, r*$3/$9, r*$4/$10, r*$5/$11, r*$6/$12;}}' > {output}
     """
 
