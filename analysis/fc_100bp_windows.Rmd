@@ -169,6 +169,7 @@ forcecalled <- merge(forcecalled, zcw_peak_rand)
 #just using Chromosome 1, as many data points
 #grep -P 'chr1\\t|chr\\t' 
 #forcecalled <- forcecalled[chr=="chr1"]
+forcecalled <- forcecalled[chr!="chrX"]
 ```
 
 # CpG Island Methylation
