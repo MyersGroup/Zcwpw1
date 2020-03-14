@@ -41,15 +41,15 @@ snakemake --cores 15 --snakefile pipelines/Force_Call_Peaks.py -npr
 
 snakemake --cores 15 --snakefile pipelines/wgs.py -npr
 
-# create DMC1 profile plot
+# Perform analysis of DMC1 data
 cd dmc1
-snakemake --cores 15 --snakefile ../pipelines/dmc1.py -npr
-
-#Create Allele Specificify Plot
-Allele_specificity.sh
+snakemake --cores 15 --snakefile pipelines/dmc1.py -npr
 
 # plot profile over gene
 metagene_plot.sh
+
+snakemake --cores 10 --snakefile pipelines/analyse_peaks.py -npr
+snakemake --cores 3 --snakefile pipelines/non_chip_analysis.py -npr
 ```
 
 Other analyses are Rnotebooks, and require the [preprocess.sh](analysis/preprocess.sh) script to be run to generate the required files.
