@@ -371,7 +371,7 @@ p <- ggplot(pPeak_CpG[CpG<20 & methStatus!="Unk"], aes(CpG, PeakProb, colour=Typ
 p
 #dev.off()
 
-#saveRDS(p,"../data/CpG/NormalPeaks300bp.rds")
+saveRDS(p,"../data/CpG/NormalPeaks300bp.rds")
 
 
 
