@@ -192,6 +192,17 @@ rule per100bp:
     """
 
 
+rule windows:
+  input:
+    "../single-cell/sequencing/metadata/hg38_sizes.chrom"
+  output:
+    "data/forcepeaks/genome.windows.100wide.100slide.bed"
+  shell:
+    """
+    bedtools makewindows -g {input} -w 100 > {output}
+    """
+
+
 rule random_zcw:
   # Random Zcw Peaks
   input:
