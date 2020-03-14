@@ -209,7 +209,7 @@ rule random_zcw:
     chrom = "../single-cell/sequencing/metadata/hg38_sizes.chrom"
   output:
     bed = "data/peaks/Zcw_random.bed",
-    sizes = "data/genome/hg38_sizes23.bed"
+    sizes = "data/genome/hg38_sizes_23.chrom"
   shell:
     """
     head -23 {input.chrom} > {output.sizes}
