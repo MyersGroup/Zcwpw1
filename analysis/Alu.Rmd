@@ -251,6 +251,33 @@ fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeatsAlu[enrichment==10], x1="
 fraction_overlapN2(zcw_peaks_cin[cov_input>=5], repeatsAlu[enrichment==20], x1="Zcw UT", y1="Alu Repeats CpG=20", shift=1e8) + scale_y_continuous()
 ```
 
+```{r review_fig8, fig.width=12, fig.height=12}
+zcw_wP9_peaks_cin <- fread("../data/peaks/SingleBasePeaks.WTCHG_538916_223180_vs_WTCHG_538916_217108_AND_WTCHG_538916_220144.p0.000001.sep250.ALL.bed")
+zcw_wP9_peaks_cin <- prejoin(zcw_wP9_peaks_cin)
+
+zcw_peaks_cin$HP9combo_enrichment <- foverlaps(zcw_peaks_cin, HP9combo_peaks, mult="first")$enrichment
+zcw_wP9_peaks_cin$HP9combo_enrichment <- foverlaps(zcw_wP9_peaks_cin, HP9combo_peaks, mult="first")$enrichment
+
+p1 <- fraction_overlapN2(zcw_wP9_peaks_cin[cov_input>=5], 
+                           repeats[Name!="Alu"][grep("Alu",Name)][CI_stop-CI_start>250 & CI_stop-CI_start<350],
+                           x1="ZCWPW1 (w PRDM9)\n [inc PRDM9 sites]", y1="Alu Repeats", shift=1e8) # yes up to 70%
+
+p2 <- fraction_overlapN2(zcw_peaks_cin[cov_input>=5], 
+                           repeats[Name!="Alu"][grep("Alu",Name)][CI_stop-CI_start>250 & CI_stop-CI_start<350],
+                           x1="ZCWPW1 (w/o PRDM9)\n [inc PRDM9 sites]", y1="Alu Repeats", shift=1e8) # yes up to 70%
+
+p3 <- fraction_overlapN2(zcw_wP9_peaks_cin[cov_input>=5][is.na(HP9combo_enrichment)], 
+                           repeats[Name!="Alu"][grep("Alu",Name)][CI_stop-CI_start>250 & CI_stop-CI_start<350],
+                           x1="ZCWPW1 (w PRDM9)\n [excluding PRDM9 sites]", y1="Alu Repeats", shift=1e8) # yes up to 70%
+
+p4 <- fraction_overlapN2(zcw_peaks_cin[cov_input>=5][is.na(HP9combo_enrichment)], 
+                           repeats[Name!="Alu"][grep("Alu",Name)][CI_stop-CI_start>250 & CI_stop-CI_start<350],
+                           x1="ZCWPW1 (w/o PRDM9)\n [excluding PRDM9 sites]", y1="Alu Repeats", shift=1e8) # yes up to 70%
+
+plot_grid(p1, p2, p3, p4)
+```
+
+
 ```{r}
 repeatsAlu$id <- seq_along(repeatsAlu$chr)
 
