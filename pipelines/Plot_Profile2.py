@@ -32,7 +32,7 @@ rule all:
   input:
     #[f"bwplots/{sample}_VS_{control}_AT_{locations}.pdf" for sample, control, locations in [[samples[0],samples[1],location] for samples,location in list(itertools.product(sample_pairings, locations))]],
     #[f"bwprofilesNorm/{sample}_VS_{control}_AT_{locations}.profile" for sample, control, locations in [[samples[0],samples[1],location] for samples,location in list(itertools.product(sample_pairings, locations))]],
-    [f"bwplots/AllSamples_AT_{location}.pdf" for location in locations]
+    [f"results/bwplots/AllSamples_AT_{location}.pdf" for location in locations]
 
 
 
@@ -46,10 +46,10 @@ rule removeUTH3K4:
   Remove peaks with greater than 99.9% input  
   """
   input:
-    bed = "peaks/{sample}.bed",
-    UTh3k4 = "peaks/SingleBasePeaks.NA15-SRR5627150_AND_NA15-SRR5627151_vs_NA15-SRR5627142.p0.000001.sep250.ALL.bed",
+    bed = "data/peaks/{sample}.bed",
+    UTh3k4 = "data/peaks/SingleBasePeaks.NA15-SRR5627150_AND_NA15-SRR5627151_vs_NA15-SRR5627142.p0.000001.sep250.ALL.bed",
   output:
-    bed = "QCpeaks/{sample}_QCfiltered.bed",
+    bed = "data/QCpeaks/{sample}_QCfiltered.bed",
   shell:
     """
     # calculate 99.9% percentile of input
@@ -74,13 +74,13 @@ rule downloadFASTA:
   To enable extraction of FASTA to infer motifs within
   """
   output:
-    fa = "motifs/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa",
-    fai = "motifs/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa.fai"
+    fa = "data/motifs/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa",
+    fai = "data/motifs/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa.fai"
   shell:
     """
     # Download Fasta
-    wget ftp://ftp.ensembl.org/pub/release-95/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa.gz -O motifs/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa.gz
-    gunzip motifs/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa.gz
+    wget ftp://ftp.ensembl.org/pub/release-95/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa.gz -O data/motifs/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa.gz
+    gunzip data/motifs/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa.gz
     sed -i 's/>/>chr/g' {output.fa}
     samtools faidx {output.fa}
     """
@@ -91,10 +91,10 @@ rule extractFASTA:
   For finding Prdm9 motifs in
   """
   input:
-    bed = "QCpeaks/{sample}_QCfiltered.bed",
-    fasta = "motifs/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa"
+    bed = "data/QCpeaks/{sample}_QCfiltered.bed",
+    fasta = "data/motifs/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa"
   output:
-    fasta = "motifs/{sample}.fasta",
+    fasta = "data/motifs/{sample}.fasta",
   shell:
     """
     # | cut -f 1-3 # for names based on chr loc
@@ -108,7 +108,7 @@ rule downloadMotifs:
   Get Altemose Motifs to infer motif positions in new peak regions
   """
   output:
-    "motifs/Human_Motif_Results_Final_iter240.r"
+    "data/motifs/Human_Motif_Results_Final_iter240.r"
   shell:
     """
     wget https://github.com/altemose/PRDM9-map/raw/master/3_MotifFinding/Human_Motif_Results_Final_iter240.r -O {output}
@@ -120,12 +120,12 @@ rule findMotifs:
   Locate Prdm9 motif within peak, and recenter peak there (& strand according to motif orientation)
   """
   input:
-    fasta = "motifs/{sample}.fasta",
-    motifs = "motifs/Human_Motif_Results_Final_iter240.r",
-    bed = "QCpeaks/{sample}_QCfiltered.bed",
+    fasta = "data/motifs/{sample}.fasta",
+    motifs = "data/motifs/Human_Motif_Results_Final_iter240.r",
+    bed = "data/QCpeaks/{sample}_QCfiltered.bed",
   output:
-    bed = "QCpeaks/{sample}_MotifCenteredStranded.bed",
-    plots = "motifs/P9_motif_locations_{sample}.pdf"
+    bed = "data/QCpeaks/{sample}_MotifCenteredStranded.bed",
+    plots = "data/motifs/P9_motif_locations_{sample}.pdf"
   shell:
     """
     Rscript pipelines/center_by_motif.R {input.fasta} {input.motifs} {input.bed} {output.bed} {output.plots}
@@ -138,11 +138,11 @@ rule quantiseBeds:
   if not Human Prdm9 allele, skip motif finding and centering/stranding, use the QCfiltered.bed directly
   """
   input:
-    lambda wc: "QCpeaks/{locations}.bed" if "MotifCenteredStranded" in wc.locations else "QCpeaks/{locations}_QCfiltered.bed" #config["prdm9_allele"][]=="Human"
+    lambda wc: "data/QCpeaks/{locations}.bed" if "MotifCenteredStranded" in wc.locations else "data/QCpeaks/{locations}_QCfiltered.bed" #config["prdm9_allele"][]=="Human"
   output:
-    expand("QCpeaks/{{locations}}_Q0{quantile}.bed", quantile=[0, 1, 2, 3])
+    expand("data/QCpeaks/{{locations}}_Q0{quantile}.bed", quantile=[0, 1, 2, 3])
   params:
-    "QCpeaks/{locations}_Q"
+    "data/QCpeaks/{locations}_Q"
   shell:
     """
     split -d -n l/4 --additional-suffix=".bed" {input} {params}
@@ -154,10 +154,10 @@ rule mergeFragPos:
   Merge to fragment position bed files e.g. for replicates
   """
   input:
-    a="FragPos/Fragment_Position_{sampleA}.sorted.bed",
-    b="FragPos/Fragment_Position_{sampleB}.sorted.bed"
+    a="data/FragPos/Fragment_Position_{sampleA}.sorted.bed",
+    b="data/FragPos/Fragment_Position_{sampleB}.sorted.bed"
   output:
-    sample = "FragPos/Fragment_Position_{sampleA}_AND_{sampleB}.sorted.bed",
+    sample = "data/FragPos/Fragment_Position_{sampleA}_AND_{sampleB}.sorted.bed",
   threads:
     5
   shell:
@@ -170,9 +170,9 @@ rule totalBases:
   Calculate total number of bases the fragments cover - for normalisation purposes
   """
   input:
-    "FragPos/Fragment_Position_{sample}.sorted.bed"
+    "data/FragPos/Fragment_Position_{sample}.sorted.bed"
   output:
-    "FragPos/Fragment_Position_{sample}.total"
+    "data/FragPos/Fragment_Position_{sample}.total"
   shell:
     "grep -P 'chr[0-9X]+\t' {input} | awk 'BEGIN{{size=0;}}{{size = size + $3 - $2;}}END{{print size;}}' > {output}"
 
@@ -182,10 +182,10 @@ rule bedtograph:
   To create bedgraph after merging samples (single sample bedgraph created in Map_Reads.py snakefile)
   """
   input:
-    bed="FragPos/Fragment_Position_{sample}.sorted.bed",
+    bed="data/FragPos/Fragment_Position_{sample}.sorted.bed",
     sizes=join(METADATA_DIR, "{GENOME}_sizes.chrom".format(GENOME=GENOME))
   output:
-    "bedgraphs/depth_{sample}.bedgraph"
+    "data/bedgraphs/depth_{sample}.bedgraph"
   threads:
     5
   shell:
@@ -197,10 +197,10 @@ rule graphtobigwig:
   To create bigwig from bedgraph after merging samples (single sample bedgraph created in Map_Reads.py snakefile)
   """
   input:
-    graph="bedgraphs/depth_{sample}.bedgraph",
+    graph="data/bedgraphs/depth_{sample}.bedgraph",
     sizes=join(METADATA_DIR, "{GENOME}_sizes.chrom".format(GENOME=GENOME))
   output:
-    "bedgraphs/depth_{sample}.bigWig"
+    "data/bedgraphs/depth_{sample}.bigWig"
   threads:
     1
   shell:
@@ -213,9 +213,9 @@ rule makeBED6:
   Also remove regions if there's another within Xkbp so they're not double counted / pollute the surrounding regions
   """
   input:
-    "QCpeaks/{locations}"
+    "data/QCpeaks/{locations}"
   output:
-    "bed6/{locations}"
+    "data/bed6/{locations}"
   params:
     4000 # upstream+downstream
   shell:
@@ -235,7 +235,7 @@ rule randomBED:
   input:
     "../single-cell/sequencing/metadata/hg38_sizes.chrom"
   output:
-    "random.bed"
+    "data/other/random.bed"
   shell:
     """
     head -23 {input} |
@@ -254,11 +254,11 @@ rule bigwigProfile:
   calculate mean coverage ("profile") over regions
   """
   input:
-    locations=lambda wc: "bed6/{locations}.bed" if(wc.locations=="top_transcripts_ens") else expand("bed6/{{locations}}_Q0{quantile}.bed", quantile=[0, 1, 2, 3]),
-    random = "random.bed",
-    sample = "bedgraphs/depth_{sample}.bigWig",
+    locations=lambda wc: "data/bed6/{locations}.bed" if(wc.locations=="top_transcripts_ens") else expand("data/bed6/{{locations}}_Q0{quantile}.bed", quantile=[0, 1, 2, 3]),
+    random = "data/other/random.bed",
+    sample = "data/bedgraphs/depth_{sample}.bigWig",
   output:
-    "bwprofiles/{sample}_AT_{locations}.profile"
+    "data/bwprofiles/{sample}_AT_{locations}.profile"
   params:
     width=2000
   threads:
@@ -276,12 +276,12 @@ rule NormaliseProfile:
   Normalise average fragment depth by an Input
   """
   input:
-    sample =  "bwprofiles/{sample}_AT_{locations}.profile",
-    sample_t =  "FragPos/Fragment_Position_{sample}.total",
-    control = "bwprofiles/{control}_AT_{locations}.profile",
-    control_t = "FragPos/Fragment_Position_{control}.total"
+    sample =  "data/bwprofiles/{sample}_AT_{locations}.profile",
+    sample_t =  "data/FragPos/Fragment_Position_{sample}.total",
+    control = "data/bwprofiles/{control}_AT_{locations}.profile",
+    control_t = "data/FragPos/Fragment_Position_{control}.total"
   output:
-    "bwprofilesNorm/{sample}_VS_{control}_AT_{locations}.profile"
+    "data/bwprofilesNorm/{sample}_VS_{control}_AT_{locations}.profile"
   shell:
     """
     # calculate normalisation ratio
@@ -299,12 +299,12 @@ rule PlotProfile:
   Plot profile graph for a single sample-input pair
   """
   input:
-    sample =  "bwprofiles/{sample}_AT_{locations}.profile",
-    sample_t =  "FragPos/Fragment_Position_{sample}.total",
-    control = "bwprofiles/{control}_AT_{locations}.profile",
-    control_t = "FragPos/Fragment_Position_{control}.total"
+    sample =  "data/bwprofiles/{sample}_AT_{locations}.profile",
+    sample_t =  "data/FragPos/Fragment_Position_{sample}.total",
+    control = "data/bwprofiles/{control}_AT_{locations}.profile",
+    control_t = "data/FragPos/Fragment_Position_{control}.total"
   output:
-    "bwplots/{sample}_VS_{control}_AT_{locations}.pdf"
+    "results/bwplots/{sample}_VS_{control}_AT_{locations}.pdf"
   threads:
     1
   shell:
@@ -320,9 +320,9 @@ rule MultiProfilePlot:
   Plot profile graph for all normalised samples for a given set of regions
   """
   input:
-    samplePair =  [f"bwprofilesNorm/{sample}_VS_{control}_AT_{{locations}}.profile" for sample, control, name in sample_pairings]
+    samplePair =  [f"data/bwprofilesNorm/{sample}_VS_{control}_AT_{{locations}}.profile" for sample, control, name in sample_pairings]
   output:
-    "bwplots/AllSamples_AT_{locations}.pdf"
+    "results/bwplots/AllSamples_AT_{locations}.pdf"
   params:
     sampleName = " ".join([f"'{name}'" for s,c,name in sample_pairings]),
     regionsName =  lambda wc: config["regionNames"][wc.locations],
