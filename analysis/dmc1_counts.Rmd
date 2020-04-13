@@ -266,11 +266,70 @@ p
 #ggsave("../results/rad51_counts.pdf", width = 7, height = 5)
 ```
 
+```{r load_RPA}
+
+rpa_counts_ZCW <- readxl::read_excel("../data/cellular/RPA.xlsx")
+
+rpa_counts_ZCW$Mouse1 <- colnames(rpa_counts_ZCW)[1]
+rpa_counts_ZCW$Mouse2 <- colnames(rpa_counts_ZCW)[8]
+rpa_counts_ZCW$Mouse3 <- colnames(rpa_counts_ZCW)[13]
+
+rpa_counts_ZCW <- rpa_counts_ZCW[2:nrow(rpa_counts_ZCW),]
+
+colnames(rpa_counts_ZCW) <- c("Image","Stage","Foci","NA1","NA2","NA3","NA4","Image","Stage","Foci","NA5","NA6","Image","Stage","Foci","NA7","NA8","NA9","NA10","NA11","NA12","NA13","Mouse","Mouse","Mouse")
+
+rpa_counts <- data.table(rbind(rpa_counts_ZCW[,c(1:3,23)],
+                     rpa_counts_ZCW[,c(8:10,24)],
+                     rpa_counts_ZCW[,c(13:15,25)]))
+
+rpa_counts[grep("TG",Mouse), Genotype := "WT"]
+rpa_counts[grep("ZCWP",Mouse), Genotype := "Zcwpw1 KO"]
+
+rpa_counts[rpa_counts$Stage=="lateZ",]$Stage <- "Late Z"
+rpa_counts[rpa_counts$Stage=="LateZ",]$Stage <- "Late Z"
+rpa_counts[rpa_counts$Stage=="EarlyZ",]$Stage <- "Early Z"
+rpa_counts[rpa_counts$Stage=="P",]$Stage <- "(Pseudo)P"
+rpa_counts[rpa_counts$Stage=="PseudoP",]$Stage <- "(Pseudo)P"
+rpa_counts <- rpa_counts[!is.na(Image)]
+
+rpa_counts$Stage <- factor(rpa_counts$Stage, levels = c("L","Late L","Early Z","Z","Late Z","(Pseudo)P","Late P"))
+rpa_counts$Genotype <- factor(rpa_counts$Genotype, levels = c("WT","Zcwpw1 KO","Prdm9 KO"))
+rpa_counts[, Foci := as.numeric(Foci)]
+
+
+for(stage in c("Early Z","Z","Late Z","(Pseudo)P")){
+print(t.test(data.table(rpa_counts)[Genotype=="Zcwpw1 KO" & Stage ==stage]$Foci,
+       data.table(rpa_counts)[Genotype=="WT" & Stage ==stage]$Foci))
+}
+```
+
+
+```{r rpa_counts, fig.width=7, fig.height=5}
+p <- ggplot(rpa_counts[Stage!="Late L"], aes(Stage, Foci, colour=Genotype)) + 
+  geom_point(size=0.5, position = position_jitterdodge()) + 
+  scale_color_brewer(palette = "Set1", labels = c("Wild Type",expression(italic("Zcwpw1")^"-/-"),expression(italic("Prdm9")^"-/-"))) + 
+  theme_minimal() + 
+  geom_boxplot(alpha=0) +
+  theme(legend.position = "bottom") +
+  ylab("RPA Foci Count")
+
+p + geom_signif(y_position=c(350, 400, 320, 250),
+                xmin=c(0.8, 1.8, 2.8, 3.8),
+                xmax=c(1.2, 2.2, 3.2, 4.2),
+              annotation=c("0.097",fs("4.41e-05"),fs("0.0014"),fs("< 2.2e-16")),
+              tip_length=0.01, col="black", parse=TRUE) + ylim(0,420)
+
+p
+
+#ggsave("../results/rpa_counts.pdf", width = 7, height = 5)
+```
+
 ```{r export_data}
 dmc1_counts$Target <- "DMC1"
 rad51_counts$Target <- "RAD51"
+rpa_counts$Target <- "RPA2"
 
-fwrite(rbind(dmc1_counts, rad51_counts), "../results/non_ChIP/DMC1_RAD51_Counts.tsv")
+fwrite(rbind(dmc1_counts, rad51_counts, rpa_counts), "../results/non_ChIP/DMC1_RAD51_RPA2_Counts.csv")
 
 ```
 
