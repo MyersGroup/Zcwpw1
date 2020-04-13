@@ -224,6 +224,37 @@ mean(Zcw_CVC_AT_hP9$pvalue[HP9_peaks$enrichment>4 & HP9_peaks$cov_input>=5]<=1e-
 mean(Zcw_CVC_AT_hP9$pvalue[HP9_peaks$enrichment>10 & HP9_peaks$cov_input>=5]<=1e-6)
 ```
 
+# PRDM9_ZCWPW1_Correlation
+
+```{r, PRDM9_ZCWPW1_Correlation}
+i=10
+ii=3
+
+a <- HP9combo_peaks[cov_input>i & FC_Zcw_wP9_cov_input>ii]$enrichment
+b <- HP9combo_peaks[cov_input>i & FC_Zcw_wP9_cov_input>ii]$FC_Zcw_wP9_enrichment
+c <- HP9combo_peaks[cov_input>i & FC_Zcw_wP9_cov_input>ii]$FC_Zcw_CVC_enrichment
+
+k=11
+outliers <- c(
+which(a >= min(-head(sort(-a), k))),
+which(b >= min(-head(sort(-b), k))),
+which(c >= min(-head(sort(-c), k)))
+)
+
+cor.test(a[-outliers], c[-outliers])
+summary(lm(log(c[-outliers]+0.1) ~ log(a[-outliers]+0.1)))
+
+qplot(a[-outliers]+0.1, c[-outliers]+0.1, size=I(0.3), alpha=I(0.15)) + 
+  scale_x_log10() + scale_y_log10() + 
+  ylab("ZCWPW1 Enrichment (with PRDM9 vs without)") + xlab("PRDM9 Enrichment (vs input)") + 
+  geom_smooth(method="lm", se=F, colour="red", linetype="dashed") + geom_smooth()
+
+cor.test(a[-outliers], b[-outliers])
+qplot(a[-outliers]+0.1, b[-outliers]+1, size=I(0.1), alpha=I(0.3)) + geom_smooth() + scale_x_log10() + scale_y_log10() + ylab("ZCWPW1 Enrichment (with PRDM9 vs input)") + xlab("PRDM9 Enrichment (vs input)")
+
+```
+
+
 # HP9 N vs HP9
 
 ```{r}
