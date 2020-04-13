@@ -116,7 +116,6 @@ HP9combo_peaks$FC_h3k36me3_P9_cov_input <- h3k36me3_P9_AT_HP9combo$cov_input
 all.equal(Zcw_CVC_AT_hP9combo$center_start, HP9combo_peaks$center_start)
 ```
 
-
 ## N term
 
 ```{r}
@@ -565,7 +564,7 @@ probs5 = predict(CtermDMC1glmHist,
                 type = "response")
 
 
-dmc1label1 = HP9combo_peaks[cov_input>5 & FC_Zcw_CVC_cov_input>5 & chr != "chrX" & cov_input<200 & FC_Zcw_CVC_enrichment<10][chr %in% testChrs]$isDMC1
+dmc1label1 = HP9combo_peaks[cov_input>5& FC_Zcw_CVC_cov_input>5 & chr != "chrX" & cov_input<200 & FC_Zcw_CVC_enrichment<10][chr %in% testChrs]$isDMC1
 
 
 caret::confusionMatrix(data = as.factor(probs1>0.05),
@@ -635,8 +634,10 @@ p2 <- ggplot(rbind(tmp1, tmp2, tmp3)[V1>0.005], aes(V1, V2, colour=Predictors)) 
 pmain <- plot_grid(p1+theme(legend.position = "none"),
                    p2+theme(legend.position = "none"))
 
-#pdf("../results/DMC1_ROC_PR.pdf", width=10, height = 5)
-plot_grid(pmain, get_legend(p1), ncol=1, rel_heights = c(1, 0.07))
+ROC_PR <- plot_grid(pmain, get_legend(p1), ncol=1, rel_heights = c(1, 0.07))
+
+#pdf(width=10, height = 5) #"../results/DMC1_ROC_PR.pdf", 
+ROC_PR
 #dev.off()
 ```
 
@@ -686,7 +687,7 @@ head(Zcw_CVC_AT_hP9N[order(-enrichment)],10)
 
 # Visualising Discrimination, C vs N term
 
-```{r DMC1_density}
+```{r DMC1_density, fig.width=10, fig.height = 5}
 ggplot(HP9combo_peaks[cov_input>5], aes(enrichment, FC_Zcw_CVC_enrichment)) +
   geom_point(size=0.1, alpha=0.5) +
   scale_y_log10() + scale_x_log10() + facet_wrap(~isDMC1)
@@ -695,25 +696,31 @@ ggplot(HP9N_peaks[cov_input>5], aes(enrichment, FC_Zcw_CVC_enrichment)) +
   geom_point(size=0.1, alpha=0.5) +
   scale_y_log10() + scale_x_log10() + facet_wrap(~isDMC1)
 
-ggplot(HP9combo_peaks[cov_input>5 & FC_Zcw_CVC_cov_input>5], aes(FC_Zcw_CVC_enrichment, color=isDMC1)) +
+ggplot(HP9combo_peaks[cov_input>5 & FC_Zcw_CVC_cov_input>5], aes(FC_Zcw_CVC_enrichment+0.01, color=isDMC1)) +
   geom_density() +
-  scale_x_log10() + ggtitle("Cterm")
+  scale_x_log10(limits=c(0.01,10)) + ggtitle("Cterm")
 
 ggplot(HP9N_peaks[cov_input>5 & FC_Zcw_CVC_cov_input>5], aes(FC_Zcw_CVC_enrichment, color=isDMC1)) +
   geom_density() +
   scale_x_log10() + ggtitle("Nterm") + geom_vline(xintercept = 0.9, linetype="dashed")
 
 p1 <- ggplot(HP9combo_peaks[cov_input>5 & FC_Zcw_CVC_cov_input>5], aes(FC_Zcw_CVC_enrichment, fill=isDMC1)) +
-    geom_density(alpha=0.5) +
-    scale_x_log10(limits=c(1e-2, 5)) +  theme_minimal() + theme(legend.position = "none") + scale_fill_brewer(palette = "Set1") + xlab("Enrichment of Zcwpw1 (with vs without humanPrdm9)")
+    geom_density(alpha=0.5) + #, position="fill"
+    scale_x_log10(limits=c(1e-2, 5)) +  theme_minimal() + theme(legend.position = "bottom") + guides(fill=guide_legend("Overlaps DMC1")) +
+  scale_fill_brewer(palette = "Set1") + xlab("Enrichment of ZCWPW1 (with vs without human PRDM9)")
 
 p2 <- ggplot(HP9combo_peaks[cov_input>5 & FC_Zcw_CVC_cov_input>5], aes(enrichment, fill=isDMC1)) +
-    geom_density(alpha=0.5) +
-    scale_x_log10(limits=c(0.5, 50)) +  theme_minimal() + scale_fill_brewer(palette = "Set1") + xlab("Enrichment of humanPrdm9")
+    geom_density(alpha=0.5) + #, position="fill"
+    scale_x_log10(limits=c(0.5, 50)) + theme_minimal() +
+  scale_fill_brewer(palette = "Set1") + xlab("Enrichment of human PRDM9") 
 
-#pdf("../results/DMC1_density.pdf", width=10, height = 5)
-plot_grid(p1, p2)
-#dev.off()
+density_comparison <- plot_grid(p1 + theme(legend.position = "none"), p2 + theme(legend.position = "none"), rel_widths = c(1, 1.25))
+density_comparison
+```
+
+```{r Density_and_AUC, fig.width=10, fig.height = 10}
+plot_grid(plot_grid(density_comparison, get_legend(p1), ncol=1, rel_heights = c(1, 0.07)),
+          ROC_PR, nrow = 2, labels = NULL)
 ```
 
 # Average DMC1 Overlap HP9 C term
