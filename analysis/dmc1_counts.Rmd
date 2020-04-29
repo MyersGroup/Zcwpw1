@@ -402,3 +402,47 @@ cowplot::plot_grid(pw, ps, nrow=2)
 #ggsave("../results/weight_&_synapsis.pdf", width = 3, height = 7)
 ```
 
+```{r foci_ends, fig.width=8, fig.height = 5}
+foci_ends <- data.table(readxl::read_excel("../data/cellular/Revised Supplementary Table 6.xlsx", range = "A6:G49"))
+setnames(foci_ends, c("Image","Stage","Both","Centromeric","Telomeric","Neither","Total"))
+foci_ends[Stage=="D", Stage := "Mid D"]
+foci_ends[Stage=="P", Stage := "Mid P"]
+foci_ends[, Stage := factor(Stage, levels=c("Mid P","Late P","Early D","Mid D","Late D"))]
+foci_ends <- melt(foci_ends, id.vars=c("Image","Stage","Total"), variable.name = "Staining_class", value.name = "count")
+foci_ends[, Staining_class := factor(Staining_class, levels=c("Neither","Telomeric","Centromeric","Both"))]
+foci_ends <- foci_ends[,.(Proportion=sum(count, na.rm = T)/sum(Total), sucess=sum(count, na.rm = T), N=sum(Total)),by=c("Stage","Staining_class")]
+foci_ends <- cbind(foci_ends, data.table(Hmisc::binconf(foci_ends$sucess, foci_ends$N, method="wilson")))
+
+cum_prop <- cbind(foci_ends[,.(cumulative_proportion=cumsum(Proportion)),by=Stage],Staining_class=rep(c("Both","Centromeric","Telomeric","Neither"), 5))
+
+foci_ends[, Lower_diff := Lower - Proportion]
+foci_ends[, Upper_diff := Upper - Proportion]
+
+foci_ends <- cum_prop[foci_ends, on=c("Stage","Staining_class")]
+foci_ends[, Staining_class := factor(Staining_class, levels=c("Neither","Telomeric","Centromeric","Both"))]
+
+
+ggplot(foci_ends, aes(Staining_class, Proportion, colour=Stage)) +
+  geom_pointrange(aes(ymin = Lower, ymax = Upper), position = position_dodge2(width = 0.5)) +
+  scale_color_brewer(palette = "Set1") +
+  theme_minimal() +
+  ylab("Mean chromosomes per cell showing ZCWPW1 foci") +
+  xlab("Ends of chromosome with foci") +
+  theme(axis.line=element_line()) +
+  scale_y_continuous(labels = scales::percent)
+
+ggplot(foci_ends, aes(Stage, Proportion, fill=Staining_class)) +
+  geom_col() +
+  geom_errorbar(aes(ymin=cumulative_proportion+Lower_diff, ymax=cumulative_proportion+Upper_diff),
+                 colour="black", width=0.3,
+                 position = position_dodge(width=0.8)) +
+  scale_fill_brewer(palette = "Set1") +
+  guides(fill=guide_legend(title="Position of \nZCWPW1 foci at\nsynaptonemal \ncomplex ends")) +
+  theme_minimal() +
+  ylab("Mean chromosomes per cell showing ZCWPW1 foci") +
+  xlab("Meiotic Stage") +
+  theme(axis.line=element_line()) +
+  scale_y_continuous(labels = scales::percent, breaks = c(0,0.25,0.5,0.75,1))
+```
+
+
