@@ -17,6 +17,20 @@ library(ggsignif)
 library(cowplot)
 ```
 
+```{r}
+# convert 2e4 etc. to scientific notation
+fs <- function(l) {
+     # turn in to character string in scientific notation
+     l <- format(l, scientific = TRUE)
+     # quote the part before the exponent to keep all the digits
+     l <- gsub("^(.*)e", "'\\1'e", l)
+     # turn the 'e+' into plotmath format
+     l <- gsub("e", "%*%10^", l)
+     # return this as an expression
+     return(l)
+}
+```
+
 
 ```{r load_DMC1}
 
@@ -120,12 +134,14 @@ dmc1_counts <- dmc1_counts[!is.na(dmc1_counts$Stage),]
 dmc1_counts$Stage <- stringr::str_to_title(dmc1_counts$Stage)
 
 dmc1_counts[dmc1_counts$Stage=="L",]$Stage <- "Late L"
-dmc1_counts[dmc1_counts$Stage=="P?",]$Stage <- "P"
-dmc1_counts[dmc1_counts$Stage=="Pseudop",]$Stage <- "P"
+dmc1_counts[dmc1_counts$Stage=="P",]$Stage <- "(Pseudo) P"
+dmc1_counts[dmc1_counts$Stage=="P?",]$Stage <- "(Pseudo)P"
+dmc1_counts[dmc1_counts$Stage=="Pseudop",]$Stage <- "(Pseudo)P"
+dmc1_counts[dmc1_counts$Stage=="Z",]$Stage <- "Mid Z"
 
 dmc1_counts[dmc1_counts$Genotype=="Wild Type (unrelated)",]$Genotype <- "Wild Type"
 
-dmc1_counts$Stage <- factor(dmc1_counts$Stage, levels = c("L","Late L","Early Z","Z","Late Z","P","P?","Pseudop"))
+dmc1_counts$Stage <- factor(dmc1_counts$Stage, levels = c("L","Late L","Early Z","Mid Z","Late Z","(Pseudo)P","P?","Pseudop"))
 dmc1_counts$Genotype <- factor(dmc1_counts$Genotype, levels = c("Wild Type","Wild Type (unrelated)","Zcwpw1 -/-","Prdm9 -/-"))
 ```
 
@@ -146,21 +162,9 @@ ggplot(data.table(dmc1_counts)[Genotype=="Prdm9 -/-"], aes(Stage, Foci, colour=M
   geom_jitter(position = position_jitterdodge())
 
 # add pvalues
-for(stage in c("Late L","Early Z","Z","Late Z","P")){
+for(stage in c("Late L","Early Z","Mid Z","Late Z","(Pseudo)P")){
 print(t.test(data.table(dmc1_counts)[Genotype=="Zcwpw1 -/-" & Stage ==stage]$Foci,
        data.table(dmc1_counts)[Genotype=="Wild Type" & Stage ==stage]$Foci))
-}
-
-# convert 2e4 etc. to scientific notation
-fs <- function(l) {
-     # turn in to character string in scientific notation
-     l <- format(l, scientific = TRUE)
-     # quote the part before the exponent to keep all the digits
-     l <- gsub("^(.*)e", "'\\1'e", l)
-     # turn the 'e+' into plotmath format
-     l <- gsub("e", "%*%10^", l)
-     # return this as an expression
-     return(l)
 }
 
 p + geom_signif(y_position=c(80, 290, 325, 220, 230),
@@ -233,13 +237,14 @@ rad51_counts <- data.table(rbind(rad51_counts_WT, rad51_counts_P9KO, rad51_count
 rad51_counts$Foci <- as.integer(rad51_counts$Foci)
 
 rad51_counts[rad51_counts$Stage=="late Z",]$Stage <- "Late Z"
+rad51_counts[rad51_counts$Stage=="Z",]$Stage <- "Mid Z"
 rad51_counts[rad51_counts$Stage=="PseudoP",]$Stage <- "(Pseudo)P"
 rad51_counts[rad51_counts$Stage=="P",]$Stage <- "(Pseudo)P"
 
-rad51_counts$Stage <- factor(rad51_counts$Stage, levels = c("L","Late L","Early Z","Z","Late Z","(Pseudo)P","Late P"))
+rad51_counts$Stage <- factor(rad51_counts$Stage, levels = c("L","Late L","Early Z","Mid Z","Late Z","(Pseudo)P","Late P"))
 rad51_counts$Genotype <- factor(rad51_counts$Genotype, levels = c("WT","Zcwpw1 KO","Prdm9 KO"))
 
-for(stage in c("Late L","Early Z","Z","Late Z","(Pseudo)P")){
+for(stage in c("Late L","Early Z","Mid Z","Late Z","(Pseudo)P")){
 print(t.test(data.table(rad51_counts)[Genotype=="Zcwpw1 KO" & Stage ==stage]$Foci,
        data.table(rad51_counts)[Genotype=="WT" & Stage ==stage]$Foci))
 }
@@ -288,16 +293,17 @@ rpa_counts[grep("ZCWP",Mouse), Genotype := "Zcwpw1 KO"]
 rpa_counts[rpa_counts$Stage=="lateZ",]$Stage <- "Late Z"
 rpa_counts[rpa_counts$Stage=="LateZ",]$Stage <- "Late Z"
 rpa_counts[rpa_counts$Stage=="EarlyZ",]$Stage <- "Early Z"
+rpa_counts[rpa_counts$Stage=="Mid Z",]$Stage <- "Mid Z"
 rpa_counts[rpa_counts$Stage=="P",]$Stage <- "(Pseudo)P"
 rpa_counts[rpa_counts$Stage=="PseudoP",]$Stage <- "(Pseudo)P"
 rpa_counts <- rpa_counts[!is.na(Image)]
 
-rpa_counts$Stage <- factor(rpa_counts$Stage, levels = c("L","Late L","Early Z","Z","Late Z","(Pseudo)P","Late P"))
+rpa_counts$Stage <- factor(rpa_counts$Stage, levels = c("L","Late L","Early Z","Mid Z","Late Z","(Pseudo)P","Late P"))
 rpa_counts$Genotype <- factor(rpa_counts$Genotype, levels = c("WT","Zcwpw1 KO","Prdm9 KO"))
 rpa_counts[, Foci := as.numeric(Foci)]
 
 
-for(stage in c("Early Z","Z","Late Z","(Pseudo)P")){
+for(stage in c("Early Z","Mid Z","Late Z","(Pseudo)P")){
 print(t.test(data.table(rpa_counts)[Genotype=="Zcwpw1 KO" & Stage ==stage]$Foci,
        data.table(rpa_counts)[Genotype=="WT" & Stage ==stage]$Foci))
 }
