@@ -359,14 +359,15 @@ forcecalled300[CpG_Island==0 & NotAlu==0 & Alu==0,.(PeakProb=mean(ZcwPeak>0),.N,
 forcecalled300[CpG_Island==0 & NotAlu==0 & Alu==0,.(PeakProb=mean(ZcwPeakRand>0),.N, Type="Random"), by=c("CpG","methStatus")][order(CpG)])
 
 pPeak_CpG[,sep := sqrt((PeakProb * (1- PeakProb))/N), by=c("CpG")]
+pPeak_CpG[methStatus=="NA", methStatus := "Meth"]
 
 p <- ggplot(pPeak_CpG[CpG<20 & methStatus!="Unk"], aes(CpG, PeakProb, colour=Type, alpha=methStatus)) +
   geom_pointrange(aes(ymax = PeakProb + 2*sep, ymin = PeakProb - 2*sep)) +
   scale_color_brewer(palette = "Set1", name="Peak Type") +
-  ylab("Probability of window overlaping a ZCWPW1 peak") +
+  ylab("Probability of window overlapping a ZCWPW1 peak") +
   xlab("CpG count in 300bp window") +
   #ggtitle("300bp, Non Repeat, Non Alu, Non CpG Island Peaks") +
-  scale_alpha_manual(values=c("Meth"=1, "NA"=1, "UnMeth"=0.5), name="Methylation\nStatus") +
+  scale_alpha_manual(values=c("Meth"=1, "UnMeth"=0.5), name="Methylation\nStatus") +
   theme_minimal()
 p
 #dev.off()
@@ -385,7 +386,7 @@ pPeak_CpG[,sep := sqrt((PeakProb * (1- PeakProb))/N), by=c("CpG")]
 ggplot(pPeak_CpG[CpG<20 & methStatus!="Unk"], aes(CpG, PeakProb, colour=Type, alpha=methStatus)) +
   geom_pointrange(aes(ymax = PeakProb + 2*sep, ymin = PeakProb - 2*sep)) +
   scale_color_brewer(palette = "Set1", name="Peak Type") +
-  ylab("Probability of overlaping a Zcwpw1 peak") +
+  ylab("Probability of overlapping a Zcwpw1 peak") +
   ggtitle("300bp,Alu Peaks") +
   #coord_cartesian(ylim=c(0,0.8)) +
   scale_alpha_manual(values=c("Meth"=1, "NA"=1, "UnMeth"=0.5), name="Methylation\nStatus") +
@@ -404,7 +405,7 @@ pPeak_CpG[,sep := sqrt((PeakProb * (1- PeakProb))/N), by=c("CpG")]
 ggplot(pPeak_CpG[CpG<25 & methStatus!="Unk"], aes(CpG, PeakProb, colour=Type, alpha=methStatus)) +
   geom_pointrange(aes(ymax = PeakProb + 2*sep, ymin = PeakProb - 2*sep)) +
   scale_color_brewer(palette = "Set1", name="Peak Type") +
-  ylab("Probability of overlaping a Zcwpw1 peak") +
+  ylab("Probability of overlapping a Zcwpw1 peak") +
   ggtitle("300bp,CpGI") +
   facet_wrap(~CGI) +
   scale_alpha_manual(values=c("Meth"=1, "NA"=1, "UnMeth"=0.5), name="Methylation\nStatus") +
@@ -761,7 +762,7 @@ p1 <- ggplot(forcecalled[zcw_cov_input>5 & hP9combo_cov_input>5][!zcw_enrichment
   #stat_summary_hex(bins=200, alpha=0.5, fun= function(x) as.character(mean(x))) + # na.rm=T
   stat_summary_hex(bins=200, alpha=0.5, fun= function(x)if(length(x)>=3){as.character(mean(x))}else{NA}) + # na.rm=T
   geom_density_2d(aes(colour=hP9Combo.bound),bins=15) +
-  labs(x="Enrichment of Zcwpw1", y="Enrichment of ZCWPW1 when cotransfected with human PRDM9") +
+  labs(x="Enrichment of ZCWPW1", y="Enrichment of ZCWPW1 when cotransfected with human PRDM9") +
   scale_fill_manual(labels = c("p = 1", "p < 10^(-9)"), values = c("#E41A1C", "#377EB8")) +
   scale_colour_manual(values = c("#E41A1C", "#377EB8"), guide=FALSE) +
   labs(fill="Evidence of human PRDM9 binding") +
@@ -789,7 +790,7 @@ p2 <- ggplot(forcecalled[zcw_cov_input>5 & cP9combo_cov_input>5][!zcw_enrichment
   #stat_summary_hex(bins=200, alpha=0.5, fun= function(x) as.character(mean(x))) + # na.rm=T
   stat_summary_hex(bins=200, alpha=0.5, fun= function(x)if(length(x)>=3){as.character(mean(x))}else{NA}) + # na.rm=T
   geom_density_2d(aes(colour=cP9Combo.bound),bins=15) +
-  labs(x="Enrichment of Zcwpw1", y="Enrichment of ZCWPW1 when cotransfected with chimp PRDM9") +
+  labs(x="Enrichment of ZCWPW1", y="Enrichment of ZCWPW1 when cotransfected with chimp PRDM9") +
   scale_fill_manual(labels = c("p = 1", "p < 10^(-3)"), values = c("#E41A1C", "#377EB8")) +
   scale_colour_manual(values = c("#E41A1C", "#377EB8"), guide=FALSE) +
   labs(fill="Evidence of chimp PRDM9 binding") +
@@ -985,8 +986,8 @@ p1 <- fraction_overlapN(forcecalled[sample(1:nrow(forcecalled))][h3k4me3_hP9_cov
                         "h3k4me3_hP9_enrichment","zcw_hP9_enrichment", n=100) +
   scale_y_log10() + scale_x_log10() +
   theme(legend.position = "none") +
-  ylab("Mean Zcwpw1 Enrichment when co-transfected with Prdm9") +
-  xlab("Mean H3K4me3 Enrichment when co-transfected with Prdm9+ 0.01")
+  ylab("Mean ZCWPW1 Enrichment when co-transfected with hPRDM9") +
+  xlab("Mean H3K4me3 Enrichment when co-transfected with hPRDM9+ 0.01")
 
 
 forcecalled$enrichment <- forcecalled$h3k36me3_hP9_enrichment
@@ -995,8 +996,8 @@ p2 <- fraction_overlapN(forcecalled[sample(1:nrow(forcecalled))][h3k36me3_hP9_co
                         "h3k36me3_hP9_enrichment","zcw_hP9_enrichment", n=100) + 
   scale_y_log10() + scale_x_log10() +
   theme(legend.position = "none") +
-  ylab("Mean ZCWPW1 Enrichment when co-transfected with PRDM9") +
-  xlab("Mean H3K36me3 Enrichment when co-transfected with PRDM9 + 0.01")
+  ylab("Mean ZCWPW1 Enrichment when co-transfected with hPRDM9") +
+  xlab("Mean H3K36me3 Enrichment when co-transfected with hPRDM9 + 0.01")
 
 #pdf("results/H3Kme3_vs_Zcw_wP9.pdf", width = 11)
 plot_grid(p1,p2)
@@ -1023,12 +1024,12 @@ tmp <- rbind(
 p <- ggplot(tmp, aes(mean_enrichment, Mean, colour=Subset)) +
   geom_point() +
   #scale_x_log10() +
-  xlab("Mean H3K4me3 enrichment in humanPRDM9 transfection") +
-  ylab("Mean ZCWPW1 enrichment in ZCWPW1-humanPRDM9 cotransfection") +
+  xlab("Mean H3K4me3 enrichment in human PRDM9 transfection") +
+  ylab("Mean ZCWPW1 enrichment in ZCWPW1 human PRDM9 cotransfection") +
   geom_pointrange(aes(ymax = uq, ymin = lq), linetype="dotted") +
   geom_errorbar(aes(ymax = Mean + 2*sem, ymin = Mean - 2*sem), width = 0.05) +
-  scale_colour_manual(labels = c("humanPRDM9 bound (p<1e-7) & No pre-existing H3K4me3 (p>1e-5)",
-                               "Pre-existing H3K4me3 (p<1e-5)"),
+  scale_colour_manual(labels = c(expression("Human-PRDM9 bound (p<10"^"-7"*") & No pre-existing H3K4me3 (p>10"^"-5"*")"),
+                               expression("Pre-existing H3K4me3 (p<10"^"-5"*")")),
                       guide=guide_legend(nrow=2),
                     values = RColorBrewer::brewer.pal(3, "Set1")) +
   theme_minimal() +
@@ -1065,14 +1066,6 @@ tmp2 <- y_pred
 names(tmp2)[1:3] <- c("mean_enrichment","Subset","Mean")
 
 #pdf("H3K4strength_binned_allchr.pdf")
-p + geom_ribbon(aes(ymin = Mean - 2*se.fit, ymax = Mean + 2*se.fit, group=Subset),
-                data=tmp2[se.fit<0.5], fill = "grey70", colour="grey70", alpha=0.5) +
-  geom_hline(yintercept = 1.95, linetype="dashed")
-
-p + geom_ribbon(aes(ymin = Mean - 2*se.fit, ymax = Mean + 2*se.fit, group=Subset),
-                data=tmp2[se.fit<0.05], fill = "grey70", colour="grey70", alpha=0.5) +
-  geom_hline(yintercept = 1.95, linetype="dashed") + scale_x_log10()
-
 p + geom_ribbon(aes(ymin = Mean - 2*se.fit, ymax = Mean + 2*se.fit, group=Subset),
                 data=tmp2[se.fit<0.05], fill = "grey70", colour="grey70", alpha=0.5) +
   geom_hline(yintercept = 1.95, linetype="dashed") + scale_x_log10() + scale_y_log10()
