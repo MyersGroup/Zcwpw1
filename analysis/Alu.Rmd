@@ -214,7 +214,7 @@ AluEnrich <- fraction_overlapN2(repeatsAlu, zcw_peaks_cin, x1="Alu Repeats by Cp
   scale_x_continuous() +
   xlim(0,25) + # min of 200 data points required
   xlab("CpG Count in Alu Repeats") + 
-  ylab("Fraction of Alu Repeats overlaping\n ZCWPW1 peaks (no PRDM9)") +
+  ylab("Fraction of Alu Repeats overlapping\n ZCWPW1 peaks (no PRDM9)") +
   theme(legend.position = "bottom")
 
 
@@ -281,11 +281,11 @@ plot_grid(p1, p2, p3, p4)
 ```{r}
 repeatsAlu$id <- seq_along(repeatsAlu$chr)
 
-overlapingAluIDS <- foverlaps(zcw_peaks_cin, repeatsAlu, mult="first")$id
-overlapingAluIDS2 <- overlapingAluIDS[!is.na(overlapingAluIDS)]
+overlappingAluIDS <- foverlaps(zcw_peaks_cin, repeatsAlu, mult="first")$id
+overlappingAluIDS2 <- overlappingAluIDS[!is.na(overlappingAluIDS)]
 
 repeatsAlu$overlap <- FALSE
-repeatsAlu[id %in% overlapingAluIDS2, overlap := TRUE]
+repeatsAlu[id %in% overlappingAluIDS2, overlap := TRUE]
 
 # compare count of CpG
 repeatsAlu$enrichment <- repeatsAlu$CG_count
@@ -468,7 +468,7 @@ CpGgeneral <- ggplot(tmp, aes(CpGcount, MeanEnrich, colour=Repeat, size=N)) +
   geom_line(size=0.5, linetype="dashed") +
   theme_minimal() +
   geom_pointrange(aes(ymin=MeanEnrich - 2*(sd/sqrt(N)), ymax=MeanEnrich + 2*(sd/sqrt(N))), size=0.5) +
-  ylab("Mean Enrichment of Zcwpw1 peaks (without Prdm9)") +
+  ylab("Mean Enrichment of ZCWPW1 peaks (without hPRDM9)") +
   xlab("Count of CpGs under peak +/-150")
 
 #pdf("../results/CpG_general.pdf", width=10)
@@ -547,7 +547,7 @@ tmp <- rbind(binned_cpg_prop, cpg_prop_rand)
 
 tmp$CpG <- gsub("CpG_","",tmp$variable)
 tmp$CpG <- gsub("_"," to ",tmp$CpG)
-tmp$CpG <- gsub("gt"," >=",tmp$CpG)
+tmp$CpG <- gsub("13gt",">= 13",tmp$CpG)
 tmp$CpG <- factor(tmp$variable, levels = tmp$variable, labels=tmp$CpG)
 
 # reorder so 0 at bottom
@@ -564,7 +564,7 @@ tmp[,maxwidth := min(c(diffnext,diffprev)), by=c("bin","enrichment")]
 CpG_Proportions <- ggplot(tmp, aes(enrichment, value, fill=CpG)) +
   geom_col(aes(width=maxwidth)) +
   scale_fill_brewer() +
-  scale_x_continuous(labels=c("Random \n Peaks",0:5), breaks=c(-0.5,0:5)) +
+  scale_x_continuous(labels=c("Random \n Regions",0:5), breaks=c(-0.5,0:5)) +
   scale_fill_brewer(direction = -1, palette = "RdBu") +
   ylab("Proportion of ZCWPW1 Peaks") +
   xlab("Enrichment of ZCWPW1") +
@@ -591,7 +591,7 @@ ggplot(data.table(a=c(1,1,2,2),b=c(0.1,0.9,0.5,0.5),c=c(1,2,1,2)), aes(a,b, fill
 CpGWindows <- readRDS("../data/CpG/NormalPeaks300bp.rds")
 
 #pdf("../results/CpG_plot.pdf", height = 10, width = 10)
-plot_grid(pi, CpGWindows + ylab("Probability of window overlaping a ZCWPW1 peak"), AluEnrich, CpG_Proportions + theme_minimal(), nrow=2, rel_widths = c(2,3), labels = c("A","C","B","D"))
+plot_grid(pi, CpGWindows + ylab("Probability of window overlapping a ZCWPW1 peak"), AluEnrich, CpG_Proportions + theme_minimal(), nrow=2, rel_widths = c(2,3), labels = c("A","C","B","D"))
 #dev.off()
 ```
 
