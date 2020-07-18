@@ -38,6 +38,7 @@ rule dmc1_counts:
     "data/cellular/zcw_dmc1.xlsx",
     "data/cellular/Second prdm9 KO DMC1 foci.xlsx",
     "data/cellular/Rad51.xlsx",
+    "data/cellular/RPA2.xlsx",
     rmd = "analysis/dmc1_counts.Rmd"
   output:
     md = "results/dmc1_counts.md"
