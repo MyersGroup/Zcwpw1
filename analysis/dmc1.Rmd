@@ -206,7 +206,8 @@ p <- ggplot(rbind(A,X), aes(SPO11, DMC1)) +
   geom_point(aes(colour=Heat), size=0.75, stroke=0) +
   coord_cartesian(xlim = c(0,12), ylim=c(0,15))+
   #geom_smooth(data = A, method="lm") +
-  #geom_smooth(data = X, method="gam") +
+  geom_smooth(data = A, method="gam", formula = y ~ s(x) ) +
+  geom_smooth(data = X, method="gam", formula = y ~ s(x, k=5)) +
   #scale_x_sqrt() + scale_y_sqrt() +
   scale_x_continuous(breaks = c(0,4,8,12))+
   scale_colour_gradientn(colours=colormap, na.value = "blue", name="H3K4me3\nScaled")+
@@ -236,9 +237,9 @@ pko <- ggplot(rbind(AKO,XKO), aes(SPO11, DMC1)) +
   #geom_line(data=AmeanKO, size=0.1) +
   geom_pointrange(data=XmeanKO, aes(ymin=SPO11_min, ymax=SPO11_max), size=0.2, colour="blue")+
   #facet_zoom(xy=SPO11<2 & DMC1<2, zoom.size = 1) +
-  #geom_smooth(data = AKO, method="gam", formula = y ~ s(x) ) +
+  geom_smooth(data = AKO, method="gam", formula = y ~ s(x) ) +
   #geom_smooth(data = AKO, method = "lm") +
-  #geom_smooth(data = XKO, method="gam", formula = y ~ s(x, k=8), bs = "ad") 
+  geom_smooth(data = XKO, method="gam", formula = y ~ s(x, k=4),colour="red") +
   #scale_x_sqrt() + scale_y_sqrt() +
   #geom_abline(colour="black", slope=1.00752, intercept = 0.09511, linetype="dashed") +
   geom_abline(colour="darkgreen") +
@@ -262,10 +263,10 @@ saveRDS(dmc1_curveline,"../results/dmc1/dmc1_curveline.rds")
 #pdf(width = 7*1.5, height = 7)
 p <- ggplot(rbind(A,X), aes(SPO11, DMC1, colour=Chr)) +
   geom_point(alpha=0.7, size=0.75, stroke=0) +
-  coord_cartesian(xlim = c(0,12), ylim=c(0,15))+
-  scale_x_continuous(breaks = c(0,4,8,12))+
-  geom_pointrange(data=Amean[DMC1<15 & SPO11<12], aes(ymin=SPO11_min, ymax=SPO11_max), size=0.35, colour="darkred") +
-  geom_pointrange(data=Xmean[DMC1<15 & SPO11<12], aes(ymin=SPO11_min, ymax=SPO11_max), size=0.35, colour="blue") +
+  coord_cartesian(xlim = c(0,6), ylim=c(0,12))+
+  scale_x_continuous(breaks = c(0,2,4,6))+
+  geom_pointrange(data=Amean, aes(ymin=SPO11_min, ymax=SPO11_max), size=0.35, colour="darkred") +
+  geom_pointrange(data=Xmean, aes(ymin=SPO11_min, ymax=SPO11_max), size=0.35, colour="blue") +
   geom_abline(linetype="dashed") +
   scale_colour_manual(values = c("#ff7f00","#004782")) + guides(colour = guide_legend(override.aes = list(size=5))) +
   ylab("Scaled DMC1 (WT)") +
@@ -276,8 +277,8 @@ p
 
 pko <- ggplot(rbind(AKO,XKO), aes(SPO11, DMC1, colour=Chr)) +
   geom_point(alpha=0.7, size=0.75, stroke=0) +
-  coord_cartesian(xlim = c(0,12), ylim=c(0,15))+
-  scale_x_continuous(breaks = c(0,4,8,12))+
+  coord_cartesian(xlim = c(0,6), ylim=c(0,13.52))+
+  scale_x_continuous(breaks = c(0,2,4,6))+
   geom_pointrange(data=AmeanKO, aes(ymin=SPO11_min, ymax=SPO11_max), size=0.35, colour="darkred") +
   geom_pointrange(data=XmeanKO, aes(ymin=SPO11_min, ymax=SPO11_max), size=0.35, colour="blue")+
   geom_abline(linetype="dashed") +
