@@ -50,7 +50,7 @@ dmc1_counts_KO <- rbind(dmc1_counts_KO[,1:4],
                      dmc1_counts_KO[,7:10],
                      dmc1_counts_KO[,11:14])
 
-dmc1_counts_KO$Genotype <- "Zcwpw1 -/-"
+dmc1_counts_KO$Genotype <- "Zcwpw1-/-"
 
 # # # # # # # # # # # #
 # Load WT counts
@@ -83,12 +83,12 @@ dmc1_counts_P9 <- readxl::read_excel("../data/cellular/zcw_dmc1.xlsx", sheet = "
 # colnames(dmc1_counts_P9)[c(4)] <- "Mouse"
 
 dmc1_counts_P9$Mouse <- "TGFJ 27.1B (6 Aug 2019)"
-dmc1_counts_P9$Genotype <- "Prdm9 -/-"
+dmc1_counts_P9$Genotype <- "Prdm9-/-"
 
 
 dmc1_counts_P9B <- readxl::read_excel("../data/cellular/Second prdm9 KO DMC1 foci.xlsx", skip = 1)
 dmc1_counts_P9B$Mouse <- "TGFJ 26.2C (11Oct 2019)"
-dmc1_counts_P9B$Genotype <- "Prdm9 -/-"
+dmc1_counts_P9B$Genotype <- "Prdm9-/-"
 
 # # # # # # # # # # # #
 # Unrelated WT counts
@@ -109,18 +109,18 @@ dmc1_counts_UWT <- rbind(dmc1_counts_UWT[,1:4],
 colnames(dmc1_counts_UWT)[1] <- "Image"
 colnames(dmc1_counts_UWT)[3] <- "DMC1 foci"
 
-dmc1_counts_UWT$Genotype <- "Wild Type (unrelated)"
+dmc1_counts_UWT$Genotype <- "Wild Type"
 
 
 # # # # # # # # # # # #
 # Combine & Plot
 # # # # # # # # # # # #
 
-dmc1_counts <- rbind(dmc1_counts_KO,
+dmc1_counts <- data.table(rbind(dmc1_counts_KO,
                      #dmc1_counts_WT,
                      dmc1_counts_P9,
                      dmc1_counts_P9B,
-                     dmc1_counts_UWT)
+                     dmc1_counts_UWT))
 
 dmc1_counts <- dmc1_counts[!(toupper(dmc1_counts$Image)=="IMAGE"),]
 
@@ -137,12 +137,13 @@ dmc1_counts[dmc1_counts$Stage=="L",]$Stage <- "Late L"
 dmc1_counts[dmc1_counts$Stage=="P",]$Stage <- "(Pseudo) P"
 dmc1_counts[dmc1_counts$Stage=="P?",]$Stage <- "(Pseudo)P"
 dmc1_counts[dmc1_counts$Stage=="Pseudop",]$Stage <- "(Pseudo)P"
+dmc1_counts[dmc1_counts$Stage=="(Pseudo) P",]$Stage <- "(Pseudo)P"
 dmc1_counts[dmc1_counts$Stage=="Z",]$Stage <- "Mid Z"
 
 dmc1_counts[dmc1_counts$Genotype=="Wild Type (unrelated)",]$Genotype <- "Wild Type"
 
-dmc1_counts$Stage <- factor(dmc1_counts$Stage, levels = c("L","Late L","Early Z","Mid Z","Late Z","(Pseudo)P","P?","Pseudop"))
-dmc1_counts$Genotype <- factor(dmc1_counts$Genotype, levels = c("Wild Type","Wild Type (unrelated)","Zcwpw1 -/-","Prdm9 -/-"))
+dmc1_counts$Stage <- factor(dmc1_counts$Stage, levels = c("L","Late L","Early Z","Mid Z","Late Z","(Pseudo)P"))
+dmc1_counts$Genotype <- factor(dmc1_counts$Genotype, levels = c("Wild Type","Wild Type (unrelated)","Zcwpw1-/-","Prdm9-/-"))
 ```
 
 ```{r dmc1_counts, fig.width=7, fig.height=5, fig.retina=T}
@@ -158,12 +159,12 @@ p <- ggplot(dmc1_counts, aes(Stage, Foci, colour=Genotype)) +
 # check by mouse
 ggplot(dmc1_counts, aes(Stage, Foci, colour=Mouse)) + geom_jitter() + facet_wrap(~Genotype)
 
-ggplot(data.table(dmc1_counts)[Genotype=="Prdm9 -/-"], aes(Stage, Foci, colour=Mouse, group=Mouse)) + 
+ggplot(data.table(dmc1_counts)[Genotype=="Prdm9-/-"], aes(Stage, Foci, colour=Mouse, group=Mouse)) + 
   geom_jitter(position = position_jitterdodge())
 
 # add pvalues
 for(stage in c("Late L","Early Z","Mid Z","Late Z","(Pseudo)P")){
-print(t.test(data.table(dmc1_counts)[Genotype=="Zcwpw1 -/-" & Stage ==stage]$Foci,
+print(t.test(data.table(dmc1_counts)[Genotype=="Zcwpw1-/-" & Stage ==stage]$Foci,
        data.table(dmc1_counts)[Genotype=="Wild Type" & Stage ==stage]$Foci))
 }
 
@@ -193,7 +194,7 @@ colnames(rad51_counts_ZCW) <- c("Image","Stage","Foci","NA1","NA2","Image","Stag
 rad51_counts_ZCW <- rbind(rad51_counts_ZCW[,c(1:3,9)],
                      rad51_counts_ZCW[,c(6:8,10)])
 
-rad51_counts_ZCW$Genotype <- "Zcwpw1 KO"
+rad51_counts_ZCW$Genotype <- "Zcwpw1-/-"
 
 # # # # # # # # # # # #
 # Prdm9KO counts
@@ -206,7 +207,7 @@ rad51_counts_P9KO <- rad51_counts_P9KO[2:nrow(rad51_counts_P9KO),]
 
 colnames(rad51_counts_P9KO) <- c("Image","Stage","Foci","Mouse")
 
-rad51_counts_P9KO$Genotype <- "Prdm9 KO"
+rad51_counts_P9KO$Genotype <- "Prdm9-/-"
 
 
 # # # # # # # # # # # #
@@ -225,7 +226,7 @@ colnames(rad51_counts_WT) <- c("Image","Stage","Foci","NA1","NA2","Image","Stage
 rad51_counts_WT <- rbind(rad51_counts_WT[,c(1:3,9)],
                      rad51_counts_WT[,c(6:8,10)])
 
-rad51_counts_WT$Genotype <- "WT"
+rad51_counts_WT$Genotype <- "Wild Type"
 
 
 # # # # # # # # # # # #
@@ -242,11 +243,11 @@ rad51_counts[rad51_counts$Stage=="PseudoP",]$Stage <- "(Pseudo)P"
 rad51_counts[rad51_counts$Stage=="P",]$Stage <- "(Pseudo)P"
 
 rad51_counts$Stage <- factor(rad51_counts$Stage, levels = c("L","Late L","Early Z","Mid Z","Late Z","(Pseudo)P","Late P"))
-rad51_counts$Genotype <- factor(rad51_counts$Genotype, levels = c("WT","Zcwpw1 KO","Prdm9 KO"))
+rad51_counts$Genotype <- factor(rad51_counts$Genotype, levels = c("Wild Type","Zcwpw1-/-","Prdm9-/-"))
 
 for(stage in c("Late L","Early Z","Mid Z","Late Z","(Pseudo)P")){
-print(t.test(data.table(rad51_counts)[Genotype=="Zcwpw1 KO" & Stage ==stage]$Foci,
-       data.table(rad51_counts)[Genotype=="WT" & Stage ==stage]$Foci))
+print(t.test(data.table(rad51_counts)[Genotype=="Zcwpw1-/-" & Stage ==stage]$Foci,
+       data.table(rad51_counts)[Genotype=="Wild Type" & Stage ==stage]$Foci))
 }
 ```
 
@@ -273,59 +274,69 @@ p
 
 ```{r load_RPA}
 
-rpa_counts_ZCW <- readxl::read_excel("../data/cellular/RPA.xlsx")
-
-rpa_counts_ZCW$Mouse1 <- colnames(rpa_counts_ZCW)[1]
-rpa_counts_ZCW$Mouse2 <- colnames(rpa_counts_ZCW)[8]
-rpa_counts_ZCW$Mouse3 <- colnames(rpa_counts_ZCW)[13]
-
+rpa_counts_ZCW <- readxl::read_excel("../data/cellular/RPA2.xlsx")
+rpa_counts_ZCW <- rpa_counts_ZCW[,c(1:3, 6:8, 10:12, 18:20, 23:25, 28:30)]
 rpa_counts_ZCW <- rpa_counts_ZCW[2:nrow(rpa_counts_ZCW),]
 
-colnames(rpa_counts_ZCW) <- c("Image","Stage","Foci","NA1","NA2","NA3","NA4","Image","Stage","Foci","NA5","NA6","Image","Stage","Foci","NA7","NA8","NA9","NA10","NA11","NA12","NA13","Mouse","Mouse","Mouse")
+rpa_counts_ZCW$Mouse1 <- colnames(rpa_counts_ZCW)[1]
+rpa_counts_ZCW$Mouse2 <- colnames(rpa_counts_ZCW)[4]
+rpa_counts_ZCW$Mouse3 <- colnames(rpa_counts_ZCW)[7]
+rpa_counts_ZCW$Mouse4 <- colnames(rpa_counts_ZCW)[10]
+rpa_counts_ZCW$Mouse5 <- colnames(rpa_counts_ZCW)[13]
+rpa_counts_ZCW$Mouse6 <- colnames(rpa_counts_ZCW)[16]
 
-rpa_counts <- data.table(rbind(rpa_counts_ZCW[,c(1:3,23)],
-                     rpa_counts_ZCW[,c(8:10,24)],
-                     rpa_counts_ZCW[,c(13:15,25)]))
+colnames(rpa_counts_ZCW) <- c(rep(c("Image","Stage","Foci"), 6), rep("Mouse",6))
 
-rpa_counts[grep("TG",Mouse), Genotype := "WT"]
-rpa_counts[grep("ZCWP",Mouse), Genotype := "Zcwpw1 KO"]
+rpa_counts <- data.table(rbind(rpa_counts_ZCW[,c(1:3,19)],
+                     rpa_counts_ZCW[,c(4:6,20)],
+                     rpa_counts_ZCW[,c(7:9,21)],
+                     rpa_counts_ZCW[,c(10:12,22)],
+                     rpa_counts_ZCW[,c(13:15,23)],
+                     rpa_counts_ZCW[,c(16:18,24)]))
+
+rpa_counts <- rpa_counts[!is.na(Image)]
+
+rpa_counts[grep("TG",Mouse), Genotype := "Wild Type"]
+rpa_counts[grep("ZCW",Mouse), Genotype := "Zcwpw1-/-"]
 
 rpa_counts[rpa_counts$Stage=="lateZ",]$Stage <- "Late Z"
 rpa_counts[rpa_counts$Stage=="LateZ",]$Stage <- "Late Z"
+rpa_counts[rpa_counts$Stage=="late Z",]$Stage <- "Late Z"
 rpa_counts[rpa_counts$Stage=="EarlyZ",]$Stage <- "Early Z"
-rpa_counts[rpa_counts$Stage=="Mid Z",]$Stage <- "Mid Z"
+rpa_counts[rpa_counts$Stage=="earlyZ",]$Stage <- "Early Z"
+rpa_counts[rpa_counts$Stage=="Z",]$Stage <- "Mid Z"
 rpa_counts[rpa_counts$Stage=="P",]$Stage <- "(Pseudo)P"
 rpa_counts[rpa_counts$Stage=="PseudoP",]$Stage <- "(Pseudo)P"
-rpa_counts <- rpa_counts[!is.na(Image)]
+rpa_counts[rpa_counts$Stage=="pseudoP",]$Stage <- "(Pseudo)P"
+
+rpa_counts[,.N,by=Stage]
 
 rpa_counts$Stage <- factor(rpa_counts$Stage, levels = c("L","Late L","Early Z","Mid Z","Late Z","(Pseudo)P","Late P"))
-rpa_counts$Genotype <- factor(rpa_counts$Genotype, levels = c("WT","Zcwpw1 KO","Prdm9 KO"))
+rpa_counts$Genotype <- factor(rpa_counts$Genotype, levels = c("Wild Type","Zcwpw1-/-","Prdm9-/-"))
 rpa_counts[, Foci := as.numeric(Foci)]
 
 
 for(stage in c("Early Z","Mid Z","Late Z","(Pseudo)P")){
-print(t.test(data.table(rpa_counts)[Genotype=="Zcwpw1 KO" & Stage ==stage]$Foci,
-       data.table(rpa_counts)[Genotype=="WT" & Stage ==stage]$Foci))
+print(t.test(data.table(rpa_counts)[Genotype=="Zcwpw1-/-" & Stage ==stage]$Foci,
+       data.table(rpa_counts)[Genotype=="Wild Type" & Stage ==stage]$Foci))
 }
 ```
 
 
 ```{r rpa_counts, fig.width=7, fig.height=5}
-p <- ggplot(rpa_counts[Stage!="Late L"], aes(Stage, Foci, colour=Genotype)) + 
+p <- ggplot(rpa_counts[!Stage %in% c("L","Late L")], aes(Stage, Foci, colour=Genotype)) + 
   geom_point(size=0.5, position = position_jitterdodge()) + 
   scale_color_brewer(palette = "Set1", labels = c("Wild Type",expression(italic("Zcwpw1")^"-/-"),expression(italic("Prdm9")^"-/-"))) + 
   theme_minimal() + 
   geom_boxplot(alpha=0) +
   theme(legend.position = "bottom") +
-  ylab("RPA Foci Count")
+  ylab("RPA2 Foci Count")
 
 p + geom_signif(y_position=c(350, 400, 320, 250),
                 xmin=c(0.8, 1.8, 2.8, 3.8),
                 xmax=c(1.2, 2.2, 3.2, 4.2),
-              annotation=c("0.097",fs("4.41e-05"),fs("0.0014"),fs("< 2.2e-16")),
+              annotation=c("0.78",fs("1.1e-10"),fs("2.1e-10"),fs("1.1e-45")),
               tip_length=0.01, col="black", parse=TRUE) + ylim(0,420)
-
-p
 
 #ggsave("../results/rpa_counts.pdf", width = 7, height = 5)
 ```
